@@ -1,5 +1,5 @@
 import { PlaceholderState } from "@/components/placeholder-state";
-import { SectionCard } from "@/components/section-card";
+import { DataPoint, DetailPanel, SectionCard } from "@/components/section-card";
 import { LoadingState } from "@/components/shared-states";
 
 const extractedSections = [
@@ -18,7 +18,12 @@ export default function NewJobPage() {
         description="This placeholder route establishes the URL and the expected data shape for the future job creation flow: recruiter inputs, extracted configuration sections, interview limits, and publish actions."
       >
         <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <SectionCard title="Recruiter inputs" kicker="Manual entry">
+          <SectionCard
+            title="Recruiter inputs"
+            kicker="Manual entry"
+            description="The form panel holds the operational brief, language, and role context that seed the job draft."
+            tone="strong"
+          >
             <ul className="space-y-3 text-sm leading-7 text-slate-600">
               <li>Job title</li>
               <li>Interview language</li>
@@ -29,6 +34,7 @@ export default function NewJobPage() {
           <SectionCard
             title="Extracted editable sections"
             kicker="AI-assisted review"
+            description="A report-style panel keeps the generated structure readable before the recruiter starts editing."
           >
             <LoadingState
               eyebrow="Shared loading"
@@ -41,6 +47,46 @@ export default function NewJobPage() {
               ))}
             </ul>
           </SectionCard>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
+          <SectionCard
+            title="Job draft metrics"
+            kicker="Structured review"
+            description="Cards and panels share the same spacing and density rules across configuration and recruiter review surfaces."
+          >
+            <div className="grid gap-3 sm:grid-cols-3">
+              <DataPoint label="Sections" value={4} detail="Editable blocks" />
+              <DataPoint
+                label="Language"
+                value="EN"
+                detail="Interview locale"
+              />
+              <DataPoint
+                label="Runtime"
+                value="Voice"
+                detail="Dispatch method"
+              />
+            </div>
+          </SectionCard>
+
+          <DetailPanel
+            title="Lateral review panel"
+            kicker="Operator context"
+            description="Side panels stay available for quick AI hints, extracted risks, or publish checks without interrupting form work."
+          >
+            <div className="space-y-3 text-sm leading-7 text-slate-600">
+              <p>Role is optimized for high-volume intake.</p>
+              <p>
+                Extraction separates conditions, hard requirements, and soft
+                skills.
+              </p>
+              <p>
+                Publish checks can attach here later without a new panel
+                language.
+              </p>
+            </div>
+          </DetailPanel>
         </div>
       </PlaceholderState>
     </div>

@@ -1,23 +1,100 @@
 import type { ReactNode } from "react";
 
+import { cn } from "@/lib/utils";
+
 type SectionCardProps = {
   title: string;
   kicker?: string;
+  description?: string;
+  actions?: ReactNode;
+  footer?: ReactNode;
+  tone?: "default" | "strong" | "subtle";
   children: ReactNode;
 };
 
-export function SectionCard({ title, kicker, children }: SectionCardProps) {
+const toneStyles = {
+  default: "ops-panel",
+  strong: "ops-panel-strong",
+  subtle:
+    "border border-slate-200/80 bg-white/72 shadow-[0_16px_44px_rgba(15,23,42,0.05)]",
+} as const;
+
+export function SectionCard({
+  title,
+  kicker,
+  description,
+  actions,
+  footer,
+  tone = "default",
+  children,
+}: SectionCardProps) {
   return (
-    <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_16px_48px_rgba(15,23,42,0.05)]">
-      {kicker ? (
-        <p className="font-mono text-xs tracking-[0.22em] text-slate-500 uppercase">
-          {kicker}
-        </p>
+    <section className={cn("rounded-[1.75rem] p-6", toneStyles[tone])}>
+      <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          {kicker ? (
+            <p className="ops-kicker text-slate-500">{kicker}</p>
+          ) : null}
+          <h2 className="font-heading mt-3 text-xl font-semibold text-slate-950">
+            {title}
+          </h2>
+          {description ? (
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-600">
+              {description}
+            </p>
+          ) : null}
+        </div>
+        {actions ? <div className="shrink-0">{actions}</div> : null}
+      </div>
+
+      <div className="mt-5">{children}</div>
+
+      {footer ? (
+        <div className="mt-5 border-t border-slate-200/80 pt-4">{footer}</div>
       ) : null}
+    </section>
+  );
+}
+
+type DataPointProps = {
+  label: string;
+  value: string | number;
+  detail?: string;
+};
+
+export function DataPoint({ label, value, detail }: DataPointProps) {
+  return (
+    <div className="rounded-[1.25rem] border border-slate-200/80 bg-white/78 px-4 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+      <p className="ops-kicker text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
+      {detail ? <p className="mt-1 text-xs text-slate-500">{detail}</p> : null}
+    </div>
+  );
+}
+
+type DetailPanelProps = {
+  title: string;
+  kicker?: string;
+  description?: string;
+  children: ReactNode;
+};
+
+export function DetailPanel({
+  title,
+  kicker,
+  description,
+  children,
+}: DetailPanelProps) {
+  return (
+    <aside className="ops-panel-strong rounded-[1.75rem] p-6">
+      {kicker ? <p className="ops-kicker text-cyan-900">{kicker}</p> : null}
       <h2 className="font-heading mt-3 text-xl font-semibold text-slate-950">
         {title}
       </h2>
-      <div className="mt-4">{children}</div>
-    </section>
+      {description ? (
+        <p className="mt-2 text-sm leading-7 text-slate-600">{description}</p>
+      ) : null}
+      <div className="mt-5">{children}</div>
+    </aside>
   );
 }
