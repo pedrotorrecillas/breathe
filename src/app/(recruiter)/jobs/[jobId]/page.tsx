@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { PlaceholderState } from "@/components/placeholder-state";
 import { DataPoint, DetailPanel, SectionCard } from "@/components/section-card";
 import { EmptyState } from "@/components/shared-states";
-import { StatusBadge } from "@/components/status-badge";
+import { scoreBadgeIntent, StatusBadge } from "@/components/status-badge";
 
 type JobDetailPageProps = {
   params: Promise<{
@@ -19,15 +19,26 @@ const knownJobIds = new Set([
 const candidatePreview = [
   {
     name: "Lucia Torres",
-    score: "Strong fit",
+    score: "Outstanding",
     note: "Warehouse picking, forklift certified, available for nights.",
+    runtime: "completed",
   },
   {
     name: "Daniel Ruiz",
-    score: "Review",
+    score: "Average",
     note: "Retail inventory background, logistics crossover unclear.",
+    runtime: "human_requested",
   },
-];
+] as const;
+
+const scoreScale = [
+  "Outstanding",
+  "Great",
+  "Good",
+  "Average",
+  "Low",
+  "Poor",
+] as const;
 
 export default async function JobDetailPage({ params }: JobDetailPageProps) {
   const { jobId } = await params;
@@ -91,7 +102,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <DataPoint
                   label="Score"
-                  value="A2"
+                  value="Outstanding"
                   detail="High priority review"
                 />
                 <DataPoint
@@ -125,13 +136,24 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
                         {candidate.note}
                       </p>
                     </div>
-                    <StatusBadge
-                      intent={
-                        candidate.score === "Strong fit" ? "success" : "warning"
-                      }
-                    >
-                      {candidate.score}
-                    </StatusBadge>
+                    <div className="flex flex-wrap gap-2">
+                      <StatusBadge
+                        intent={scoreBadgeIntent[candidate.score]}
+                        density="compact"
+                      >
+                        {candidate.score}
+                      </StatusBadge>
+                      <StatusBadge
+                        intent={
+                          candidate.runtime === "completed" ? "info" : "special"
+                        }
+                        density="compact"
+                      >
+                        {candidate.runtime === "completed"
+                          ? "Interview complete"
+                          : "Human requested"}
+                      </StatusBadge>
+                    </div>
                   </div>
                 </article>
               ))}
@@ -139,11 +161,26 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
           </SectionCard>
 
           <SectionCard
-            title="Report / empty panel"
-            kicker="Shared panel pattern"
-            description="The same panel shape supports empty reports and future recruiter summaries."
+            title="Score and state legend"
+            kicker="Recruiter scan system"
+            description="Score badges stay categorical and compact. Operational badges carry exceptions without overloading dense views."
             tone="subtle"
           >
+            <div className="mb-5 flex flex-wrap gap-2">
+              {scoreScale.map((score) => (
+                <StatusBadge key={score} intent={scoreBadgeIntent[score]}>
+                  {score}
+                </StatusBadge>
+              ))}
+            </div>
+            <div className="mb-5 flex flex-wrap gap-2">
+              <StatusBadge intent="neutral">Applicants</StatusBadge>
+              <StatusBadge intent="info">Interviewed</StatusBadge>
+              <StatusBadge intent="success">Shortlisted</StatusBadge>
+              <StatusBadge intent="warning">Draft</StatusBadge>
+              <StatusBadge intent="danger">Rejected</StatusBadge>
+              <StatusBadge intent="special">Human requested</StatusBadge>
+            </div>
             <EmptyState
               eyebrow="Shared empty"
               title="No candidates have reached this pipeline view yet."
