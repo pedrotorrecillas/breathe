@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Clara MVP Scaffold
+
+Foundational Next.js application for the Breath project and the Clara MVP.
+
+This repository currently covers the first Foundations issue (`BRE-15`) and establishes:
+
+- Next.js App Router with TypeScript
+- Tailwind CSS v4
+- shadcn/ui configuration
+- a recruiter route group centered on `Jobs`
+- a public candidate apply route group
+- initial domain boundaries for jobs, candidates, interview runs, and evaluations
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies and start the dev server:
+
+```bash
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000` in your browser.
+
+Useful commands:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run lint
+npm run test
+npm run build
+npm run format
+npm run format:write
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Testing conventions live in [docs/testing.md](./docs/testing.md).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Key directories:
 
-## Learn More
+- `src/app`
+  App Router entrypoints and route groups
+- `src/app/(recruiter)`
+  Recruiter-facing routes and shared shell
+- `src/app/(public)`
+  Public candidate routes
+- `src/components`
+  Shared UI and product scaffolding components
+- `src/domain`
+  Core domain types split by product area
+- `src/lib`
+  Shared utilities and app-level config
 
-To learn more about Next.js, take a look at the following resources:
+Initial routes:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `/`
+  Scaffold overview and entry links
+- `/jobs`
+  Recruiter jobs list placeholder
+- `/jobs/new`
+  Job configuration placeholder
+- `/jobs/[jobId]`
+  Job detail placeholder
+- `/apply/[jobId]`
+  Public candidate apply placeholder
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Product References
 
-## Deploy on Vercel
+The initial scaffold was shaped from the local product documents in this repository:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `Refs/What is Clara v2.md`
+- `Refs/clara-mvp-functional-spec-v1.md`
+- `Refs/clara-mvp-discovery-notes.md`
+- `Refs/clara-mvp-linear-plan.md`

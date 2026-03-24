@@ -297,6 +297,8 @@ For MVP we should still keep the recruiter-facing setup simple, but internally w
 - language strategy
 - job conditions
 - scored requirements
+- generated interview questions
+- per-question confidence levels / scoring rubrics
 - runtime telephony settings
 - next-steps messaging
 
@@ -368,6 +370,35 @@ Rules:
 
 - CV and LinkedIn are alternatives
 - if the candidate provides LinkedIn but not CV, they can still continue
+
+### Candidate identity compatibility decision
+
+We want the future system to support contacting candidates again for other jobs and building a reusable candidate profile over time.
+
+To stay compatible with that without overloading the MVP, we are making these decisions now:
+
+- `Candidate` is a reusable entity separate from `Application`
+- `Application` represents one candidate applying to one specific job
+- `Phone` is the minimum operational identity field in the MVP
+- `Email` remains optional in the MVP
+- if an email is provided, it is stored on the candidate profile, not only as raw form data
+- the data model should support normalized identity fields from day one
+
+Recommended candidate identity fields:
+
+- `fullName`
+- `phone`
+- `normalizedPhone`
+- `email`
+- `normalizedEmail`
+- `linkedinUrl`
+- `cvAssetRef`
+
+Important:
+
+- advanced candidate deduplication is not part of the MVP
+- candidate re-engagement and reusable profile behavior should become a future epic
+- the MVP should not block that future path by coupling candidate identity to a single application
 
 ### Application confirmation
 
@@ -783,6 +814,28 @@ They mainly drive operational rejection logic rather than report presentation.
 ### No general explanation summary
 
 We do not need a high-level “overall explanation” paragraph above the report in the MVP.
+
+### Important scoring nuance from the reference prompts
+
+The reference system does not wait until the very end of the process to define all scoring logic.
+
+During interview generation, each generated question receives:
+
+- exactly one question per requirement
+- a question type
+- a per-question custom scoring rubric
+- exactly 6 `confidence_level` objects
+
+This means the full system has an important intermediate phase between job configuration and post-call evaluation:
+
+1. extract structured job configuration
+2. generate interview questions from those requirements
+3. attach per-question confidence levels / scoring guidance
+4. run the interview
+5. extract structured post-call outputs
+6. aggregate block scores and final classification
+
+For MVP planning, we should explicitly account for this intermediate question-generation phase even if the recruiter never sees it directly.
 
 ## Compliance Decisions
 

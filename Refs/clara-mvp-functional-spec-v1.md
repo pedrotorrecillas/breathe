@@ -302,6 +302,25 @@ Knockout behavior belongs to job conditions, not to scored requirements.
 - extraction happens in one pass
 - all extracted fields remain editable before publish
 
+## Interview generation compatibility note
+
+Although recruiters do not author interview questions directly in the MVP, the reference Clara flow includes a structured interview-generation phase after job configuration.
+
+That phase generates:
+
+- exactly one question per requirement
+- question types
+- special language-question behavior where relevant
+- a per-question scoring rubric
+- exactly 6 `confidence_level` objects per generated question
+
+This means our system design should leave room for:
+
+- a stored/generated interview question set per published job configuration or interview context
+- question-level confidence guidance that can later inform post-call scoring
+
+This is not yet a recruiter-facing feature, but it is an important compatibility requirement for the runtime and evaluation model.
+
 ## Interview Limits
 
 The system should support, if implementation cost is acceptable:
@@ -333,6 +352,31 @@ Behavior:
 - `Email` optional but desirable
 - `CV upload` or `LinkedIn` required as one-of-two alternatives
 - `T&C acceptance` required
+
+## Candidate identity compatibility decision
+
+The MVP should remain compatible with a future reusable candidate-profile system.
+
+Therefore:
+
+- `Candidate` must be modeled separately from `Application`
+- `Application` represents a candidate applying to one job
+- `Phone` is the minimum operational identity field in MVP
+- `Email` remains optional
+- if an email is provided, it is stored on the candidate entity
+- candidate identity data should include normalized fields from day one
+
+Recommended identity-oriented fields on `Candidate`:
+
+- `fullName`
+- `phone`
+- `normalizedPhone`
+- `email`
+- `normalizedEmail`
+- `linkedinUrl`
+- `cvAssetRef`
+
+Advanced deduplication and candidate re-engagement are out of scope for the MVP and should be handled in a later epic.
 
 ## Candidate-side confirmation
 
@@ -533,7 +577,9 @@ Key fields:
 
 - full name
 - phone
+- normalized phone
 - email
+- normalized email
 - cv asset reference
 - linkedin url
 
@@ -704,6 +750,15 @@ Examples:
 ## Requirement categories
 
 Use the same scale as global categories.
+
+## Important evaluation architecture note
+
+The reference Clara flow suggests a two-stage scoring architecture:
+
+1. question generation attaches per-question `confidence_level` scoring guidance
+2. post-call evaluation extracts requirement/block outputs and aggregates them into final scores
+
+For MVP we may simplify how much of that is visible, but the system should not assume that all scoring starts only after the call ends.
 
 ## Report structure
 

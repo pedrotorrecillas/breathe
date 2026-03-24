@@ -16,6 +16,7 @@ Clara was born inside Job&Talent, one of the world's largest staffing platforms 
 **Regulatory classification:** Clara is classified as a **High-Risk AI System** under EU AI Act Annex III, point 4 (Employment). It is exclusively a decision-support tool -- all hiring/rejection decisions remain under human control. Clara does NOT make autonomous hiring decisions.
 
 **Scale (as of March 2026):**
+
 - 1.7M+ interview processes to date
 - 11,237 average interviews per day (30K record daily)
 - 40,000+ hires facilitated
@@ -24,18 +25,19 @@ Clara was born inside Job&Talent, one of the world's largest staffing platforms 
 
 **Growth trajectory (monthly calls):**
 
-| Month | Calls |
-|-------|-------|
-| Oct 2024 | 7,463 |
-| Jan 2025 | 8,064 |
-| Apr 2025 | 19,025 |
-| Jun 2025 | 55,614 |
+| Month    | Calls   |
+| -------- | ------- |
+| Oct 2024 | 7,463   |
+| Jan 2025 | 8,064   |
+| Apr 2025 | 19,025  |
+| Jun 2025 | 55,614  |
 | Sep 2025 | 108,720 |
 | Oct 2025 | 146,038 |
 
 **18x growth in 12 months** (Oct 2024 → Oct 2025)
 
 **Key clients by sector:**
+
 - **Logistics:** GXO, UPS, DHL, Expeditors
 - **Retail:** Frasers Group, Inditex, AS Watson, THG, Burlington, H&M
 - **Industry:** Bosch, Schaeffler, Crown, Graphic Packaging
@@ -49,6 +51,7 @@ Clara was born inside Job&Talent, one of the world's largest staffing platforms 
 ## 2.1 Core Features
 
 ### AI Phone Interviews
+
 - Clara calls candidates by phone and conducts a structured interview of ~14 minutes
 - Questions adapt to the role, company, and candidate context
 - Multilingual support (Spanish, English, French, and more)
@@ -57,6 +60,7 @@ Clara was born inside Job&Talent, one of the world's largest staffing platforms 
 - Clara identifies itself as an AI-powered interview agent at the start of every interaction
 
 ### Evaluation and Scoring
+
 - Each candidate receives a score based on configurable criteria
 - Scoring weighs hard skills, soft skills, and role-specific requirements
 - Configurable weights per requirement group (individual requirement-level weights coming in the future)
@@ -66,9 +70,11 @@ Clara was born inside Job&Talent, one of the world's largest staffing platforms 
 - Qualitative levels: Strong Fit / Viable Fit / Weak Fit
 
 ### Killer Questions
+
 Two separate concepts with different logic:
 
 **Job conditions:**
+
 - Salary, location, schedule, right to work, driving license...
 - If the candidate doesn't meet them, the interview STOPS
 - These are true knockout questions
@@ -77,12 +83,14 @@ Two separate concepts with different logic:
   - White collar: salary, remote policy, contract type, visa status
 
 **Role requirement knockouts:**
+
 - Requirements marked as "essential" by the client
 - If the candidate fails, the interview CONTINUES but the score automatically drops to "poor match"
 - Flagged in the UI as failed essential requirement
 - This avoids legal issues with automated decision-making (Art. 22 GDPR)
 
 ### Interview Highlights
+
 - Automatic extraction of key interview moments
 - Verbatim quotes linked to specific requirements
 - Audio playback of the exact moment
@@ -94,6 +102,7 @@ Two separate concepts with different logic:
   - Key moments: 5 max (4 best + 1 worst for excellent candidates, inverse for poor ones)
 
 ### CV Integration
+
 - CV context used during interviews (post-Clara 4.0)
 - Two-phase interview generation:
   - Phase 1: Standard template at vacancy level (consistent assessment guidelines)
@@ -101,6 +110,7 @@ Two separate concepts with different logic:
 - Killer questions integration into CV fit scoring (boost/lower scores based on match)
 
 ### Custom Voice Branding (Clara Pro)
+
 - 3 configurable fields: Call Introduction (500 chars), Call Closing (500 chars), Brand Voice/FAQ (2000 chars)
 - Applies to NEW jobs only (existing jobs keep defaults)
 - FAQ is passive: Clara keeps it "in her back pocket," answers only when candidates ask
@@ -109,17 +119,20 @@ Two separate concepts with different logic:
 - Dynamic variables: `{{candidate_name}}`, `{{company_name}}`, `{{job_title}}`
 
 ### Interview Limits
+
 - Clients can cap total interviews or cap by score level (5-6)
 - Jobs auto-pause when limits are reached
 - Call queue is irreversible -- once a candidate enters, retries continue until completion
 
 ### Scheduling
+
 - Automatic interview scheduling via Cal.com
 - SMS reminders (2h before via Cal.com)
 - WhatsApp reminders (via Twilio/HappyRobot) -- improves no-show from 60% to 20%
 - Candidates confirm attendance by replying "yes"
 
 ### Recruiter Dashboard
+
 - Chat-based web interface (80% of interactions via chat)
 - Candidate view with scores and rankings
 - Interview audio playback
@@ -128,12 +141,14 @@ Two separate concepts with different logic:
 - Candidate source analytics (UTM tracking)
 
 ### ATS Integrations
+
 - Connection to 100+ ATSs via aggregators (Merge/Kombo)
 - Bidirectional candidate status sync
 - PDF report delivery as ATS attachment
 - Activity notes created automatically
 
 ### Job Boards
+
 - Multiposting: publish one listing to multiple boards via Broadbean/Join
 - Direct integration: InfoJobs (client's own account via OAuth)
 - Direct link / QR code (retail, warehouses)
@@ -144,11 +159,13 @@ Two separate concepts with different logic:
 Critical compliance feature for candidates with disabilities:
 
 **Pre-call opt-out:**
+
 - "Accessibility Support" button on landing page → form for name/email/phone/CV
 - Tagged `needs_human` → appears in Profile Queue with orange "Human Action Required" status
 - No automated call is triggered
 
 **In-call opt-out:**
+
 - Clara detects verbal intents ("I need a person", "I can't hear you", etc.)
 - Ends call gracefully → tags `needs_human`
 - Email suppression: if `classification_tag == 'needs_human'`, NEVER send rejection email
@@ -216,67 +233,79 @@ Critical compliance feature for candidates with disabilities:
 ## 2.3 Call Mechanics (Detailed)
 
 ### Candidate Entry Paths
+
 - **Direct Call:** From JT Workers App or Indeed -- call within 2 minutes of application
 - **Candidate Apply Link:** Pre-interview flow (landing page), then call scheduled
 
 ### Call Phases
+
 Introduction (identity verification via email) → Killer Questions (optional, auto-reject on fail) → Default Questions OR Requirements Questions → Closing
 
 ### Blue Collar vs White Collar Detection
+
 - AI classifier on job title determines mode
 - Blue collar: questions asked one by one
 - White collar: all 3 default questions presented in one prompt
 
 ### Requirements Structure
+
 Organized in 3 sections: Role Requirements, Technical Skills, Interpersonal Skills
 
 ### Retry Logic
+
 - **5 attempts total** per candidate per job
 - First attempt is immediate (even at night)
 - Retries 2-5 restricted to 9am-8pm in candidate's timezone
 - After 5 failed attempts = auto-rejected
 
 ### Phone Number Strategy
+
 - 3 rotating numbers per country for spam prevention
 - **40% higher answer rate** with local numbers
 - Global telephony: Tier 1 (local numbers, 15+ countries), Tier 2 (roaming), Tier 3 (blocked/sanctioned)
 
 ### Call Duration
+
 - Average: 8 min (standard), 3 min (with killer questions)
 - Max: 60 min hard limit
 
 ### Inbound Calls
+
 - Clara answers callbacks from candidates
 - Never retries after an inbound call (prevents harassing uninterested candidates)
 
 ### Demo Jobs
+
 - Prefix `[demo]` bypasses orchestrator queue
 - Triggers call in 10-15 seconds (vs normal queue)
 
 ### Queue Logic
+
 - Per-prospect, not per-person
 - Same person applying to 2 jobs = 2 separate queues
 
 ### Recordings
+
 - All calls recorded, stored 12 months, GDPR-compliant
 - Candidates can request deletion
 
 ## 2.4 Plans and Pricing
 
 ### Clara Go (self-service)
+
 - Monthly subscription via Stripe
 - Per-interview pricing (credit system)
 - Credits roll over and never expire
 - Trial: 20 free interviews per account, no time limit
 
-| Package | Monthly | Annual (20% off) | Price/interview |
-|---------|---------|-----------------|-----------------|
-| 10 | €120 | €1,080 (€90/mo) | €12 / €9 |
-| 25 | €300 | €2,700 (€225/mo) | €12 / €9 |
-| 50 | €600 | €5,400 (€450/mo) | €12 / €9 |
-| 100 | €1,200 | €10,800 (€900/mo) | €12 / €9 |
-| 250 | €3,000 | €27,000 (€2,250/mo) | €12 / €9 |
-| 500 | €5,400 | €48,600 (€4,050/mo) | €10.80 / €8.10 |
+| Package | Monthly | Annual (20% off)    | Price/interview |
+| ------- | ------- | ------------------- | --------------- |
+| 10      | €120    | €1,080 (€90/mo)     | €12 / €9        |
+| 25      | €300    | €2,700 (€225/mo)    | €12 / €9        |
+| 50      | €600    | €5,400 (€450/mo)    | €12 / €9        |
+| 100     | €1,200  | €10,800 (€900/mo)   | €12 / €9        |
+| 250     | €3,000  | €27,000 (€2,250/mo) | €12 / €9        |
+| 500     | €5,400  | €48,600 (€4,050/mo) | €10.80 / €8.10  |
 
 - Multi-currency: EUR (Spain/EU), USD (US/LATAM), GBP (UK)
 - Automatic currency detection by IP
@@ -284,15 +313,16 @@ Organized in 3 sections: Role Requirements, Technical Skills, Interpersonal Skil
 
 **Credit states:**
 
-| Status | Credits work? | Jobs active? | New credits? |
-|--------|--------------|-------------|-------------|
-| Trial (no sub) | Yes | Yes | No |
-| Active subscription | Yes | Yes | Yes (on renewal) |
-| Cancelled | Yes | Yes (until 0) | No |
-| Payment failed (<5 days) | Yes | Yes | Pending |
-| Payment failed (>=5 days) | Frozen | Paused | No |
+| Status                    | Credits work? | Jobs active?  | New credits?     |
+| ------------------------- | ------------- | ------------- | ---------------- |
+| Trial (no sub)            | Yes           | Yes           | No               |
+| Active subscription       | Yes           | Yes           | Yes (on renewal) |
+| Cancelled                 | Yes           | Yes (until 0) | No               |
+| Payment failed (<5 days)  | Yes           | Yes           | Pending          |
+| Payment failed (>=5 days) | Frozen        | Paused        | No               |
 
 ### Clara Pro (enterprise)
+
 - Custom pricing, requires sales contact
 - Sales creates subscription in Stripe Dashboard manually
 - Same webhook flow as Go
@@ -312,6 +342,7 @@ Client (company)
 ```
 
 Each level inherits configuration from the level above and can override it. Configuration includes:
+
 - Interview intro and outro (tone, branding, messaging)
 - Evaluation weights (which competencies matter most)
 - Scoring criteria (what "good" means for this operation)
@@ -322,10 +353,10 @@ Each level inherits configuration from the level above and can override it. Conf
 
 ## 2.5 Prompt Versions
 
-| Version | Functionality | Target |
-|---------|--------------|--------|
-| v3 | Basic, no enterprise features. 3x2 requirement matrix | Clara Go |
-| v4 | Killer questions + custom weights + confidence levels. 3x2 matrix + custom fields | Clara Pro |
+| Version | Functionality                                                                     | Target    |
+| ------- | --------------------------------------------------------------------------------- | --------- |
+| v3      | Basic, no enterprise features. 3x2 requirement matrix                             | Clara Go  |
+| v4      | Killer questions + custom weights + confidence levels. 3x2 matrix + custom fields | Clara Pro |
 
 Maintained as separate prompts (not one prompt with conditionals) to avoid LLM confusion. Feature flags control which version each user sees.
 
@@ -338,17 +369,20 @@ Clara is evolving from an interview tool to a conversational, proactive digital 
 Clara becomes a self-service support assistant embedded in the dashboard. Users ask "how-to" questions and get instant answers with citations from a curated knowledge base.
 
 **What it CAN answer:**
+
 - "How do credits work?"
 - "Where do I change the interview language?"
 - "How is the candidate score calculated?"
 - "Can I edit job requirements after publishing?"
 
 **What it CANNOT answer (yet):**
+
 - "Who scored highest this week?" (requires live data → Phase 2)
 - "Show me candidates with SAP experience" (requires pipeline query → Phase 2)
 - "Schedule Maria for an interview" (requires write action → Phase 3)
 
 **How it works:**
+
 1. User opens Clara chat widget (icon in top nav bar)
 2. User types question
 3. System performs RAG (Retrieval-Augmented Generation):
@@ -360,12 +394,14 @@ Clara becomes a self-service support assistant embedded in the dashboard. Users 
 6. Low confidence (<0.6) → "I'm not sure" fallback + [Contact Support] / [Search Help Center]
 
 **Knowledge base (MVP):**
+
 - Clara User Guide (job creation, interview config, candidate management, scoring, credits/billing)
 - Top 20 FAQs compiled from support tickets
 - Core feature definitions (killer questions, scoring weights, etc.)
 - NOT indexed: internal eng docs, sales decks, competitor analysis, pricing details
 
 **Success metrics:**
+
 - L1 support ticket deflection: 0% → 40% (3-month target)
 - Time to unblock: 3.2 hours → <2 minutes
 - New user ticket rate (first 7 days): 37% → <20%
@@ -377,6 +413,7 @@ Clara becomes a self-service support assistant embedded in the dashboard. Users 
 Clara becomes an "Insight Engine" that queries **live candidate data** using natural language. Unlike the Knowledge Agent (static docs), the Q&A Agent queries candidate CVs, interview transcripts, scores, and pipeline data.
 
 **What it CAN answer:**
+
 - "Show me candidates who scored >80 on 'Sales Skill'"
 - "Who has worked in a warehouse before?"
 - "What is the main reason candidates are failing this interview?"
@@ -387,12 +424,14 @@ Clara becomes an "Insight Engine" that queries **live candidate data** using nat
 **Key insight:** Standard filters miss semantic matches. A candidate might not have "Night Shift" tagged but said "I love working nights" in the interview. The Q&A Agent performs semantic search across transcripts and CVs to find these matches.
 
 **Core tools available to the agent:**
+
 1. `search_candidate_skills` -- Find candidates by skill/experience/qualification from CV or interview
 2. `query_pipeline_status` -- Count/filter candidates by stage, score range, or job
 3. `analyze_interview_failure` -- Identify why candidates are failing (per-requirement analysis)
 4. `compare_candidates` -- Side-by-side comparison of 2+ candidates across all dimensions
 
 **What it CANNOT do (yet):**
+
 - "Shortlist these 5 candidates" (requires write action → Phase 3)
 - "Schedule Maria for Tuesday" (requires calendar integration → Phase 3)
 
@@ -401,11 +440,13 @@ Clara becomes an "Insight Engine" that queries **live candidate data** using nat
 Not a chat interface -- an "intelligent feed" that pushes Action Cards to the dashboard. **"Push > Pull" philosophy.**
 
 **Surfaces:**
+
 - Dashboard Feed (primary)
 - Chat Widget (secondary)
 - Email Digest (optional daily at 9am)
 
 **4 trigger categories:**
+
 1. **Candidate-level:** Hot lead stalling (48h+ without review), ghosting risk detection
 2. **Pipeline-level:** Velocity slowdown, bottleneck identification
 3. **Job-level:** Incomplete job setup, credits running low
@@ -498,44 +539,45 @@ Not a chat interface -- an "intelligent feed" that pushes Action Cards to the da
 
 ## 3.2 Stack Components
 
-| Component | Technology | Function | Details |
-|-----------|-----------|---------|----------|
-| **Voice AI** | HappyRobot | Voice interview engine | 5-person team with deep expertise. Exclusive relationship. Contains complex dynamic logic (language detection, pronunciation, timezones, country-specific intros) |
-| **Telephony** | Twilio | Calls, SMS, WhatsApp | Also used for Cal.com reminders and candidate communication. Global telephony: Tier 1 (local numbers, 15+ countries), Tier 2 (roaming), Tier 3 (blocked/sanctioned) |
-| **LLMs** | Google Gemini + Anthropic Claude + OpenAI | Candidate analysis, scoring, evaluations | Gemini for primary analysis, Claude as complement, OpenAI (GPT-4.5, o3-mini) for orchestration |
-| **Voice Synthesis** | ElevenLabs | Voice generation | Temporary audio; no data retention after processing |
-| **Orchestration** | Deep Agents + LangGraph | Agent flow, thread management | Migrated from LangChain. Single graph with one supervisor. Checkpointer for threads |
-| **Database** | PostgreSQL | Clara core data | Custom optimized model, not direct API calls |
-| **Vector DB** | PG Vector (Postgres) | RAG on unstructured data | Offline ingestion from CRMs, emails, calendars. Sub-millisecond data access optimization |
-| **Storage** | AWS S3 (eu-west-1) | CVs, recordings, transcripts, reports | Per-tenant encryption via AWS KMS. All data within EEA |
-| **Observability** | Langfuse | Traces, prompts, scores, evaluations | 100k units/month limit. ~120 traces/day currently. Each trace generates 5 sub-traces |
-| **Tech metrics** | Datadog | Technical monitoring | Operational dashboards, SIEM, anomaly detection |
-| **Product analytics** | Amplitude | Feature usage metrics | Anonymized tracking only, no PII |
-| **Business analytics** | BigQuery + Looker | Aggregated data and business dashboards | J&T Google Cloud infrastructure |
-| **Scheduling** | Cal.com | Interview scheduling | Known issue: only account creator receives booking confirmations |
-| **Payments** | Stripe | Self-serve subscriptions | Webhooks for credits, customer portal, multi-currency |
-| **ATS** | Merge / Kombo | Aggregator for 100+ ATSs | Self-service connection. Authentication handled by aggregator. Rate limiting per account |
-| **Job boards** | InfoJobs, Broadbean, Join | Job posting | InfoJobs: direct OAuth. Broadbean/Join: multiposting via email/feeds |
-| **Auth** | Okta | SSO (SAML 2.0/OIDC) | Internal credentials and access logs (no client PII) |
-| **Frontend** | React/TypeScript | Recruiter dashboard (`clara-work-web-app`) | Chat-based (80% of interactions via chat) |
-| **Marketing site** | Framer | clara.works | CMS for blog and comparison pages |
+| Component              | Technology                                | Function                                   | Details                                                                                                                                                             |
+| ---------------------- | ----------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Voice AI**           | HappyRobot                                | Voice interview engine                     | 5-person team with deep expertise. Exclusive relationship. Contains complex dynamic logic (language detection, pronunciation, timezones, country-specific intros)   |
+| **Telephony**          | Twilio                                    | Calls, SMS, WhatsApp                       | Also used for Cal.com reminders and candidate communication. Global telephony: Tier 1 (local numbers, 15+ countries), Tier 2 (roaming), Tier 3 (blocked/sanctioned) |
+| **LLMs**               | Google Gemini + Anthropic Claude + OpenAI | Candidate analysis, scoring, evaluations   | Gemini for primary analysis, Claude as complement, OpenAI (GPT-4.5, o3-mini) for orchestration                                                                      |
+| **Voice Synthesis**    | ElevenLabs                                | Voice generation                           | Temporary audio; no data retention after processing                                                                                                                 |
+| **Orchestration**      | Deep Agents + LangGraph                   | Agent flow, thread management              | Migrated from LangChain. Single graph with one supervisor. Checkpointer for threads                                                                                 |
+| **Database**           | PostgreSQL                                | Clara core data                            | Custom optimized model, not direct API calls                                                                                                                        |
+| **Vector DB**          | PG Vector (Postgres)                      | RAG on unstructured data                   | Offline ingestion from CRMs, emails, calendars. Sub-millisecond data access optimization                                                                            |
+| **Storage**            | AWS S3 (eu-west-1)                        | CVs, recordings, transcripts, reports      | Per-tenant encryption via AWS KMS. All data within EEA                                                                                                              |
+| **Observability**      | Langfuse                                  | Traces, prompts, scores, evaluations       | 100k units/month limit. ~120 traces/day currently. Each trace generates 5 sub-traces                                                                                |
+| **Tech metrics**       | Datadog                                   | Technical monitoring                       | Operational dashboards, SIEM, anomaly detection                                                                                                                     |
+| **Product analytics**  | Amplitude                                 | Feature usage metrics                      | Anonymized tracking only, no PII                                                                                                                                    |
+| **Business analytics** | BigQuery + Looker                         | Aggregated data and business dashboards    | J&T Google Cloud infrastructure                                                                                                                                     |
+| **Scheduling**         | Cal.com                                   | Interview scheduling                       | Known issue: only account creator receives booking confirmations                                                                                                    |
+| **Payments**           | Stripe                                    | Self-serve subscriptions                   | Webhooks for credits, customer portal, multi-currency                                                                                                               |
+| **ATS**                | Merge / Kombo                             | Aggregator for 100+ ATSs                   | Self-service connection. Authentication handled by aggregator. Rate limiting per account                                                                            |
+| **Job boards**         | InfoJobs, Broadbean, Join                 | Job posting                                | InfoJobs: direct OAuth. Broadbean/Join: multiposting via email/feeds                                                                                                |
+| **Auth**               | Okta                                      | SSO (SAML 2.0/OIDC)                        | Internal credentials and access logs (no client PII)                                                                                                                |
+| **Frontend**           | React/TypeScript                          | Recruiter dashboard (`clara-work-web-app`) | Chat-based (80% of interactions via chat)                                                                                                                           |
+| **Marketing site**     | Framer                                    | clara.works                                | CMS for blog and comparison pages                                                                                                                                   |
 
 ## 3.3 Backend Services (Full Component Map)
 
 Clara SaaS consists of 87 components across 13 categories. Key backend services:
 
-| Service | Stack | Function |
-|---------|-------|----------|
-| **Demand** | Kotlin/Spring Boot/PostgreSQL | Core business logic: vacancy requests, leads, interview triggering |
-| **Flow Manager** | Kotlin/Camunda BPMN | Orchestrator (no business logic). Manages interview lifecycle flows |
-| **Interviews** | Kotlin (new) | Unified interview service (Clara 4.0). AI provider integration, scoring, transcription storage |
-| **Koffice** | Elixir/Phoenix | Backend-for-Frontend (BFF). API aggregation for the web app |
-| **C3PO** | Python/LangGraph/LangChain | The AI brain. Deep Agents orchestration, LLM calls, prompt management |
-| **Gilfoyle** | API Gateway | Copilot interface. REST gateway for chat-based interactions |
-| **ATS Gateway** | Kotlin | ATS integration layer. Merge/Kombo abstraction |
-| **Clara Admin FE** | React/TypeScript | Frontend (`clara-work-web-app`) |
+| Service            | Stack                         | Function                                                                                       |
+| ------------------ | ----------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Demand**         | Kotlin/Spring Boot/PostgreSQL | Core business logic: vacancy requests, leads, interview triggering                             |
+| **Flow Manager**   | Kotlin/Camunda BPMN           | Orchestrator (no business logic). Manages interview lifecycle flows                            |
+| **Interviews**     | Kotlin (new)                  | Unified interview service (Clara 4.0). AI provider integration, scoring, transcription storage |
+| **Koffice**        | Elixir/Phoenix                | Backend-for-Frontend (BFF). API aggregation for the web app                                    |
+| **C3PO**           | Python/LangGraph/LangChain    | The AI brain. Deep Agents orchestration, LLM calls, prompt management                          |
+| **Gilfoyle**       | API Gateway                   | Copilot interface. REST gateway for chat-based interactions                                    |
+| **ATS Gateway**    | Kotlin                        | ATS integration layer. Merge/Kombo abstraction                                                 |
+| **Clara Admin FE** | React/TypeScript              | Frontend (`clara-work-web-app`)                                                                |
 
 **Scale estimates:**
+
 - Transition to standalone SaaS: ~460 dev-days (clean start) or ~580 (full migration)
 - Monthly infra cost at 300K interviews: $79K-$107K (direct Twilio) or $112K-$187K (via HappyRobot)
 - Steady-state team: ~30 people (20 eng + 4 product + 5 ops)
@@ -549,6 +591,7 @@ Major architectural redesign unifying SaaS and staffing interview flows:
 **Service flow:** UI → Demand → VertexAI → Flow Manager → Call Center → HappyRobot → back through chain for scoring
 
 **Key design decisions:**
+
 - Flow Manager is purely an orchestrator (no business logic)
 - "Clara memory" concept: resume dropped calls, avoid repeated questions, skip stages for known candidates
 - Two types of "requirements": simple (validated by Clara during interview) vs. generic (documentation/paperwork)
@@ -566,11 +609,13 @@ Major architectural redesign unifying SaaS and staffing interview flows:
 Clara migrated from LangChain graphs to Deep Agents (reference: Pearl.ai made the same migration 2 months earlier with positive results).
 
 **Before (LangChain):**
+
 - 6-7 complex graphs with multiple nodes
 - Manual context management between graphs
 - Growing and unsustainable complexity
 
 **Now (Deep Agents):**
+
 - Single graph with one supervisor node (Deep Agent)
 - Built-in file system that eliminates manual context management
 - Tools separated by type:
@@ -627,12 +672,14 @@ Each interview prompt is built in real time before the call, combining multiple 
 Assembly is done by chaining multiple smaller prompts (not a single mega-prompt).
 
 **Prompting ownership:**
+
 - Engineering owns the business logic and assembly
 - Non-technical teams can modify content (intros, tone, adjustments) without touching logic
 
 ### Change Management for Prompts
 
 Per EU AI Act Article 43, prompt changes are classified as:
+
 - **Non-substantial:** Bug fixes, UI improvements, minor wording adjustments → standard deployment
 - **Substantial:** Scoring logic changes, new evaluation criteria, new high-risk contexts → full conformity reassessment required
 - **Process:** Change request → impact assessment → validation/testing (regression, fairness, accuracy, security) → deployment
@@ -710,6 +757,7 @@ The system maps HappyRobot's call outcomes to Clara's internal status:
 HappyRobot is Clara's voice engine. It's not a simple wrapper -- it contains complex dynamic logic:
 
 **Capabilities:**
+
 - Phone call execution with voice AI
 - Real-time transcription
 - Full audio recording
@@ -720,6 +768,7 @@ HappyRobot is Clara's voice engine. It's not a simple wrapper -- it contains com
 - Country-specific custom intro rules (e.g., Colombia doesn't mention the client)
 
 **Relationship with Clara:**
+
 - Exclusive technology partner (5-person team with deep expertise)
 - Relationship managed by Pablo on the Clara team
 - Some functionality can't be moved out of HappyRobot due to latency
@@ -728,6 +777,7 @@ HappyRobot is Clara's voice engine. It's not a simple wrapper -- it contains com
 - Clara 4.0 aims to reduce HappyRobot dependency by moving prompt preparation, scoring logic, and post-processing into product
 
 **Voice Style Guide (per language):**
+
 - **Spanish:** Informal "tu", professional tone
 - **French:** Formal "vous", conversational
 - **Polish:** Formal "Pan/Pani" (third-person), no double gender forms
@@ -736,6 +786,7 @@ HappyRobot is Clara's voice engine. It's not a simple wrapper -- it contains com
 - **Overall:** Natural, professional, optimistic. Simple language (reading age 9-11). Gender-neutral when possible.
 
 **Known issues:**
+
 - Audio fetch was blocking UI (fix deployed)
 - Latency prevents moving certain functionality
 - Vertex AI hallucination incident (ID corruption: 98958A returned as 99A)
@@ -751,6 +802,7 @@ HappyRobot is Clara's voice engine. It's not a simple wrapper -- it contains com
 JT Technologies implements a security-by-design and privacy-by-default framework aligned with ISO 27001 and SOC 2 Type II principles.
 
 **Key practices:**
+
 - Secure SDLC with gates at every step of the lifecycle
 - Encryption: AES-256-GCM at rest, TLS 1.3 in transit, per-tenant keys via AWS KMS
 - Access Control: SSO (SAML 2.0/OIDC), RBAC, least privilege
@@ -762,6 +814,7 @@ JT Technologies implements a security-by-design and privacy-by-default framework
 - Regular algorithmic audits against demographic bias
 
 **Certifications & Status:**
+
 - ISO 27001: Certified
 - SOC 2 Type II: In progress (Q1 2026 start)
 - ISO 42001 (AI Management): In progress
@@ -829,18 +882,18 @@ Additional enterprise requirements: DORA compliance, cybersecurity plan, secure 
 
 ## 4.6 Key External Subprocessors
 
-| Provider | Purpose | Data Processed | Region | Compliance |
-|----------|---------|---------------|--------|------------|
-| **AWS** | Infrastructure, hosting, storage | Application data, candidate and client info | EU (Ireland) | GDPR, ISO 27001, SOC 2 Type II |
-| **Twilio** | Voice call routing, SMS, WhatsApp | Audio streams, call metadata | EU / US | GDPR DPA, SCCs for cross-border |
-| **OpenAI** | NLU and generation (LLM inference) | Transcribed text and conversation content | US / EU endpoints | GDPR DPA, SCCs, ISO 27001 |
-| **Google (Gemini)** | Language modeling and reasoning | Transcribed text and metadata | EU / US | GDPR DPA, SCCs, ISO 27001, SOC 2 |
-| **ElevenLabs** | Voice generation and synthesis | Temporary voice audio; not stored post-inference | EU / US | GDPR-aligned; no data retention |
-| **HappyRobot** | Task orchestration, voice AI | Interview audio, transcripts, metadata | US | DPA status: **unconfirmed** |
-| **Okta** | Auth and SSO | Internal credentials and access logs (no client PII) | EU | ISO 27001, SOC 2 Type II, GDPR DPA |
-| **Amplitude** | Product analytics | Anonymized usage data (no PII) | EU / US | GDPR-aligned; anonymized only |
-| **DataDog** | Observability platform | Logs, metrics, error analysis | EU | ISO 27001, 27017, 27018, SOC 2 Type II |
-| **Stripe** | Billing/payments | Transaction data, limited customer identifiers | EU (Ireland) + US | PCI DSS Level 1, GDPR DPA, SCCs |
+| Provider            | Purpose                            | Data Processed                                       | Region            | Compliance                             |
+| ------------------- | ---------------------------------- | ---------------------------------------------------- | ----------------- | -------------------------------------- |
+| **AWS**             | Infrastructure, hosting, storage   | Application data, candidate and client info          | EU (Ireland)      | GDPR, ISO 27001, SOC 2 Type II         |
+| **Twilio**          | Voice call routing, SMS, WhatsApp  | Audio streams, call metadata                         | EU / US           | GDPR DPA, SCCs for cross-border        |
+| **OpenAI**          | NLU and generation (LLM inference) | Transcribed text and conversation content            | US / EU endpoints | GDPR DPA, SCCs, ISO 27001              |
+| **Google (Gemini)** | Language modeling and reasoning    | Transcribed text and metadata                        | EU / US           | GDPR DPA, SCCs, ISO 27001, SOC 2       |
+| **ElevenLabs**      | Voice generation and synthesis     | Temporary voice audio; not stored post-inference     | EU / US           | GDPR-aligned; no data retention        |
+| **HappyRobot**      | Task orchestration, voice AI       | Interview audio, transcripts, metadata               | US                | DPA status: **unconfirmed**            |
+| **Okta**            | Auth and SSO                       | Internal credentials and access logs (no client PII) | EU                | ISO 27001, SOC 2 Type II, GDPR DPA     |
+| **Amplitude**       | Product analytics                  | Anonymized usage data (no PII)                       | EU / US           | GDPR-aligned; anonymized only          |
+| **DataDog**         | Observability platform             | Logs, metrics, error analysis                        | EU                | ISO 27001, 27017, 27018, SOC 2 Type II |
+| **Stripe**          | Billing/payments                   | Transaction data, limited customer identifiers       | EU (Ireland) + US | PCI DSS Level 1, GDPR DPA, SCCs        |
 
 ---
 
@@ -864,11 +917,13 @@ Clara identifies itself as AI at the start of every interaction:
 **Spanish (Staffing clients):** "Soy Clara, reclutadora IA de Job and Talent..." (does not disclose end client name)
 
 **Dual naming convention:**
+
 - SaaS clients: "Clara, the AI Recruiter of clara.works"
 - Staffing clients: "Clara, Job and Talent AI Recruiter"
 - InfoJobs: "Previa" (white-label, no Clara branding)
 
 **Prohibited uses of Clara:**
+
 - Performance evaluation of existing employees
 - Employee termination decisions
 - Biometric identification
@@ -881,19 +936,23 @@ Clara identifies itself as AI at the start of every interaction:
 Three oversight approaches implemented:
 
 **1. Human-in-the-Loop (mandatory review):**
+
 - Human reviews and approves/rejects every Clara recommendation before action
 - Required for: final hiring decisions, score overrides
 
 **2. Human-on-the-Loop (continuous monitoring):**
+
 - Human monitors Clara's decisions and can intervene if needed
 - Clara can work autonomously within defined parameters
 - Required for: interview quality monitoring, pipeline management
 
 **3. Human-in-Command (override authority):**
+
 - Human retains full decision-making authority; Clara is advisory only
 - Required for: all hiring/rejection final decisions
 
 **Escalation triggers:**
+
 - Low confidence levels
 - CV/response inconsistencies
 - Behavioral flags during interview
@@ -957,23 +1016,23 @@ Third-Party Services (HappyRobot, Cal.com)
 
 ### Retention Policy Hierarchy
 
-| Priority | Level | Example |
-|----------|-------|---------|
-| 1 (highest) | Tenant override | InfoJobs: delete after 5 days |
-| 2 | Regional default | California (FEHA): retain ADS data 4 years minimum |
-| 3 | System default | EU (GDPR): 2 years after last activity |
+| Priority    | Level            | Example                                            |
+| ----------- | ---------------- | -------------------------------------------------- |
+| 1 (highest) | Tenant override  | InfoJobs: delete after 5 days                      |
+| 2           | Regional default | California (FEHA): retain ADS data 4 years minimum |
+| 3           | System default   | EU (GDPR): 2 years after last activity             |
 
 Legal minimums enforced as hard floor -- no tenant can set retention below regional minimum.
 
 ### Regional Defaults
 
-| Region | Data Type | Minimum Retention | Source |
-|--------|-----------|-------------------|--------|
-| EU | Candidate data | 2 years after last interview | GDPR Article 5 |
-| EU | Interview audio recordings | 7 years | Legal defensibility |
-| EU | Client billing data | 7 years | Tax law |
-| California (US) | ADS inputs (CV, interview responses) | 4 years | FEHA |
-| California (US) | ADS outputs (scores, decisions) | 4 years | FEHA |
+| Region          | Data Type                            | Minimum Retention            | Source              |
+| --------------- | ------------------------------------ | ---------------------------- | ------------------- |
+| EU              | Candidate data                       | 2 years after last interview | GDPR Article 5      |
+| EU              | Interview audio recordings           | 7 years                      | Legal defensibility |
+| EU              | Client billing data                  | 7 years                      | Tax law             |
+| California (US) | ADS inputs (CV, interview responses) | 4 years                      | FEHA                |
+| California (US) | ADS outputs (scores, decisions)      | 4 years                      | FEHA                |
 
 ### Pipeline Display for Deleted Candidates
 
@@ -989,32 +1048,33 @@ Every piece of PII must be mapped: data entity, storage location, retention peri
 
 ### Critical Gaps (Being Resolved)
 
-| Priority | Requirement | Status |
-|----------|-------------|--------|
-| P0 | Individual candidate deletion (`POST /gdpr/forget`) | Covered |
-| P0 | Configurable auto-deletion per tenant | Covered |
-| P0 | Third-party deletion (HappyRobot, Cal.com) | **NOT covered -- blocker** |
-| P0 | Audit trail + deletion receipts | Covered |
-| P0 | Cold storage / Legal Data Vault | Covered |
-| P1 | Candidate data request response (NY Local Law 144, 30-day SLA) | Not covered |
-| P2 | Full tenant offboarding | Covered |
-| P2 | Frontend display for deleted candidates | Planned |
+| Priority | Requirement                                                    | Status                     |
+| -------- | -------------------------------------------------------------- | -------------------------- |
+| P0       | Individual candidate deletion (`POST /gdpr/forget`)            | Covered                    |
+| P0       | Configurable auto-deletion per tenant                          | Covered                    |
+| P0       | Third-party deletion (HappyRobot, Cal.com)                     | **NOT covered -- blocker** |
+| P0       | Audit trail + deletion receipts                                | Covered                    |
+| P0       | Cold storage / Legal Data Vault                                | Covered                    |
+| P1       | Candidate data request response (NY Local Law 144, 30-day SLA) | Not covered                |
+| P2       | Full tenant offboarding                                        | Covered                    |
+| P2       | Frontend display for deleted candidates                        | Planned                    |
 
 ## 5.5 US State Compliance
 
-| State | Requirement | Status |
-|-------|-------------|--------|
-| **California (FEHA)** | 4-year retention for all ADS inputs/outputs | Covered in policy engine |
-| **New York (Local Law 144)** | Bias audit + public summary on clara.works; 30-day candidate data request response; 10 business day candidate notice | Owned by Aymara/Legal |
-| **Colorado** | Consumer opt-out + human review of adverse decisions. Effective June 2026 | Separate workstream |
-| **Illinois (IHRA)** | Document that Clara does not use ZIP codes in candidate screening | Legal documentation |
-| **New Jersey** | Business necessity documentation | Legal to lead |
+| State                        | Requirement                                                                                                          | Status                   |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| **California (FEHA)**        | 4-year retention for all ADS inputs/outputs                                                                          | Covered in policy engine |
+| **New York (Local Law 144)** | Bias audit + public summary on clara.works; 30-day candidate data request response; 10 business day candidate notice | Owned by Aymara/Legal    |
+| **Colorado**                 | Consumer opt-out + human review of adverse decisions. Effective June 2026                                            | Separate workstream      |
+| **Illinois (IHRA)**          | Document that Clara does not use ZIP codes in candidate screening                                                    | Legal documentation      |
+| **New Jersey**               | Business necessity documentation                                                                                     | Legal to lead            |
 
 ## 5.6 Incident & Breach Handling
 
 **Scope:** Technical malfunctions, cybersecurity incidents, fundamental rights impacts, misuse outside intended purpose
 
 **Process:**
+
 1. **Detection:** System monitoring, deployer notifications, internal audits
 2. **Assessment & Classification:** Data Protection Incident vs AI System Malfunction vs Security Incident
 3. **Response & Mitigation:** Suspension of functionality, rollback, corrective actions
@@ -1025,13 +1085,13 @@ Every piece of PII must be mapped: data entity, storage location, retention peri
 
 Key identified risks with mitigations:
 
-| Risk ID | Risk | Impact | Mitigation |
-|---------|------|--------|------------|
-| FR-01 | Indirect discrimination (accent bias, work history gaps) | High | Bias audits, guardrails, regular fairness testing |
-| H-02 | Automation bias (recruiter overreliance on scores) | Medium | Confidence scores, explanations, override logging |
-| M-01 | Misuse outside intended purpose | Medium | Prohibited uses documentation, feature restrictions |
-| P-01 | Privacy violations | High | GDPR framework, DPAs, encryption, access control |
-| T-01 | Erroneous outputs | Medium | Human-in-the-loop validation, anomaly detection |
+| Risk ID | Risk                                                     | Impact | Mitigation                                          |
+| ------- | -------------------------------------------------------- | ------ | --------------------------------------------------- |
+| FR-01   | Indirect discrimination (accent bias, work history gaps) | High   | Bias audits, guardrails, regular fairness testing   |
+| H-02    | Automation bias (recruiter overreliance on scores)       | Medium | Confidence scores, explanations, override logging   |
+| M-01    | Misuse outside intended purpose                          | Medium | Prohibited uses documentation, feature restrictions |
+| P-01    | Privacy violations                                       | High   | GDPR framework, DPAs, encryption, access control    |
+| T-01    | Erroneous outputs                                        | Medium | Human-in-the-loop validation, anomaly detection     |
 
 **Bias testing target:** >95% pass rate on protected characteristics (gender, age, national origin, disability)
 
@@ -1040,6 +1100,7 @@ Key identified risks with mitigations:
 Complete documentation maintained at `/Users/pedrotorrecillas/projects/EU AI Act documentation/`. Key content from each:
 
 ### Doc 1: System Description & Intended Purpose
+
 - **Classification:** High-Risk AI System per EU AI Act Annex III, point 4 (Employment)
 - **Exclusive purpose:** Support human recruiters in early-stage recruitment (screening + structured interviews)
 - **Outputs:** Recommendations, rankings, explanatory insights ONLY -- no autonomous hiring/rejection
@@ -1047,6 +1108,7 @@ Complete documentation maintained at `/Users/pedrotorrecillas/projects/EU AI Act
 - **Reasonably foreseeable risks:** Automation bias, deployment outside recruitment context, discriminatory input criteria
 
 ### Doc 2: Technical Documentation
+
 - **Development form:** SaaS-based service integrating APIs, voice processing, LLM orchestration
 - **Three-layer architecture:**
   1. Base LLM (OpenAI) -- inference only, no retraining
@@ -1055,15 +1117,18 @@ Complete documentation maintained at `/Users/pedrotorrecillas/projects/EU AI Act
 - **Oversight tools:** Confidence scores, output explanations, anomaly detection, real-time pause/termination capability
 
 ### Doc 3: Risk Management Process
+
 - **Framework:** Continuous risk assessment per Article 9 EU AI Act
 - **Residual risk standards:** Acceptable if reduced to low/manageable level with safeguards + mandatory human oversight
 
 ### Doc 4: Risk Register & Residual Risk Assessment
+
 - **Identified risks:** Indirect discrimination (FR-01), erroneous outputs, privacy violations, lack of interpretability, automation bias (H-02), misuse outside intended purpose (M-01)
 - **Likelihood x Impact matrix:** 3x4 matrix (Low/Medium/High likelihood x Low/Medium/High/Critical impact)
 - **Monitoring:** Post-market monitoring and incident tracking built in
 
 ### Doc 5: Data Governance & Data Quality
+
 - **Scope:** Candidate data (CVs, interview responses), employer data (job descriptions), system metadata
 - **Exclusions:** No biometric data, emotion data, unique ID biometrics
 - **Quality principles:** Relevance/purpose limitation, representativeness (bias mitigation), accuracy/completeness validation, timeliness monitoring
@@ -1071,6 +1136,7 @@ Complete documentation maintained at `/Users/pedrotorrecillas/projects/EU AI Act
 - **Bias testing:** Regular fairness audits; exclusion/neutralization of proxy variables
 
 ### Doc 7: Human Oversight Policy
+
 - **Three approaches:** Human-in-the-loop (mandatory review) + Human-on-the-loop (continuous monitoring) + Human-in-command (override authority)
 - **CV screening:** Automated parsing with human validation of interview script generation
 - **Interview scoring:** Two-step (confidence intervals during script generation, then 1-100 scores post-interview with fixed weights)
@@ -1079,32 +1145,38 @@ Complete documentation maintained at `/Users/pedrotorrecillas/projects/EU AI Act
 - **Override logging:** All overrides logged with timestamp, personnel ID, rationale, outcome
 
 ### Doc 9-12: Post-Market Monitoring Plans
+
 - Ongoing monitoring of system performance, accuracy, fairness metrics
 - Regular reviews and updates based on deployment feedback
 
 ### Doc 11: Transparency Notice
+
 - **AI identification:** Clara identifies itself as AI-powered at start of every interaction
 - **Dual naming:** "Clara, the AI Recruiter of clara.works" (SaaS) vs "Clara, Job and Talent AI Recruiter" (staffing)
 - **Candidate-facing text (EN):** "This interview is conducted using an AI-powered system designed to support human recruiters. All decisions are reviewed by a human recruiter."
 - **Candidate-facing text (ES):** "Soy Clara, reclutadora IA de Job and Talent..."
 
 ### Doc 13: Incident & Serious Breach Handling
+
 - **Scope:** Technical malfunctions, cybersecurity incidents, fundamental rights impacts, misuse outside intended purpose
 - **Detection:** System monitoring, deployer notifications, internal audits
 - **Response:** Suspension of functionality, rollback, corrective actions, authority notification where required
 - **Documentation:** All incidents logged with description, root cause, mitigation, lessons learned
 
 ### Doc 14: Change Management & Model Update Process
+
 - **Triggers:** Configuration updates, prompt changes, scoring logic/weights/thresholds, data pipeline mods, new functionalities, deployment context changes
 - **Classification:** Non-substantial (bug fixes, UI) vs Substantial (scoring changes, new evaluation criteria, new high-risk contexts)
 - **Process:** Change request → impact assessment → validation/testing (regression, fairness, accuracy, security) → deployment
 - **Substantial modifications:** Full conformity reassessment per Article 43 EU AI Act
 
 ### Doc 15: Fundamental Rights Impact Assessment (FRIA)
+
 - Covers staffing agency use case
 - Work in Progress -- Google Doc: `docs.google.com/document/d/1Epp_jdatieRCaC41A4BtzN_YLiEVfLxYQnfCiru-y1A`
 
 ### Bias & Fairness Audit (Q4 2025)
+
 - **Methodology:** 100% of EU candidate interactions analyzed; excluded demographic subgroups <2% of population
 - **Metric:** Adverse Impact Ratio (AIR) using 80% Rule standard (EEOC/EU compliance benchmark)
 - **Gender results:** Clara 2.0 achieves near-perfect parity (0.98 female hire rate vs 1.00 male reference)
@@ -1113,7 +1185,9 @@ Complete documentation maintained at `/Users/pedrotorrecillas/projects/EU AI Act
 - **Guardrails:** Explicit prompts exclude gender, age, race, ethnicity, nationality, religion, sexual orientation, disability, health, family status from scoring
 
 ### Clara Technical, Legal, Compliance Pack
+
 A comprehensive document linking all compliance resources:
+
 - **Core architecture:** Desktop/mobile React frontend, Kotlin/Spring Boot backend (existing J&T infrastructure)
 - **LLM providers:** OpenAI (GPT-4.5, o3-mini), Google Gemini, ElevenLabs (voice), Twilio (telephony)
 - **13+ subprocessors listed:** AWS, OpenAI, Google, Twilio, ElevenLabs, HappyRobot, Okta, Amplitude, Indeed, Stripe, Postmark/SendGrid, Cloudflare
@@ -1125,50 +1199,50 @@ A comprehensive document linking all compliance resources:
 
 The following documents exist in `Shared drives/Clara/Clara - Compliance supporting docs/` but require manual download to read. Descriptions based on file names and context:
 
-| Document | Description |
-|----------|-------------|
-| **Clara (internal)_DPIA_approved.pdf** | Approved Data Protection Impact Assessment for Clara. Required for high-risk processing. Findings shareable with clients on request |
-| **clara-platform-architecture.pdf** | Platform architecture diagram |
-| **infrastructure_overview.pdf** | Infrastructure overview document |
-| **241125 Clara - security slides .pdf** | Security presentation (November 2025) |
-| **Clara AI - Process detail flujograma slide.pdf** | Process flow diagram for Clara AI interview lifecycle |
-| **IS Incident Management Policy_v2.pdf** | Information Security Incident Management Policy v2 |
-| **Job_and_Talent_Continuity_and_Recovery_Plan.docx.pdf** | Business Continuity and Disaster Recovery Plan |
-| **Operations Security Policy_v3.docx.pdf** | Operations Security Policy v3 |
-| **Secure Development Policy_v2.docx-2.pdf** | Secure Development Lifecycle Policy v2 |
-| **Clara - Functional Description and HO instructions.pdf** | Functional description and human oversight instructions per EU AI Act Article 11(1) |
-| **Clara - Principios Generales.pdf** | General principles document (Spanish) |
-| **Q&A AEGON_Clara IA Job&Talent.pdf** | Aegon CISO compliance review Q&A -- enterprise security questionnaire responses |
-| **Q&A AEGON additional questions.pdf** | Follow-up Aegon security questions (January 2026) |
-| **Santa Lucia Q&A 23-12-25.pdf** | Santalucia security/compliance Q&A (December 2025) |
-| **Cuestiones_ClaraAI_Santalucia.pdf** | Santalucia homologation questions for Clara AI |
-| **Clara - Respuesta RFP Santalucia final.docx** | Final RFP response to Santalucia |
-| **SANTALUCIA Clara SaaS Order Form - Final 2026. ES.docx** | Santalucia SaaS order form (Spanish) |
-| **Anexo 1: Data Breach Notification Process** | Data breach notification procedure |
-| **Proceso notificador de violacion de datos.pdf** | Data breach notification process (Spanish version) |
-| **DATA PROTECTION PRINCIPLES.pdf** | J&T data protection principles |
-| **Estructura corporativa.pdf** | Corporate structure document |
-| **ES_Clara pitch_February_2026.pdf** | Clara sales pitch deck (Spanish, February 2026) |
-| **Clara_Technical_Integration.pptx.pdf** | Technical integration presentation |
-| **SaaS GTC.pdf** | SaaS General Terms and Conditions |
+| Document                                                   | Description                                                                                                                         |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Clara (internal)\_DPIA_approved.pdf**                    | Approved Data Protection Impact Assessment for Clara. Required for high-risk processing. Findings shareable with clients on request |
+| **clara-platform-architecture.pdf**                        | Platform architecture diagram                                                                                                       |
+| **infrastructure_overview.pdf**                            | Infrastructure overview document                                                                                                    |
+| **241125 Clara - security slides .pdf**                    | Security presentation (November 2025)                                                                                               |
+| **Clara AI - Process detail flujograma slide.pdf**         | Process flow diagram for Clara AI interview lifecycle                                                                               |
+| **IS Incident Management Policy_v2.pdf**                   | Information Security Incident Management Policy v2                                                                                  |
+| **Job_and_Talent_Continuity_and_Recovery_Plan.docx.pdf**   | Business Continuity and Disaster Recovery Plan                                                                                      |
+| **Operations Security Policy_v3.docx.pdf**                 | Operations Security Policy v3                                                                                                       |
+| **Secure Development Policy_v2.docx-2.pdf**                | Secure Development Lifecycle Policy v2                                                                                              |
+| **Clara - Functional Description and HO instructions.pdf** | Functional description and human oversight instructions per EU AI Act Article 11(1)                                                 |
+| **Clara - Principios Generales.pdf**                       | General principles document (Spanish)                                                                                               |
+| **Q&A AEGON_Clara IA Job&Talent.pdf**                      | Aegon CISO compliance review Q&A -- enterprise security questionnaire responses                                                     |
+| **Q&A AEGON additional questions.pdf**                     | Follow-up Aegon security questions (January 2026)                                                                                   |
+| **Santa Lucia Q&A 23-12-25.pdf**                           | Santalucia security/compliance Q&A (December 2025)                                                                                  |
+| **Cuestiones_ClaraAI_Santalucia.pdf**                      | Santalucia homologation questions for Clara AI                                                                                      |
+| **Clara - Respuesta RFP Santalucia final.docx**            | Final RFP response to Santalucia                                                                                                    |
+| **SANTALUCIA Clara SaaS Order Form - Final 2026. ES.docx** | Santalucia SaaS order form (Spanish)                                                                                                |
+| **Anexo 1: Data Breach Notification Process**              | Data breach notification procedure                                                                                                  |
+| **Proceso notificador de violacion de datos.pdf**          | Data breach notification process (Spanish version)                                                                                  |
+| **DATA PROTECTION PRINCIPLES.pdf**                         | J&T data protection principles                                                                                                      |
+| **Estructura corporativa.pdf**                             | Corporate structure document                                                                                                        |
+| **ES_Clara pitch_February_2026.pdf**                       | Clara sales pitch deck (Spanish, February 2026)                                                                                     |
+| **Clara_Technical_Integration.pptx.pdf**                   | Technical integration presentation                                                                                                  |
+| **SaaS GTC.pdf**                                           | SaaS General Terms and Conditions                                                                                                   |
 
 ### Google Docs (Require Browser Access)
 
-| Document | URL | Content |
-|----------|-----|---------|
-| General Terms & Conditions | `drive.google.com/file/d/1OrFjGn31zAjfv5zXTlnQfHAQsRFzfQA6` | Legal terms for Clara SaaS |
-| SaaS Order Form | `docs.google.com/document/d/1rsjqBcC2PlPfJqW3ZaenPykZieLhzAhQ` | Commercial order form template |
-| Website Privacy Policy | `docs.google.com/document/d/1EslnjI8BGu80PouXrmqvxta_ztig1Rw3xyOGnkQumug` | Privacy policy for clara.works |
-| ISO 27001 Certificate | `drive.google.com/file/d/1VL0aKyHyBWR_WsxnC2wuzCggVbgWSIvI` | Information security certification |
-| Data Security (internal) | `docs.google.com/document/d/1DhV0X6Ymx3rZlDPpMNucpi8mJcQ-L3F1unu-8DMWi_o` | Original document from Security team |
-| Functional Description & HO Instructions | `docs.google.com/document/d/1VVnYuqkOpwEbYLbQLXbCvOuDgK4UE33GjK1KUXSlX90` | EU AI Act Article 11(1) requirements |
-| Article 64 AI Transparency Briefing | `docs.google.com/document/d/1mO6HRQpgXoOLtCKlBf6xjQImNtDjh5hK8cjIshgXwE8` | Internal briefing on EU AI Act transparency |
-| Technical Docs (EU AI Act) | `docs.google.com/document/d/1_MPPx4axoX4bv8XIO4nInGE3aKK2JXDAdZAzWPrylTg` | Technical documentation for high-risk AI classification |
-| FRIA (WIP) | `docs.google.com/document/d/1Epp_jdatieRCaC41A4BtzN_YLiEVfLxYQnfCiru-y1A` | Fundamental Rights Impact Assessment (Work in Progress) |
-| FAQs | `docs.google.com/document/d/1932Pb8mPdo1fpUqfqYOUExeWDbgVPelLWwJUOYngZ5U` | General Clara FAQs |
-| Risk Management Process | `docs.google.com/document/d/1a95GrR92Mt33u__qeTuF59FUaotH8AFPA6JhdHBHE50` | Documented risk management process (EU AI Act Article 9) |
-| GTM Project Tracker | `docs.google.com/spreadsheets/d/1hX3hDopVV2kLdJeHywRXjdrFg22C0FgKLqvi3jyG5Ks` | Clara GTM landing page project tracker |
-| AI-Native Companies VC List | `docs.google.com/spreadsheets/d/1GN_p08iw1Klb4xd5kloWnyRFr0MVxBPZu5U41LNDBqc` | VC list for AI-native company outreach |
+| Document                                 | URL                                                                           | Content                                                  |
+| ---------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------- |
+| General Terms & Conditions               | `drive.google.com/file/d/1OrFjGn31zAjfv5zXTlnQfHAQsRFzfQA6`                   | Legal terms for Clara SaaS                               |
+| SaaS Order Form                          | `docs.google.com/document/d/1rsjqBcC2PlPfJqW3ZaenPykZieLhzAhQ`                | Commercial order form template                           |
+| Website Privacy Policy                   | `docs.google.com/document/d/1EslnjI8BGu80PouXrmqvxta_ztig1Rw3xyOGnkQumug`     | Privacy policy for clara.works                           |
+| ISO 27001 Certificate                    | `drive.google.com/file/d/1VL0aKyHyBWR_WsxnC2wuzCggVbgWSIvI`                   | Information security certification                       |
+| Data Security (internal)                 | `docs.google.com/document/d/1DhV0X6Ymx3rZlDPpMNucpi8mJcQ-L3F1unu-8DMWi_o`     | Original document from Security team                     |
+| Functional Description & HO Instructions | `docs.google.com/document/d/1VVnYuqkOpwEbYLbQLXbCvOuDgK4UE33GjK1KUXSlX90`     | EU AI Act Article 11(1) requirements                     |
+| Article 64 AI Transparency Briefing      | `docs.google.com/document/d/1mO6HRQpgXoOLtCKlBf6xjQImNtDjh5hK8cjIshgXwE8`     | Internal briefing on EU AI Act transparency              |
+| Technical Docs (EU AI Act)               | `docs.google.com/document/d/1_MPPx4axoX4bv8XIO4nInGE3aKK2JXDAdZAzWPrylTg`     | Technical documentation for high-risk AI classification  |
+| FRIA (WIP)                               | `docs.google.com/document/d/1Epp_jdatieRCaC41A4BtzN_YLiEVfLxYQnfCiru-y1A`     | Fundamental Rights Impact Assessment (Work in Progress)  |
+| FAQs                                     | `docs.google.com/document/d/1932Pb8mPdo1fpUqfqYOUExeWDbgVPelLWwJUOYngZ5U`     | General Clara FAQs                                       |
+| Risk Management Process                  | `docs.google.com/document/d/1a95GrR92Mt33u__qeTuF59FUaotH8AFPA6JhdHBHE50`     | Documented risk management process (EU AI Act Article 9) |
+| GTM Project Tracker                      | `docs.google.com/spreadsheets/d/1hX3hDopVV2kLdJeHywRXjdrFg22C0FgKLqvi3jyG5Ks` | Clara GTM landing page project tracker                   |
+| AI-Native Companies VC List              | `docs.google.com/spreadsheets/d/1GN_p08iw1Klb4xd5kloWnyRFr0MVxBPZu5U41LNDBqc` | VC list for AI-native company outreach                   |
 
 ---
 
@@ -1224,6 +1298,7 @@ Weekly manual review (2-3h, head of product)
 - **Adversarial testing:** In staging via HappyRobot (edge cases: accents, background noise, interruptions)
 
 **Testing sprint plan (owner: Robert):**
+
 - Week 1: Define 5-8 critical use cases, build golden dataset, validate traces in Langfuse
 - Week 2: Automated pipeline (run battery → compare vs golden → generate report), calibrate evaluators
 - Bonus: Expand to 15-20 scenarios, evaluate Galtea as Langfuse alternative
@@ -1242,39 +1317,42 @@ Clara <-> Aggregator (Merge / Kombo) <-> Client's ATS
 
 ### Integration Tiers
 
-| Tier | Model | ATSs | Capabilities | Setup |
-|------|-------|------|-------------|-------|
-| **Tier 1 (Basic)** | Self-service via aggregator | 100+ ATSs via Merge/Kombo | Receive candidates, send status + report | Self-service, potentially free |
-| **Tier 2 (Advanced)** | Native, custom per ATS | Teamtailor, SAP SuccessFactors, Workday | Rich data sync, workflow alignment, enterprise-grade | Via sales/solutions engineering, potentially paid |
+| Tier                  | Model                       | ATSs                                    | Capabilities                                         | Setup                                             |
+| --------------------- | --------------------------- | --------------------------------------- | ---------------------------------------------------- | ------------------------------------------------- |
+| **Tier 1 (Basic)**    | Self-service via aggregator | 100+ ATSs via Merge/Kombo               | Receive candidates, send status + report             | Self-service, potentially free                    |
+| **Tier 2 (Advanced)** | Native, custom per ATS      | Teamtailor, SAP SuccessFactors, Workday | Rich data sync, workflow alignment, enterprise-grade | Via sales/solutions engineering, potentially paid |
 
 ### Key Concept: "Clara Stage"
 
 Each linked job has a mapped stage in the ATS where Clara operates:
 
-| Action | Result |
-|--------|--------|
-| Candidate reaches "Clara stage" in ATS | Clara interview triggered |
-| Candidate applies via Clara | Created in ATS at Clara stage |
-| Recruiter shortlists in Clara | Candidate moved to next ATS stage |
-| Candidate moves past Clara stage in ATS | Marked shortlisted in Clara |
-| Reject in Clara | Moved to Rejected in ATS |
-| Reject in ATS | Marked rejected in Clara |
-| Backward movement to Clara stage | Does NOT re-trigger interview |
+| Action                                  | Result                            |
+| --------------------------------------- | --------------------------------- |
+| Candidate reaches "Clara stage" in ATS  | Clara interview triggered         |
+| Candidate applies via Clara             | Created in ATS at Clara stage     |
+| Recruiter shortlists in Clara           | Candidate moved to next ATS stage |
+| Candidate moves past Clara stage in ATS | Marked shortlisted in Clara       |
+| Reject in Clara                         | Moved to Rejected in ATS          |
+| Reject in ATS                           | Marked rejected in Clara          |
+| Backward movement to Clara stage        | Does NOT re-trigger interview     |
 
 ### Three Job Flows
 
 **Flow A - Import job from ATS:**
+
 1. Recruiter selects job from ATS list
 2. Clara shows ATS pipeline stages
 3. Recruiter selects "Clara interviews at this stage"
 4. Job imported and linked → bidirectional sync activated
 
 **Flow B - Link existing Clara job to ATS:**
+
 1. Recruiter creates job in Clara manually
 2. Later: click "Link to ATS" → select ATS job
 3. Select Clara stage → bidirectional sync activated
 
 **Flow C - Standalone job (no ATS):**
+
 1. Job exists only in Clara
 2. Can be distributed to job boards
 3. No ATS sync
@@ -1312,12 +1390,14 @@ Each linked job has a mapped stage in the ATS where Clara operates:
 ### Two Models
 
 **Multiposting (Broadbean, Join):**
+
 - Publish one listing → distribute to many boards
 - Candidates via email-based ingestion/feeds (not full APIs)
 - Pros: broad distribution, low effort
 - Cons: posted under J&T account (not client's), slower feedback, limited metadata
 
 **Direct (InfoJobs, Indeed TBD):**
+
 - OAuth to client's own account
 - Direct posting on behalf of client
 - Richer data
@@ -1347,6 +1427,7 @@ If the client's ATS also connects to the same job board, duplicate candidates ma
 ### Phased Strategy
 
 **Phase 1 (current):** Interview reminders
+
 - Improves no-show rate from 60% to 20%
 - Candidate replies "yes" to confirm
 - Replaces/complements Cal.com reminders (which underperform)
@@ -1354,6 +1435,7 @@ If the client's ATS also connects to the same job board, duplicate candidates ma
 **Phase 2 (planned):** Bidirectional candidate communication
 
 **Phase 3 (vision):** Pre-screening via WhatsApp/SMS before voice call
+
 - Cost savings on expensive voice interactions
 - Multiple interviews per candidate per vacancy
 - Session management and time window handling required
@@ -1386,13 +1468,13 @@ Successful payment -> webhooks
 
 ### Processed Webhooks
 
-| Event | Action |
-|-------|--------|
-| `checkout.session.completed` | Create/link Stripe customer, add initial credits, welcome email |
-| `invoice.paid` | Add renewal credits (read from price metadata) |
-| `customer.subscription.updated` | Update internal record with new price_id |
-| `customer.subscription.deleted` | Mark cancelled, stop future additions |
-| `invoice.payment_failed` | Failure email, past_due status, 5-day grace countdown |
+| Event                           | Action                                                          |
+| ------------------------------- | --------------------------------------------------------------- |
+| `checkout.session.completed`    | Create/link Stripe customer, add initial credits, welcome email |
+| `invoice.paid`                  | Add renewal credits (read from price metadata)                  |
+| `customer.subscription.updated` | Update internal record with new price_id                        |
+| `customer.subscription.deleted` | Mark cancelled, stop future additions                           |
+| `invoice.payment_failed`        | Failure email, past_due status, 5-day grace countdown           |
 
 ### Customer Portal
 
@@ -1430,12 +1512,14 @@ Successful payment -> webhooks
 Landing page → Try Clara → Modal with fields → Email, name, company, phone → Sign up → Dashboard
 
 **Proposed flow (simplified, 4 steps, ~2 minutes):**
+
 1. Try Clara → straight to conversation (no modal)
 2. Accept privacy policy/terms before demo interview
 3. Post-interview: see full report, then sign-up CTA
 4. Enter email → set password → auto-logged in → dashboard with demo job visible
 
 **Data extraction (eliminate fields):**
+
 - Name: extracted from email
 - Company: extracted from email domain
 - Country: auto-detected from IP
@@ -1443,17 +1527,20 @@ Landing page → Try Clara → Modal with fields → Email, name, company, phone
 - 2FA removed from signup (new profiles have no sensitive data; optional client setting later)
 
 **Three entry paths (all unified to same auth flow):**
+
 - "Try Clara Now" (after demo interview with report)
 - "Sign Up" from job page
 - Top nav "Sign Up"
 
 **Technical implementation:**
+
 - Next.js frontend → Clients service (`POST /client/signup`) → Authonio (Cognito-based auth)
 - Email verification via magic link with one-time code
 - MFA via SMS on first login (verifies phone)
 - On success: Authonio notifies Clients service to finalize user record (Client User + Workplace), returns JWT tokens
 
 **Demo interview specifics:**
+
 - Demo call shows full report before signup CTA
 - Max 5 requirements per section
 - Demo call duration limited
@@ -1538,6 +1625,7 @@ This is only possible because J&T is an Employer of Record: it doesn't just plac
 ## 9.2 Closed-Loop Validation Methodology
 
 Clara tracks **five outcome signals** beyond the interview:
+
 1. **Offer sent** -- did the recruiter advance the candidate?
 2. **Offer accepted** -- did the candidate take the job?
 3. **Day-1 attendance** -- did they actually show up?
@@ -1545,6 +1633,7 @@ Clara tracks **five outcome signals** beyond the interview:
 5. **Performance feedback** -- did they perform well on the job?
 
 **Calibration process:**
+
 - **4-6 week calibration period** for new clients to match fill rates, day-1 attendance, and early attrition benchmarks
 - **80/20 adaptation split:** 80% prompt/context management, 20% fine-tuning for client-specific customization
 - **Dual feedback loop:** Explicit (customization of scoring, tone, weights) + Implicit (hiring decisions mapped back to interview scores)
@@ -1562,15 +1651,17 @@ All of this varies by industry and role. Logistics, manufacturing, automotive, c
 ## 9.3 Per-Client Customization
 
 **Today (explicit):**
+
 - Interview intro and outro (tone, branding, employer brand messaging)
 - Evaluation weights (which competencies matter most for their operation)
 - Scoring criteria (what "good" means for their company)
 - Question flow and focus areas
 
 **Future (implicit and continuous):**
+
 - Every recruiter correction (score adjustment, feedback) is stored in memory
 - Evaluation style adapts to what the client values
-- Questions evolve to detect the signals that predict success *at that company*
+- Questions evolve to detect the signals that predict success _at that company_
 - Scoring calibrates to the client's real hiring bar
 
 This is the transition from a configured tool to a **learning system**. Every interaction makes Clara smarter for that client. The more you use it, the more it feels like it was built specifically for you → switching cost.
@@ -1580,6 +1671,7 @@ This is the transition from a configured tool to a **learning system**. Every in
 ## 9.4 Cross-Vertical Transferability
 
 Blue-collar roles share significant patterns across industries:
+
 - New verticals ramp up faster because foundational patterns transfer
 - Cold-start for new clients is dramatically shorter than competitors face
 - Clara can enter a new industry segment and reach production-quality performance quickly
@@ -1598,18 +1690,19 @@ Blue-collar roles share significant patterns across industries:
 
 # Part 10: Competitors
 
-| Competitor | Strength | Weakness | Threat |
-|------------|----------|----------|--------|
-| **Paradox (Olivia)** | Strong case studies in Clara's ICP. Now owned by Workday ($1B, Oct 2025) | Workday integration will slow innovation. Prices will rise. Non-Workday ATS clients will need alternatives | High -- but acquisition creates opportunity |
-| **Orbio** | 7 months old, EUR 1M ARR fast. More agentic architecture. 2nd-time founders with HR exits. Building 3 agents simultaneously. Pricing: EUR 1/processed candidate. Adecco partnership (70% time-to-hire reduction claim). Won A Volta deal over Clara despite strong free trial results | Only 7 months of data. No closed-loop signal. Traditional sales-driven (no self-service). Claims full ATS suite but actually just AI agents | High -- most significant emerging threat |
-| **HireVue** | Strong brand recognition | Too focused on video. Not voice | Medium |
-| **XOR.ai** | Covered blue-collar ICP | Blog dormant since mid-2024. More service model than product | Low |
-| **Phenom** | New voice screening agent (Nov 2025). Large platform | Large platform = slow to innovate | Medium |
-| **Heidiga** | Not using HappyRobot, building own | Basic system, 50-100% slower development than startups. Cannot use HappyRobot infrastructure | Low |
+| Competitor           | Strength                                                                                                                                                                                                                                                                              | Weakness                                                                                                                                    | Threat                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| **Paradox (Olivia)** | Strong case studies in Clara's ICP. Now owned by Workday ($1B, Oct 2025)                                                                                                                                                                                                              | Workday integration will slow innovation. Prices will rise. Non-Workday ATS clients will need alternatives                                  | High -- but acquisition creates opportunity |
+| **Orbio**            | 7 months old, EUR 1M ARR fast. More agentic architecture. 2nd-time founders with HR exits. Building 3 agents simultaneously. Pricing: EUR 1/processed candidate. Adecco partnership (70% time-to-hire reduction claim). Won A Volta deal over Clara despite strong free trial results | Only 7 months of data. No closed-loop signal. Traditional sales-driven (no self-service). Claims full ATS suite but actually just AI agents | High -- most significant emerging threat    |
+| **HireVue**          | Strong brand recognition                                                                                                                                                                                                                                                              | Too focused on video. Not voice                                                                                                             | Medium                                      |
+| **XOR.ai**           | Covered blue-collar ICP                                                                                                                                                                                                                                                               | Blog dormant since mid-2024. More service model than product                                                                                | Low                                         |
+| **Phenom**           | New voice screening agent (Nov 2025). Large platform                                                                                                                                                                                                                                  | Large platform = slow to innovate                                                                                                           | Medium                                      |
+| **Heidiga**          | Not using HappyRobot, building own                                                                                                                                                                                                                                                    | Basic system, 50-100% slower development than startups. Cannot use HappyRobot infrastructure                                                | Low                                         |
 
 ### Macro Tailwind
 
 Paradox's acquisition by Workday ($1B, Oct 2025) creates a unique window:
+
 - Non-Workday ATS clients need alternatives
 - Prices will rise during integration
 - Innovation will slow
@@ -1630,17 +1723,18 @@ Paradox's acquisition by Workday ($1B, Oct 2025) creates a unique window:
 
 ## 11.1 Ideal Profile
 
-| Dimension | Detail |
-|-----------|--------|
-| **Size** | Mid-market to enterprise (200+ employees, expanding to SMB) |
-| **Verticals** | Staffing agencies, QSR/hospitality, private security, BPO/call centers, logistics, retail, construction, manufacturing |
-| **Problem** | High-volume hiring, high turnover rates, manual screening processes that don't scale |
-| **Geography** | Spain (mature market), US (launched Q1 2026), France, international expansion |
-| **Decision maker** | VP of HR, Talent Director, franchise owner/operator |
+| Dimension          | Detail                                                                                                                 |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| **Size**           | Mid-market to enterprise (200+ employees, expanding to SMB)                                                            |
+| **Verticals**      | Staffing agencies, QSR/hospitality, private security, BPO/call centers, logistics, retail, construction, manufacturing |
+| **Problem**        | High-volume hiring, high turnover rates, manual screening processes that don't scale                                   |
+| **Geography**      | Spain (mature market), US (launched Q1 2026), France, international expansion                                          |
+| **Decision maker** | VP of HR, Talent Director, franchise owner/operator                                                                    |
 
 ## 11.2 Top 3 Early-Adopter Niches
 
 ### #1: Staffing / Temp Agencies (95/100)
+
 - Recruiting IS their product. Every hour of manual screening is lost margin
 - Annualized turnover: 419%. 16M temp placements/year in US
 - Fill rate: only 50% (half of orders left unfilled)
@@ -1651,12 +1745,14 @@ Paradox's acquisition by Workday ($1B, Oct 2025) creates a unique window:
 - Entry: Bullhorn integration (80% of large agencies use it), 10 paying agencies in 90 days
 
 ### #2: QSR / Food Service (90/100)
+
 - Turnover: 87-150%. 54% apply nights/weekends
 - Franchise operator decides in one meeting
 - Clara is a perfect fit: 24/7 calls, rapid screening
 - Post-Paradox/Workday displacement creates demand
 
 ### #3: Private Security (85/100)
+
 - Turnover: 100-300%. 162K annual openings in US
 - Near-zero tech adoption (massive greenfield)
 - 1-2 decision-makers
@@ -1678,13 +1774,14 @@ Paradox's acquisition by Workday ($1B, Oct 2025) creates a unique window:
 
 ### Spain SaaS Pipeline Analysis (116 deals)
 
-| Segment | Win Rate | Avg Ticket | Avg Close Time |
-|---------|----------|-----------|----------------|
-| Enterprise (>2K emp) | 28% | €43.9K | 43 days |
-| Mid-market (200-2K) | 5% | €32.2K | 24 days |
-| SMB (<200) | 12% | €2.4K | 12 days |
+| Segment              | Win Rate | Avg Ticket | Avg Close Time |
+| -------------------- | -------- | ---------- | -------------- |
+| Enterprise (>2K emp) | 28%      | €43.9K     | 43 days        |
+| Mid-market (200-2K)  | 5%       | €32.2K     | 24 days        |
+| SMB (<200)           | 12%      | €2.4K      | 12 days        |
 
 **Industry win rates (Spain):**
+
 - Restaurants: 40% | Insurance: 50% | Construction: 100%
 - Retail/Hospitality: 0% (29 deals, zero wins -- deprioritize)
 - Logistics: 14% (despite €52K avg ticket)
@@ -1695,11 +1792,11 @@ Paradox's acquisition by Workday ($1B, Oct 2025) creates a unique window:
 
 ### Live Pipeline Snapshot (March 23, 2026)
 
-| Category | Deals | Value |
-|----------|-------|-------|
-| Active | 30 | EUR 1,136,756 |
-| Scheduled | 34 | EUR 1,472,408 |
-| Stalled | 2 | EUR 242,000 |
+| Category  | Deals  | Value             |
+| --------- | ------ | ----------------- |
+| Active    | 30     | EUR 1,136,756     |
+| Scheduled | 34     | EUR 1,472,408     |
+| Stalled   | 2      | EUR 242,000       |
 | **Total** | **66** | **EUR 2,851,164** |
 
 **Deal stage pattern:** Discovery → Solution/Demo → Free Trial → Negotiation → Close
@@ -1717,13 +1814,13 @@ Paradox's acquisition by Workday ($1B, Oct 2025) creates a unique window:
 
 ## 12.1 Revenue Model
 
-| Model | Target | Details |
-|-------|--------|---------|
-| **Monthly subscription** (Clara Go) | SMB/mid-market | Self-service via Stripe, credits per interview |
-| **Enterprise custom** (Clara Pro) | Enterprise | Annual contracts, custom pricing |
-| **Pay-per-screen** | Staffing | $15-$50 per screen, volume-tiered |
-| **Pay-per-hire** | Staffing | $200-$400 (undercutting ConverzAI at $500) |
-| **B2B2C partnerships** | Job boards | Per-minute of AI interview time; revenue share (e.g., InfoJobs) |
+| Model                               | Target         | Details                                                         |
+| ----------------------------------- | -------------- | --------------------------------------------------------------- |
+| **Monthly subscription** (Clara Go) | SMB/mid-market | Self-service via Stripe, credits per interview                  |
+| **Enterprise custom** (Clara Pro)   | Enterprise     | Annual contracts, custom pricing                                |
+| **Pay-per-screen**                  | Staffing       | $15-$50 per screen, volume-tiered                               |
+| **Pay-per-hire**                    | Staffing       | $200-$400 (undercutting ConverzAI at $500)                      |
+| **B2B2C partnerships**              | Job boards     | Per-minute of AI interview time; revenue share (e.g., InfoJobs) |
 
 ## 12.2 Automated Outreach (Clay.com)
 
@@ -1735,16 +1832,16 @@ Goal: Daily scrape ICP job postings from companies hiring >300 employees/year, i
 
 ## 12.3 Sales Channels
 
-| Channel | Details | Metrics |
-|---------|---------|---------|
-| **SaaS Direct Sales** | Traditional B2B enterprise | ~EUR 1M ARR in middle funnel |
-| **Self-Service** | Landing page → demo → sign-up | 9.8% conversion to demo calls (118 from 1,200 visits) |
-| **AI SDR** | HappyRobot voice agent for qualification | 7/10 quality, needs prompt refinement |
-| **LinkedIn Outbound** | LemList campaigns | 2,000 invites/week via 10 users. EUR 150 CPL, 5% conversion |
-| **Google Ads** | SEM | EUR 200 CPA (optimized from EUR 400) |
-| **Staffing Channel** | J&T RPO/staffing teams | Integrated sale as part of the offering |
-| **Creator Program** | 4 HR influencers | EUR 3k budget, product videos |
-| **B2B2C Partnerships** | InfoJobs (2-month pilot, 50/50 revenue split), LinkedIn (meeting scheduled), JobCloud Suiza | Channel strategy |
+| Channel                | Details                                                                                     | Metrics                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| **SaaS Direct Sales**  | Traditional B2B enterprise                                                                  | ~EUR 1M ARR in middle funnel                                |
+| **Self-Service**       | Landing page → demo → sign-up                                                               | 9.8% conversion to demo calls (118 from 1,200 visits)       |
+| **AI SDR**             | HappyRobot voice agent for qualification                                                    | 7/10 quality, needs prompt refinement                       |
+| **LinkedIn Outbound**  | LemList campaigns                                                                           | 2,000 invites/week via 10 users. EUR 150 CPL, 5% conversion |
+| **Google Ads**         | SEM                                                                                         | EUR 200 CPA (optimized from EUR 400)                        |
+| **Staffing Channel**   | J&T RPO/staffing teams                                                                      | Integrated sale as part of the offering                     |
+| **Creator Program**    | 4 HR influencers                                                                            | EUR 3k budget, product videos                               |
+| **B2B2C Partnerships** | InfoJobs (2-month pilot, 50/50 revenue split), LinkedIn (meeting scheduled), JobCloud Suiza | Channel strategy                                            |
 
 ## 12.3 Positioning Strategy
 
@@ -1766,15 +1863,16 @@ Goal: Daily scrape ICP job postings from companies hiring >300 employees/year, i
 
 ## 12.5 ICP Targeting (Marketing)
 
-| Dimension | Detail |
-|-----------|--------|
-| **Company size** | 500-5,000 employees |
-| **Annual spend** | EUR 24K+/year |
-| **Hiring volume** | 300+ hires/year |
-| **Decision-makers** | Recruitment HR leads, operations leaders, CEOs |
-| **Use cases** | Hiring peaks, cost reduction, AI mandate from leadership |
+| Dimension           | Detail                                                   |
+| ------------------- | -------------------------------------------------------- |
+| **Company size**    | 500-5,000 employees                                      |
+| **Annual spend**    | EUR 24K+/year                                            |
+| **Hiring volume**   | 300+ hires/year                                          |
+| **Decision-makers** | Recruitment HR leads, operations leaders, CEOs           |
+| **Use cases**       | Hiring peaks, cost reduction, AI mandate from leadership |
 
 **Funnel performance (Feb 2026):**
+
 - LinkedIn outreach: EUR 4 CAC → 44% lead conversion
 - Google Ads: EUR 200 CPA (optimized from EUR 400)
 - Lemlist email: 8% conversion to lead → handover to AEs
@@ -1785,21 +1883,22 @@ Goal: Daily scrape ICP job postings from companies hiring >300 employees/year, i
 
 ## 12.6 InfoJobs Partnership Performance (Feb 2026 Pilot)
 
-| Metric | Value |
-|--------|-------|
-| Jobs opened | 5 |
-| Applicants contacted | 61% |
-| Time to report | 103 minutes average |
-| Call duration | 9.4 minutes average |
-| Funnel: Applications → Called | 31 → 28 (90%) |
-| Funnel: Called → Contacted | 28 → 17 (61%) |
-| Funnel: Contacted → Interviewed | 17 → 12 (71%) |
+| Metric                          | Value               |
+| ------------------------------- | ------------------- |
+| Jobs opened                     | 5                   |
+| Applicants contacted            | 61%                 |
+| Time to report                  | 103 minutes average |
+| Call duration                   | 9.4 minutes average |
+| Funnel: Applications → Called   | 31 → 28 (90%)       |
+| Funnel: Called → Contacted      | 28 → 17 (61%)       |
+| Funnel: Contacted → Interviewed | 17 → 12 (71%)       |
 
 ## 12.7 Marketing Operations
 
 ### Content Skills Ecosystem
 
 All installable and versioned, running in Claude Code:
+
 - `clara-blog-article` (v2.1.0) -- SEO-optimized blog posts
 - `clara-interview` (v1.4.0) -- Blog posts from AI-conducted team interviews
 - `competitor-comparison-pages` (v2.1.0) -- SEO comparison pages published to Framer CMS
@@ -1837,11 +1936,13 @@ All installable and versioned, running in Claude Code:
 **30-second pitch:** Clara conducts tens of thousands of interviews daily with human-like interactions, delivers instant insights, integrates with ATS platforms, and works 24/7.
 
 **Problem framing (for content):**
+
 - 180 applicants per hire, only 3% make it to interviews
 - Time-to-hire increased from 31 to 44 days
 - Solution: AI handles volume so people focus on judgment
 
 **3-pillar positioning:**
+
 1. **Screening:** Read every CV
 2. **Interviewing:** Consistent, structured calls at scale
 3. **Ranking:** Score candidates against benchmarks
@@ -1860,24 +1961,25 @@ All installable and versioned, running in Claude Code:
 
 # Part 13: Team Structure
 
-| Person | Role | Focus |
-|--------|------|-------|
-| **Felipe Navio** | Product management, strategy | Product direction, key decisions |
-| **Ben Anderson** | PM (Clara Wow) | Architecture decisions, PRD development, feature prioritization |
-| **Pedro Galan** | Engineering lead | InfoJobs integration, technical strategy |
-| **Andres Barriga** | Core team lead | Evaluation infrastructure, testing |
-| **Marcin Jachymski** | Integration lead | ATS integrations |
-| **Victor Guijarro** | Technical onboarding | New hire enablement |
-| **Laura Lynch** | Product leadership/strategy | High-level product direction |
-| **Antonio Rumeu** | Customer success | Spanish market, leadership daily |
-| **Philippe** | International + SMB | Incoming from Airbnb, France expansion |
-| **Jorge Salas** | Customer success | Pipeline management |
-| **Jorge Martinez** | Sales | Engineering/technical roles |
-| **Pablo** | HappyRobot relationship | Voice AI partner management |
-| **Robert** | Testing | Golden dataset, evaluator calibration |
-| **Iain** | UX | Frontend design, deleted candidate display |
+| Person               | Role                         | Focus                                                           |
+| -------------------- | ---------------------------- | --------------------------------------------------------------- |
+| **Felipe Navio**     | Product management, strategy | Product direction, key decisions                                |
+| **Ben Anderson**     | PM (Clara Wow)               | Architecture decisions, PRD development, feature prioritization |
+| **Pedro Galan**      | Engineering lead             | InfoJobs integration, technical strategy                        |
+| **Andres Barriga**   | Core team lead               | Evaluation infrastructure, testing                              |
+| **Marcin Jachymski** | Integration lead             | ATS integrations                                                |
+| **Victor Guijarro**  | Technical onboarding         | New hire enablement                                             |
+| **Laura Lynch**      | Product leadership/strategy  | High-level product direction                                    |
+| **Antonio Rumeu**    | Customer success             | Spanish market, leadership daily                                |
+| **Philippe**         | International + SMB          | Incoming from Airbnb, France expansion                          |
+| **Jorge Salas**      | Customer success             | Pipeline management                                             |
+| **Jorge Martinez**   | Sales                        | Engineering/technical roles                                     |
+| **Pablo**            | HappyRobot relationship      | Voice AI partner management                                     |
+| **Robert**           | Testing                      | Golden dataset, evaluator calibration                           |
+| **Iain**             | UX                           | Frontend design, deleted candidate display                      |
 
 **Engineering squads (4, ~18 engineers):**
+
 1. **Core** (~5 eng): Clara 4.0 infrastructure, self-service onboarding, global telephony, multi-region localization, RBAC, metrics
 2. **Integrations** (~5 eng): ATS/InfoJobs integration, Stripe/subscription engine, WhatsApp, talent pools, candidate management
 3. **Wow / Product** (~5 eng): Interview configuration UX, custom voice branding, live interview feedback, video interviews (future)
@@ -1893,16 +1995,16 @@ All installable and versioned, running in Claude Code:
 
 ## Immediate (Q1)
 
-| Priority | Feature | Status |
-|----------|---------|--------|
-| 1 | **Clara 4.0** - Unified interview service | In development (4 weeks from Feb) |
-| 2 | **CV integration** - CV context in interviews | Post-launch priority #1 |
-| 3 | **InfoJobs integration** | 6-week timeline |
-| 4 | **ATS integrations** - SuccessFactors priority | POC with Combo, evaluating Merge |
-| 5 | **WhatsApp reminders** | Phase 1 (reminders) |
-| 6 | **Interview Highlights** | Current sprint |
-| 7 | **Killer questions v2** | Feature flag in progress |
-| 8 | **Landing page optimization** | Reduce 80% drop-off |
+| Priority | Feature                                        | Status                            |
+| -------- | ---------------------------------------------- | --------------------------------- |
+| 1        | **Clara 4.0** - Unified interview service      | In development (4 weeks from Feb) |
+| 2        | **CV integration** - CV context in interviews  | Post-launch priority #1           |
+| 3        | **InfoJobs integration**                       | 6-week timeline                   |
+| 4        | **ATS integrations** - SuccessFactors priority | POC with Combo, evaluating Merge  |
+| 5        | **WhatsApp reminders**                         | Phase 1 (reminders)               |
+| 6        | **Interview Highlights**                       | Current sprint                    |
+| 7        | **Killer questions v2**                        | Feature flag in progress          |
+| 8        | **Landing page optimization**                  | Reduce 80% drop-off               |
 
 ## Medium Term (Q2-Q3)
 
@@ -1921,6 +2023,7 @@ All installable and versioned, running in Claude Code:
 ## Roadmap Additions (from Product Plan CSV)
 
 Items on the SaaS roadmap not yet mentioned above:
+
 - **Video interview POC** (Tavus pilot) -- exploring video as complement to voice
 - **Anti-cheating/fraud detection** -- detecting AI-assisted candidate responses
 - **Enterprise SSO** -- SAML/OIDC for enterprise clients
@@ -1966,130 +2069,130 @@ Items on the SaaS roadmap not yet mentioned above:
 
 # Part 16: Glossary
 
-| Term | Meaning |
-|------|---------|
-| **Clara Go** | Self-service plan with monthly subscription and per-interview credits |
-| **Clara Pro** | Enterprise plan with custom pricing and advanced features |
-| **Clara 4.0** | Unified interview service version (SaaS + staffing in one flow) |
-| **Deep Agents** | Current agent architecture (replacement for LangChain graphs) |
-| **HappyRobot** | Voice AI technology partner. Engine that executes calls |
-| **Langfuse** | Observability platform. Stores traces, prompts, scores, evaluations |
-| **LangGraph** | Thread management framework used with Deep Agents |
-| **PG Vector** | PostgreSQL extension for vector search (RAG) |
-| **ICP** | Ideal Customer Profile |
-| **RPO** | Recruitment Process Outsourcing |
-| **EoR** | Employer of Record (J&T employs the workers, not just places them) |
-| **ATS** | Applicant Tracking System (client's candidate tracking system) |
-| **VR** | Vacancy Request (specific hiring request) |
-| **Killer questions** | Job conditions that stop the interview if not met |
-| **Knockout requirements** | Essential role requirements that lower the score but don't stop the interview |
-| **Delta interview** | Interview that only covers what's new when a candidate applies to a similar role |
-| **Highlights** | Key moments extracted from the interview with verbatim quotes and audio |
-| **Modifiers** | Per-interview prompt adjustments (voice, politeness, role) |
-| **Golden dataset** | Test case set with expected outputs for quality validation |
-| **LLM-as-judge** | Automated evaluation where one LLM grades another's outputs |
-| **Clara stage** | Stage in the ATS pipeline where Clara executes interviews |
-| **Multiposting** | Publishing one job listing to multiple job boards simultaneously |
-| **DSAR** | Data Subject Access Request (GDPR personal data access request) |
-| **Closed-loop signal** | Data connecting interview → hire → performance → retention |
-| **ADS** | Automated Decision System (California FEHA classification) |
-| **FRIA** | Fundamental Rights Impact Assessment (EU AI Act requirement) |
-| **DPA** | Data Processing Agreement (GDPR requirement for subprocessors) |
-| **SCCs** | Standard Contractual Clauses (EU cross-border transfer mechanism) |
-| **BPMN** | Business Process Model and Notation (used by Flow Manager/Camunda) |
-| **BFF** | Backend-for-Frontend (Koffice pattern) |
-| **C3PO** | Clara's AI brain (Python/LangGraph/LangChain service) |
-| **Gilfoyle** | API Gateway / Copilot interface service |
-| **Koffice** | Elixir/Phoenix BFF service for the web app |
-| **QAI** | In-house QA testing tool for automated E2E tests |
-| **Tombstone record** | Anonymized placeholder retaining non-PII after GDPR deletion |
-| **Previa** | White-label name for Clara within InfoJobs partnership |
+| Term                      | Meaning                                                                          |
+| ------------------------- | -------------------------------------------------------------------------------- |
+| **Clara Go**              | Self-service plan with monthly subscription and per-interview credits            |
+| **Clara Pro**             | Enterprise plan with custom pricing and advanced features                        |
+| **Clara 4.0**             | Unified interview service version (SaaS + staffing in one flow)                  |
+| **Deep Agents**           | Current agent architecture (replacement for LangChain graphs)                    |
+| **HappyRobot**            | Voice AI technology partner. Engine that executes calls                          |
+| **Langfuse**              | Observability platform. Stores traces, prompts, scores, evaluations              |
+| **LangGraph**             | Thread management framework used with Deep Agents                                |
+| **PG Vector**             | PostgreSQL extension for vector search (RAG)                                     |
+| **ICP**                   | Ideal Customer Profile                                                           |
+| **RPO**                   | Recruitment Process Outsourcing                                                  |
+| **EoR**                   | Employer of Record (J&T employs the workers, not just places them)               |
+| **ATS**                   | Applicant Tracking System (client's candidate tracking system)                   |
+| **VR**                    | Vacancy Request (specific hiring request)                                        |
+| **Killer questions**      | Job conditions that stop the interview if not met                                |
+| **Knockout requirements** | Essential role requirements that lower the score but don't stop the interview    |
+| **Delta interview**       | Interview that only covers what's new when a candidate applies to a similar role |
+| **Highlights**            | Key moments extracted from the interview with verbatim quotes and audio          |
+| **Modifiers**             | Per-interview prompt adjustments (voice, politeness, role)                       |
+| **Golden dataset**        | Test case set with expected outputs for quality validation                       |
+| **LLM-as-judge**          | Automated evaluation where one LLM grades another's outputs                      |
+| **Clara stage**           | Stage in the ATS pipeline where Clara executes interviews                        |
+| **Multiposting**          | Publishing one job listing to multiple job boards simultaneously                 |
+| **DSAR**                  | Data Subject Access Request (GDPR personal data access request)                  |
+| **Closed-loop signal**    | Data connecting interview → hire → performance → retention                       |
+| **ADS**                   | Automated Decision System (California FEHA classification)                       |
+| **FRIA**                  | Fundamental Rights Impact Assessment (EU AI Act requirement)                     |
+| **DPA**                   | Data Processing Agreement (GDPR requirement for subprocessors)                   |
+| **SCCs**                  | Standard Contractual Clauses (EU cross-border transfer mechanism)                |
+| **BPMN**                  | Business Process Model and Notation (used by Flow Manager/Camunda)               |
+| **BFF**                   | Backend-for-Frontend (Koffice pattern)                                           |
+| **C3PO**                  | Clara's AI brain (Python/LangGraph/LangChain service)                            |
+| **Gilfoyle**              | API Gateway / Copilot interface service                                          |
+| **Koffice**               | Elixir/Phoenix BFF service for the web app                                       |
+| **QAI**                   | In-house QA testing tool for automated E2E tests                                 |
+| **Tombstone record**      | Anonymized placeholder retaining non-PII after GDPR deletion                     |
+| **Previa**                | White-label name for Clara within InfoJobs partnership                           |
 
 ---
 
 # Part 17: Resources
 
-| Resource | Location |
-|----------|----------|
-| Website | clara.works |
-| Notion hub | Clara (SaaS) Database (2d377b8c7c22802cbeccf1d62f05712f) |
-| Clara Call PRD | Notion: 2f177b8c7c22808bacb6c4e75089f063 |
-| Self-Registration Flow | Notion: 2b077b8c7c228089ae66d3d7cba71f9f |
-| Interview Setup PRD | Notion: 2ad77b8c7c2280caba56f8d56deb1fc4 |
-| Candidate Opt-Out | Notion: 2cd77b8c7c2280ed896de0ff5bf52260 |
-| Proactive Agent PRD | Notion: 2cd77b8c7c2280f996eaffcce849de34 |
-| Q&A Agent PRD | Notion: 2cd77b8c7c228065b318d2154a768d3c |
-| SDR Transition | Notion: 30277b8c7c2280f2a0b3ebc5cdb470b1 |
-| Automated Outreach | Notion: 2f577b8c7c2280798cb2d6892664d1dc |
-| FR/BE SaaS Transition | Notion: a7d77b8c7c228251adcf01cb5b38ce5e |
-| PRD Workflow Guide | Notion: 32977b8c7c2281a79b1be5f7e3e21f8b |
-| Clara 4.0 design | Notion: 2e277b8c7c228093b587e09d51a38516 |
-| Fork Inventory | Notion: 32777b8c7c2280928283c10b8d21ce28 |
-| GDPR data removal PRD | Notion: 2cc77b8c7c2280968467c35baaefbc2d |
-| Monitoring summary | Notion: 31a77b8c7c2280ee831bc7107a2a275d |
-| InfoJobs integration PRD | Notion: 2cc77b8c7c22809ab0cfe85ec29446b5 |
-| Copilot MVP | Notion: 2f677b8c7c228099bc3ed88af3b72d96 |
-| PRD workflow guide | Notion: 32977b8c7c2281a79b1be5f7e3e21f8b |
-| Security overview (client-facing) | `~/Downloads/Clara_SaaS_Security_Privacy_Overview - For Clients.pdf` |
-| Corporate deck | `~/Downloads/Clara Corporate Deck _ Jan 2026.pdf` |
-| EU AI Act documentation | `~/projects/EU AI Act documentation/` |
-| Investor thesis | `~/projects/clara-investor-thesis.md` |
-| Investor moat | `~/projects/clara-investor-moat.md` |
-| GDPR gap analysis | `~/projects/clara-gdpr-gap-analysis.md` |
-| ATS integration PRD | `~/projects/clara_ats_integration_prd.md` |
-| Integrations vision | `~/projects/clara_integrations_vision.md` |
-| Stripe PRD | `~/projects/stripe_v0_PRD.md` |
-| Testing sprint brief | `~/projects/clara-testing-sprint-brief.md` |
-| IA review (website) | `~/projects/clara-ia-review.md` |
-| SEO analysis | `~/projects/seo-analysis-clara-feb2026.md` |
-| Early adopter analysis | `~/projects/clara-early-adopter-niche-analysis.md` |
-| Competitive landscape | `~/projects/competitive-landscape-ai-recruiting-feb2026.md` |
-| SaaS pipeline analysis | `~/projects/clara-saas-pipeline-analysis.md` |
-| Marketing plan | `~/projects/clara_marketing_plan_q1q2_2025.md` |
-| Product roadmap v3 | `~/projects/clara-roadmap-v3.md` |
-| Landing flow review | `~/projects/clara-landing-flow-review.md` |
-| Santalucia RFP | `~/Downloads/RFP - Clara AI Job&Talent_Santalucia_VF.docx.pdf` |
-| Closed Loop Recruiter | `~/Downloads/Clara - Closed Loop AI Recruiter.pdf` |
-| InfoJobs Performance | `~/Downloads/Clara_Works_-_Infojobs_Performance_2026-02-20.pdf` |
-| SaaS Roadmap CSV | `~/Downloads/Product Plan 2026 - [Proposed] Clara SaaS Roadmap 25_26.csv` |
-| Influencer Campaign | `~/projects/clara-works-influencer-campaign-spain.md` |
-| Marketing Status | `~/projects/clara-marketing-status-2026-03-05.md` |
-| Meeting notes | `~/.granola-archivist/output/` |
-| Datadog dashboard | `app.datadoghq.com/dashboard/88x-5r7-kv5/clara-business-monitors` |
-| **Google Drive** | |
-| Clara Shared Drive | `GoogleDrive-pedro.torrecillas@jobandtalent.com/Shared drives/Clara/` |
-| Official presentations | `Shared drives/Clara/1. Official (only this one is updated)/` |
-| Compliance docs | `Shared drives/Clara/Clara - Compliance supporting docs/` |
-| Sales templates | `Shared drives/Clara/Sales/` |
-| Strategy & planning | `Shared drives/Clara/Strategy/` |
-| Client implementations | `Shared drives/Clara/Clients/` |
-| DPIA (approved) | `Shared drives/Clara/Clara - Compliance supporting docs/Clara (internal)_DPIA_approved.pdf` |
-| Platform architecture | `Shared drives/Clara/Clara - Compliance supporting docs/clara-platform-architecture.pdf` |
-| Infrastructure overview | `Shared drives/Clara/Clara - Compliance supporting docs/infrastructure_overview.pdf` |
-| Security slides | `Shared drives/Clara/Clara - Compliance supporting docs/241125 Clara - security slides .pdf` |
-| Process flow diagram | `Shared drives/Clara/Clara - Compliance supporting docs/Clara AI - Process detail flujograma slide.pdf` |
-| Incident management | `Shared drives/Clara/Clara - Compliance supporting docs/IS Incident Management Policy_v2.pdf` |
-| Business continuity | `Shared drives/Clara/Clara - Compliance supporting docs/Job_and_Talent_Continuity_and_Recovery_Plan.docx.pdf` |
-| Bias audit summary | `Shared drives/Clara/Clara - Compliance supporting docs/Executive Summary_ Internal Bias & Fairness Audit (CLARA) -.pdf` |
-| Santalucia RFP response | `Shared drives/Clara/Clara - Compliance supporting docs/Clara - Respuesta RFP Santalucia final.docx` |
-| Aegon CISO review | `Shared drives/Clara/Clara - Compliance supporting docs/Aegon/` |
-| **Google Docs** | |
-| General Terms & Conditions | `drive.google.com/file/d/1OrFjGn31zAjfv5zXTlnQfHAQsRFzfQA6` |
-| SaaS Order Form | `docs.google.com/document/d/1rsjqBcC2PlPfJqW3ZaenPykZieLhzAhQ` |
-| Website Privacy Policy | `docs.google.com/document/d/1EslnjI8BGu80PouXrmqvxta_ztig1Rw3xyOGnkQumug` |
-| Data Security (internal) | `docs.google.com/document/d/1DhV0X6Ymx3rZlDPpMNucpi8mJcQ-L3F1unu-8DMWi_o` |
-| Functional Description & HO | `docs.google.com/document/d/1VVnYuqkOpwEbYLbQLXbCvOuDgK4UE33GjK1KUXSlX90` |
-| Article 64 AI Transparency | `docs.google.com/document/d/1mO6HRQpgXoOLtCKlBf6xjQImNtDjh5hK8cjIshgXwE8` |
-| Technical Docs (EU AI Act) | `docs.google.com/document/d/1_MPPx4axoX4bv8XIO4nInGE3aKK2JXDAdZAzWPrylTg` |
-| FRIA (WIP) | `docs.google.com/document/d/1Epp_jdatieRCaC41A4BtzN_YLiEVfLxYQnfCiru-y1A` |
-| FAQs | `docs.google.com/document/d/1932Pb8mPdo1fpUqfqYOUExeWDbgVPelLWwJUOYngZ5U` |
-| GTM Project Tracker | `docs.google.com/spreadsheets/d/1hX3hDopVV2kLdJeHywRXjdrFg22C0FgKLqvi3jyG5Ks` |
-| AI-Native Companies VC List | `docs.google.com/spreadsheets/d/1GN_p08iw1Klb4xd5kloWnyRFr0MVxBPZu5U41LNDBqc` |
-| ISO 27001 Certificate | `drive.google.com/file/d/1VL0aKyHyBWR_WsxnC2wuzCggVbgWSIvI` |
-| Interview volume by month | `~/Downloads/Total Interviews done by Clara per Month.csv` |
-| Target companies list | `~/Downloads/empresas_clara_sector_tamano.csv` |
-| Team capacity plan | `~/Downloads/Clara team - capacity in-detail [...].csv` |
+| Resource                          | Location                                                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Website                           | clara.works                                                                                                              |
+| Notion hub                        | Clara (SaaS) Database (2d377b8c7c22802cbeccf1d62f05712f)                                                                 |
+| Clara Call PRD                    | Notion: 2f177b8c7c22808bacb6c4e75089f063                                                                                 |
+| Self-Registration Flow            | Notion: 2b077b8c7c228089ae66d3d7cba71f9f                                                                                 |
+| Interview Setup PRD               | Notion: 2ad77b8c7c2280caba56f8d56deb1fc4                                                                                 |
+| Candidate Opt-Out                 | Notion: 2cd77b8c7c2280ed896de0ff5bf52260                                                                                 |
+| Proactive Agent PRD               | Notion: 2cd77b8c7c2280f996eaffcce849de34                                                                                 |
+| Q&A Agent PRD                     | Notion: 2cd77b8c7c228065b318d2154a768d3c                                                                                 |
+| SDR Transition                    | Notion: 30277b8c7c2280f2a0b3ebc5cdb470b1                                                                                 |
+| Automated Outreach                | Notion: 2f577b8c7c2280798cb2d6892664d1dc                                                                                 |
+| FR/BE SaaS Transition             | Notion: a7d77b8c7c228251adcf01cb5b38ce5e                                                                                 |
+| PRD Workflow Guide                | Notion: 32977b8c7c2281a79b1be5f7e3e21f8b                                                                                 |
+| Clara 4.0 design                  | Notion: 2e277b8c7c228093b587e09d51a38516                                                                                 |
+| Fork Inventory                    | Notion: 32777b8c7c2280928283c10b8d21ce28                                                                                 |
+| GDPR data removal PRD             | Notion: 2cc77b8c7c2280968467c35baaefbc2d                                                                                 |
+| Monitoring summary                | Notion: 31a77b8c7c2280ee831bc7107a2a275d                                                                                 |
+| InfoJobs integration PRD          | Notion: 2cc77b8c7c22809ab0cfe85ec29446b5                                                                                 |
+| Copilot MVP                       | Notion: 2f677b8c7c228099bc3ed88af3b72d96                                                                                 |
+| PRD workflow guide                | Notion: 32977b8c7c2281a79b1be5f7e3e21f8b                                                                                 |
+| Security overview (client-facing) | `~/Downloads/Clara_SaaS_Security_Privacy_Overview - For Clients.pdf`                                                     |
+| Corporate deck                    | `~/Downloads/Clara Corporate Deck _ Jan 2026.pdf`                                                                        |
+| EU AI Act documentation           | `~/projects/EU AI Act documentation/`                                                                                    |
+| Investor thesis                   | `~/projects/clara-investor-thesis.md`                                                                                    |
+| Investor moat                     | `~/projects/clara-investor-moat.md`                                                                                      |
+| GDPR gap analysis                 | `~/projects/clara-gdpr-gap-analysis.md`                                                                                  |
+| ATS integration PRD               | `~/projects/clara_ats_integration_prd.md`                                                                                |
+| Integrations vision               | `~/projects/clara_integrations_vision.md`                                                                                |
+| Stripe PRD                        | `~/projects/stripe_v0_PRD.md`                                                                                            |
+| Testing sprint brief              | `~/projects/clara-testing-sprint-brief.md`                                                                               |
+| IA review (website)               | `~/projects/clara-ia-review.md`                                                                                          |
+| SEO analysis                      | `~/projects/seo-analysis-clara-feb2026.md`                                                                               |
+| Early adopter analysis            | `~/projects/clara-early-adopter-niche-analysis.md`                                                                       |
+| Competitive landscape             | `~/projects/competitive-landscape-ai-recruiting-feb2026.md`                                                              |
+| SaaS pipeline analysis            | `~/projects/clara-saas-pipeline-analysis.md`                                                                             |
+| Marketing plan                    | `~/projects/clara_marketing_plan_q1q2_2025.md`                                                                           |
+| Product roadmap v3                | `~/projects/clara-roadmap-v3.md`                                                                                         |
+| Landing flow review               | `~/projects/clara-landing-flow-review.md`                                                                                |
+| Santalucia RFP                    | `~/Downloads/RFP - Clara AI Job&Talent_Santalucia_VF.docx.pdf`                                                           |
+| Closed Loop Recruiter             | `~/Downloads/Clara - Closed Loop AI Recruiter.pdf`                                                                       |
+| InfoJobs Performance              | `~/Downloads/Clara_Works_-_Infojobs_Performance_2026-02-20.pdf`                                                          |
+| SaaS Roadmap CSV                  | `~/Downloads/Product Plan 2026 - [Proposed] Clara SaaS Roadmap 25_26.csv`                                                |
+| Influencer Campaign               | `~/projects/clara-works-influencer-campaign-spain.md`                                                                    |
+| Marketing Status                  | `~/projects/clara-marketing-status-2026-03-05.md`                                                                        |
+| Meeting notes                     | `~/.granola-archivist/output/`                                                                                           |
+| Datadog dashboard                 | `app.datadoghq.com/dashboard/88x-5r7-kv5/clara-business-monitors`                                                        |
+| **Google Drive**                  |                                                                                                                          |
+| Clara Shared Drive                | `GoogleDrive-pedro.torrecillas@jobandtalent.com/Shared drives/Clara/`                                                    |
+| Official presentations            | `Shared drives/Clara/1. Official (only this one is updated)/`                                                            |
+| Compliance docs                   | `Shared drives/Clara/Clara - Compliance supporting docs/`                                                                |
+| Sales templates                   | `Shared drives/Clara/Sales/`                                                                                             |
+| Strategy & planning               | `Shared drives/Clara/Strategy/`                                                                                          |
+| Client implementations            | `Shared drives/Clara/Clients/`                                                                                           |
+| DPIA (approved)                   | `Shared drives/Clara/Clara - Compliance supporting docs/Clara (internal)_DPIA_approved.pdf`                              |
+| Platform architecture             | `Shared drives/Clara/Clara - Compliance supporting docs/clara-platform-architecture.pdf`                                 |
+| Infrastructure overview           | `Shared drives/Clara/Clara - Compliance supporting docs/infrastructure_overview.pdf`                                     |
+| Security slides                   | `Shared drives/Clara/Clara - Compliance supporting docs/241125 Clara - security slides .pdf`                             |
+| Process flow diagram              | `Shared drives/Clara/Clara - Compliance supporting docs/Clara AI - Process detail flujograma slide.pdf`                  |
+| Incident management               | `Shared drives/Clara/Clara - Compliance supporting docs/IS Incident Management Policy_v2.pdf`                            |
+| Business continuity               | `Shared drives/Clara/Clara - Compliance supporting docs/Job_and_Talent_Continuity_and_Recovery_Plan.docx.pdf`            |
+| Bias audit summary                | `Shared drives/Clara/Clara - Compliance supporting docs/Executive Summary_ Internal Bias & Fairness Audit (CLARA) -.pdf` |
+| Santalucia RFP response           | `Shared drives/Clara/Clara - Compliance supporting docs/Clara - Respuesta RFP Santalucia final.docx`                     |
+| Aegon CISO review                 | `Shared drives/Clara/Clara - Compliance supporting docs/Aegon/`                                                          |
+| **Google Docs**                   |                                                                                                                          |
+| General Terms & Conditions        | `drive.google.com/file/d/1OrFjGn31zAjfv5zXTlnQfHAQsRFzfQA6`                                                              |
+| SaaS Order Form                   | `docs.google.com/document/d/1rsjqBcC2PlPfJqW3ZaenPykZieLhzAhQ`                                                           |
+| Website Privacy Policy            | `docs.google.com/document/d/1EslnjI8BGu80PouXrmqvxta_ztig1Rw3xyOGnkQumug`                                                |
+| Data Security (internal)          | `docs.google.com/document/d/1DhV0X6Ymx3rZlDPpMNucpi8mJcQ-L3F1unu-8DMWi_o`                                                |
+| Functional Description & HO       | `docs.google.com/document/d/1VVnYuqkOpwEbYLbQLXbCvOuDgK4UE33GjK1KUXSlX90`                                                |
+| Article 64 AI Transparency        | `docs.google.com/document/d/1mO6HRQpgXoOLtCKlBf6xjQImNtDjh5hK8cjIshgXwE8`                                                |
+| Technical Docs (EU AI Act)        | `docs.google.com/document/d/1_MPPx4axoX4bv8XIO4nInGE3aKK2JXDAdZAzWPrylTg`                                                |
+| FRIA (WIP)                        | `docs.google.com/document/d/1Epp_jdatieRCaC41A4BtzN_YLiEVfLxYQnfCiru-y1A`                                                |
+| FAQs                              | `docs.google.com/document/d/1932Pb8mPdo1fpUqfqYOUExeWDbgVPelLWwJUOYngZ5U`                                                |
+| GTM Project Tracker               | `docs.google.com/spreadsheets/d/1hX3hDopVV2kLdJeHywRXjdrFg22C0FgKLqvi3jyG5Ks`                                            |
+| AI-Native Companies VC List       | `docs.google.com/spreadsheets/d/1GN_p08iw1Klb4xd5kloWnyRFr0MVxBPZu5U41LNDBqc`                                            |
+| ISO 27001 Certificate             | `drive.google.com/file/d/1VL0aKyHyBWR_WsxnC2wuzCggVbgWSIvI`                                                              |
+| Interview volume by month         | `~/Downloads/Total Interviews done by Clara per Month.csv`                                                               |
+| Target companies list             | `~/Downloads/empresas_clara_sector_tamano.csv`                                                                           |
+| Team capacity plan                | `~/Downloads/Clara team - capacity in-detail [...].csv`                                                                  |
 
 ---
 
-*This document is a snapshot as of March 2026. Clara evolves fast -- if something doesn't match reality, ask the team.*
+_This document is a snapshot as of March 2026. Clara evolves fast -- if something doesn't match reality, ask the team._
