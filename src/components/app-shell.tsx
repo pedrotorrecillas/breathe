@@ -26,7 +26,7 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <div className="bg-ops-grid min-h-screen bg-transparent px-4 py-4 lg:px-6">
       <div className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-[90rem] flex-col gap-5">
-        <header className="ops-shell overflow-hidden rounded-[2rem] px-5 py-5">
+        <header className="ops-shell ops-beacon overflow-hidden rounded-[2rem] px-5 py-5">
           <div className="flex flex-col gap-5 border-b border-slate-200/80 pb-5 xl:flex-row xl:items-start xl:justify-between">
             <div className="flex items-start gap-4">
               <div className="rounded-[1.25rem] border border-white/70 bg-[linear-gradient(180deg,rgba(18,25,39,1),rgba(34,48,71,0.96))] p-3 text-white shadow-[0_20px_40px_rgba(15,23,42,0.2)]">
@@ -160,7 +160,7 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        <main className="ops-shell bg-ops-canvas flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2rem]">
+        <main className="ops-shell ops-beacon bg-ops-canvas flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2rem]">
           <div className="flex flex-col gap-4 border-b border-slate-200/80 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3">
               <span className="inline-flex items-center gap-2 rounded-full border border-cyan-200/80 bg-white/80 px-3 py-1 font-mono text-[11px] tracking-[0.22em] text-cyan-950 uppercase">
@@ -172,7 +172,7 @@ export function AppShell({ children }: AppShellProps) {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="h-2.5 w-2.5 rounded-full bg-cyan-500 shadow-[0_0_0_6px_rgba(6,182,212,0.12)]" />
+              <div className="ops-signal-dot h-2.5 w-2.5 rounded-full bg-cyan-500" />
               <span className="ops-kicker text-slate-500">
                 System frame active
               </span>

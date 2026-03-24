@@ -47,10 +47,11 @@ function SharedStateShell({
   return (
     <div
       className={cn(
-        "rounded-[1.5rem] border p-5 shadow-[0_10px_30px_rgba(15,23,42,0.05)]",
+        "ops-beacon rounded-[1.5rem] border p-5 shadow-[0_10px_30px_rgba(15,23,42,0.05)]",
         toneStyles[tone].panel,
       )}
     >
+      <div className="ops-divider mb-4 h-px w-full" />
       <div className="flex items-start gap-4">
         <div className={cn("rounded-2xl p-3", toneStyles[tone].icon)}>
           <Icon
