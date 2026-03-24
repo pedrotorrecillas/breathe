@@ -45,7 +45,7 @@ describe("recruiter shell", () => {
       "page",
     );
     expect(
-      screen.getByText(/Brand placeholder and workspace navigation/i),
+      screen.getByText(/Hiring infrastructure control plane/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/Recruiter content/i)).toBeInTheDocument();
   });
