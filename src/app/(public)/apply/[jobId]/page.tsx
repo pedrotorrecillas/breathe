@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { PlaceholderState } from "@/components/placeholder-state";
 import { SectionCard } from "@/components/section-card";
+import { ErrorState } from "@/components/shared-states";
 import { StatusBadge } from "@/components/status-badge";
 
 type ApplyPageProps = {
@@ -42,6 +43,17 @@ export default async function ApplyPage({ params }: ApplyPageProps) {
             </Button>
           </SectionCard>
         </div>
+
+        <ErrorState
+          eyebrow="Shared error"
+          title="This job is not currently accepting applications."
+          description="Reuse this when a public apply link is inactive, expired, or temporarily unavailable without building a one-off error surface."
+        >
+          <p className="text-sm leading-7 text-slate-600">
+            In later issues this can link candidates to an alternate flow or a
+            human contact path.
+          </p>
+        </ErrorState>
       </PlaceholderState>
     </div>
   );

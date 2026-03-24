@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { PlaceholderState } from "@/components/placeholder-state";
 import { SectionCard } from "@/components/section-card";
+import { EmptyState } from "@/components/shared-states";
 import { StatusBadge } from "@/components/status-badge";
 
 type JobDetailPageProps = {
@@ -38,13 +39,11 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
           </SectionCard>
 
           <SectionCard title="Candidate pipeline" kicker="Recruiter decisions">
-            <ul className="space-y-3 text-sm leading-7 text-slate-600">
-              <li>Applicants</li>
-              <li>Interviewed</li>
-              <li>Shortlisted</li>
-              <li>Hired</li>
-              <li>Rejected</li>
-            </ul>
+            <EmptyState
+              eyebrow="Shared empty"
+              title="No candidates have reached this pipeline view yet."
+              description="Use this state wherever a recruiter-facing list, report, or candidate slice exists but has no data to show yet."
+            />
           </SectionCard>
         </div>
       </PlaceholderState>

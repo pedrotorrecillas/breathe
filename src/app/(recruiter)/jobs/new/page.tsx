@@ -1,5 +1,6 @@
 import { PlaceholderState } from "@/components/placeholder-state";
 import { SectionCard } from "@/components/section-card";
+import { LoadingState } from "@/components/shared-states";
 
 const extractedSections = [
   "Job conditions",
@@ -29,7 +30,12 @@ export default function NewJobPage() {
             title="Extracted editable sections"
             kicker="AI-assisted review"
           >
-            <ul className="space-y-3 text-sm leading-7 text-slate-600">
+            <LoadingState
+              eyebrow="Shared loading"
+              title="Extraction is preparing the first configuration draft."
+              description="Use this while job conditions, requirements, and limits are still being assembled from the recruiter input."
+            />
+            <ul className="mt-6 space-y-3 text-sm leading-7 text-slate-600">
               {extractedSections.map((section) => (
                 <li key={section}>{section}</li>
               ))}
