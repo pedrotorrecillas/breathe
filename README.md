@@ -10,6 +10,7 @@ This repository currently covers the first Foundations issue (`BRE-15`) and esta
 - a recruiter route group centered on `Jobs`
 - a public candidate apply route group
 - initial domain boundaries for jobs, candidates, interview runs, and evaluations
+- documented module boundaries for preparation, runtime, and evaluation layers
 
 ## Getting Started
 
@@ -34,6 +35,7 @@ npm run format:write
 ```
 
 Testing conventions live in [docs/testing.md](./docs/testing.md).
+Module boundaries live in [docs/domain-boundaries.md](./docs/domain-boundaries.md).
 
 ## Structure
 
@@ -49,6 +51,10 @@ Key directories:
   Shared UI and product scaffolding components
 - `src/domain`
   Core domain types split by product area
+- `src/domain/interview-preparation`
+  Generated interview packages and rubrics before a call
+- `src/domain/runtime/happyrobot`
+  HappyRobot request and webhook shapes
 - `src/lib`
   Shared utilities and app-level config
 
@@ -64,6 +70,11 @@ Initial routes:
   Job detail placeholder
 - `/apply/[jobId]`
   Public candidate apply placeholder
+
+Routing convention:
+
+- Recruiter surfaces live under `src/app/(recruiter)` and inherit the recruiter shell.
+- Public candidate surfaces live under `src/app/(public)` and render without the recruiter shell.
 
 ## Product References
 

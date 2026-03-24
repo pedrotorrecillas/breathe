@@ -1,22 +1,42 @@
-export type JobStatus = "draft" | "active" | "inactive";
-export type InterviewLanguage = "en" | "es";
+import type {
+  EntityId,
+  ISODateString,
+  ISODateTimeString,
+  SupportedLanguage,
+} from "@/domain/shared/types";
 
-export type RequirementCategory =
+export type JobId = EntityId;
+
+export type JobStatus = "draft" | "active" | "inactive";
+
+export type JobRequirementCategory =
   | "condition"
   | "essential"
   | "technical"
   | "interpersonal";
 
+export type JobConditionCode =
+  | "salary"
+  | "location"
+  | "schedule"
+  | "right_to_work"
+  | "driving_license"
+  | "remote_policy"
+  | "contract_type"
+  | "visa_status"
+  | "other";
+
 export type JobRequirement = {
-  id: string;
+  id: EntityId;
+  code: JobConditionCode | null;
   label: string;
   description: string;
-  category: RequirementCategory;
+  category: JobRequirementCategory;
   weight: number;
-  knockout: boolean;
+  isKnockout: boolean;
 };
 
-export type InterviewLimits = {
+export type JobInterviewLimits = {
   maxInterviews: number | null;
   stopAfterStrongFits: number | null;
 };
@@ -30,13 +50,15 @@ export type JobPipelineSnapshot = {
 };
 
 export type Job = {
-  id: string;
+  id: JobId;
   title: string;
   status: JobStatus;
-  interviewLanguage: InterviewLanguage;
-  createdAt: string;
+  interviewLanguage: SupportedLanguage;
+  createdAt: ISODateTimeString;
+  publishedAt: ISODateTimeString | null;
+  expiresAt: ISODateString | null;
   publicApplyPath: string | null;
   pipeline: JobPipelineSnapshot;
   requirements: JobRequirement[];
-  interviewLimits: InterviewLimits;
+  interviewLimits: JobInterviewLimits;
 };

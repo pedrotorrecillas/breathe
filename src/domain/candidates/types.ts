@@ -1,15 +1,16 @@
-export type CandidateLanguage = "en" | "es";
+import type {
+  EntityId,
+  ISODateTimeString,
+  SupportedLanguage,
+} from "@/domain/shared/types";
 
-export type CandidateProfile = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  phoneNumber: string;
-  email: string;
-  locale: CandidateLanguage;
-  consentAcceptedAt: string | null;
-  source: "public_apply_link" | "ats" | "referral" | "manual";
-};
+export type CandidateId = EntityId;
+
+export type CandidateSource =
+  | "public_apply_link"
+  | "ats"
+  | "referral"
+  | "manual";
 
 export type CandidatePipelineStage =
   | "applicant"
@@ -18,3 +19,27 @@ export type CandidatePipelineStage =
   | "hired"
   | "rejected"
   | "needs_human";
+
+export type CandidateProfile = {
+  id: CandidateId;
+  fullName: string;
+  phone: string;
+  normalizedPhone: string;
+  email: string | null;
+  normalizedEmail: string | null;
+  linkedinUrl: string | null;
+  cvAssetRef: string | null;
+  locale: SupportedLanguage;
+  source: CandidateSource;
+  consentAcceptedAt: ISODateTimeString | null;
+};
+
+export type CandidateApplication = {
+  id: EntityId;
+  candidateId: CandidateId;
+  jobId: EntityId;
+  source: CandidateSource;
+  stage: CandidatePipelineStage;
+  submittedAt: ISODateTimeString;
+  needsHumanReviewAt: ISODateTimeString | null;
+};
