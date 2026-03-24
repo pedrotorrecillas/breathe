@@ -1,6 +1,11 @@
+import { FormField } from "@/components/form-field";
 import { PlaceholderState } from "@/components/placeholder-state";
 import { DataPoint, DetailPanel, SectionCard } from "@/components/section-card";
 import { LoadingState } from "@/components/shared-states";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 const extractedSections = [
   "Job conditions",
@@ -24,11 +29,47 @@ export default function NewJobPage() {
             description="The form panel holds the operational brief, language, and role context that seed the job draft."
             tone="strong"
           >
-            <ul className="space-y-3 text-sm leading-7 text-slate-600">
-              <li>Job title</li>
-              <li>Interview language</li>
-              <li>Job description</li>
-            </ul>
+            <form className="grid gap-4">
+              <FormField
+                label="Job title"
+                required
+                hint="Use the recruiter-facing title candidates will recognize."
+              >
+                <Input defaultValue="Warehouse Associate" />
+              </FormField>
+
+              <FormField
+                label="Interview language"
+                required
+                hint="This determines the default voice interview locale."
+              >
+                <Select defaultValue="en">
+                  <option value="en">English</option>
+                  <option value="es">Spanish</option>
+                  <option value="ca">Catalan</option>
+                </Select>
+              </FormField>
+
+              <FormField
+                label="Job description"
+                required
+                hint="Keep operational context, shift pattern, and hard requirements explicit."
+              >
+                <Textarea defaultValue="High-volume warehouse intake role for night shifts, pallet movement, scanning, and loading dock support." />
+              </FormField>
+
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Button className="rounded-full bg-slate-950 px-6 text-white hover:bg-slate-800">
+                  Generate draft
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-full border-slate-300 bg-white/80 px-6 text-slate-700"
+                >
+                  Save as draft
+                </Button>
+              </div>
+            </form>
           </SectionCard>
 
           <SectionCard
