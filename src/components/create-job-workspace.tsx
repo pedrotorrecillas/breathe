@@ -6,10 +6,16 @@ import { FormField } from "@/components/form-field";
 import { PlaceholderState } from "@/components/placeholder-state";
 import { DataPoint, DetailPanel, SectionCard } from "@/components/section-card";
 import { LoadingState } from "@/components/shared-states";
+import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type {
+  JobConditionInput,
+  JobExtractionDraft,
+} from "@/domain/jobs/configuration";
+import { extractJobConfiguration } from "@/lib/job-extraction";
 
 type DraftFields = {
   title: string;
@@ -49,6 +55,10 @@ export function CreateJobWorkspace() {
     description: "",
   });
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [draft, setDraft] = useState<JobExtractionDraft | null>(null);
+  const [extractionError, setExtractionError] = useState<string | null>(null);
+  const [newConditionLabel, setNewConditionLabel] = useState("");
+  const [newConditionValue, setNewConditionValue] = useState("");
 
   const canExtract =
     fields.title.trim().length > 0 && fields.description.trim().length >= 40;
@@ -65,6 +75,89 @@ export function CreateJobWorkspace() {
   function handleGenerateDraft() {
     const nextErrors = validateDraft(fields);
     setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
+    const result = extractJobConfiguration({
+      title: fields.title,
+      description: fields.description,
+    });
+
+    if (!result.success) {
+      setExtractionError(result.error);
+      setDraft(null);
+      return;
+    }
+
+    setExtractionError(null);
+    setDraft(result.data);
+  }
+
+  function updateCondition(
+    conditionId: string,
+    updates: Partial<JobConditionInput>,
+  ) {
+    setDraft((currentDraft) => {
+      if (!currentDraft) {
+        return currentDraft;
+      }
+
+      return {
+        ...currentDraft,
+        jobConditions: currentDraft.jobConditions.map((condition) =>
+          condition.id === conditionId
+            ? { ...condition, ...updates }
+            : condition,
+        ),
+      };
+    });
+  }
+
+  function removeCondition(conditionId: string) {
+    setDraft((currentDraft) => {
+      if (!currentDraft) {
+        return currentDraft;
+      }
+
+      return {
+        ...currentDraft,
+        jobConditions: currentDraft.jobConditions.filter(
+          (condition) => condition.id !== conditionId,
+        ),
+      };
+    });
+  }
+
+  function addCondition() {
+    if (!newConditionLabel.trim()) {
+      return;
+    }
+
+    setDraft((currentDraft) => {
+      if (!currentDraft) {
+        return currentDraft;
+      }
+
+      return {
+        ...currentDraft,
+        jobConditions: [
+          ...currentDraft.jobConditions,
+          {
+            id: `cond_custom_${currentDraft.jobConditions.length + 1}`,
+            code: "other",
+            label: newConditionLabel.trim(),
+            value: newConditionValue.trim(),
+            state: newConditionValue.trim() ? "complete" : "missing",
+            details: "Manually added by recruiter.",
+          },
+        ],
+      };
+    });
+
+    setNewConditionLabel("");
+    setNewConditionValue("");
   }
 
   return (
@@ -157,12 +250,19 @@ export function CreateJobWorkspace() {
             kicker="Long-form workflow"
             description="This panel reserves the page structure that will hold extracted conditions, scored sections, limits, and publish state below the initial form."
           >
-            <LoadingState
-              eyebrow="Shared loading"
-              title="Extraction is preparing the first configuration draft."
-              description="Use this while job conditions, requirements, and limits are still being assembled from the recruiter input."
-              rows={2}
-            />
+            {draft ? (
+              <div className="rounded-[1.4rem] border border-emerald-200/80 bg-emerald-50/70 px-4 py-4 text-sm leading-7 text-emerald-900">
+                Draft ready. Extracted conditions can now be reviewed and edited
+                below.
+              </div>
+            ) : (
+              <LoadingState
+                eyebrow="Shared loading"
+                title="Extraction is preparing the first configuration draft."
+                description="Use this while job conditions, requirements, and limits are still being assembled from the recruiter input."
+                rows={2}
+              />
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               <DataPoint
                 label="Required fields"
@@ -179,8 +279,108 @@ export function CreateJobWorkspace() {
               Extracted sections will render here after the recruiter submits a
               valid role brief.
             </div>
+            {extractionError ? (
+              <div className="mt-4 rounded-[1.2rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                {extractionError}
+              </div>
+            ) : null}
           </SectionCard>
         </div>
+
+        {draft ? (
+          <SectionCard
+            title="Job conditions"
+            kicker="BRE-24"
+            description="Operational conditions are separate from scored requirements and can remain missing or incomplete until the recruiter resolves them."
+          >
+            <div className="grid gap-3">
+              {draft.jobConditions.map((condition) => (
+                <article
+                  key={condition.id}
+                  className="rounded-[1.4rem] border border-slate-200/80 bg-white/82 p-4 shadow-[0_14px_32px_rgba(15,23,42,0.05)]"
+                >
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Input
+                          aria-label={`${condition.label} label`}
+                          className="h-10 max-w-sm"
+                          onChange={(event) =>
+                            updateCondition(condition.id, {
+                              label: event.target.value,
+                            })
+                          }
+                          value={condition.label}
+                        />
+                        <StatusBadge
+                          intent={
+                            condition.state === "complete"
+                              ? "success"
+                              : condition.state === "incomplete"
+                                ? "warning"
+                                : "special"
+                          }
+                          density="compact"
+                        >
+                          {condition.state}
+                        </StatusBadge>
+                      </div>
+                      <Textarea
+                        aria-label={`${condition.label} value`}
+                        className="mt-3 min-h-24"
+                        onChange={(event) =>
+                          updateCondition(condition.id, {
+                            value: event.target.value,
+                            state: event.target.value.trim()
+                              ? "complete"
+                              : "missing",
+                          })
+                        }
+                        value={condition.value}
+                      />
+                      <p className="mt-2 text-xs text-slate-500">
+                        {condition.details || "No extra recruiter note."}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-full"
+                      onClick={() => removeCondition(condition.id)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-[1.4rem] border border-dashed border-slate-300/90 bg-slate-50/70 p-4">
+              <p className="ops-kicker text-slate-500">Add missing condition</p>
+              <div className="mt-3 grid gap-3 md:grid-cols-[0.9fr_1.1fr_auto]">
+                <Input
+                  aria-label="New condition label"
+                  onChange={(event) => setNewConditionLabel(event.target.value)}
+                  placeholder="Condition label"
+                  value={newConditionLabel}
+                />
+                <Input
+                  aria-label="New condition value"
+                  onChange={(event) => setNewConditionValue(event.target.value)}
+                  placeholder="Condition value"
+                  value={newConditionValue}
+                />
+                <Button
+                  type="button"
+                  className="rounded-full"
+                  onClick={addCondition}
+                >
+                  Add condition
+                </Button>
+              </div>
+            </div>
+          </SectionCard>
+        ) : null}
 
         <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
           <SectionCard

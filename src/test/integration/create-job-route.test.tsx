@@ -33,4 +33,27 @@ describe("create-job route", () => {
 
     expect(generateButton).not.toBeDisabled();
   });
+
+  it("renders editable job conditions after extraction", () => {
+    render(<NewJobPage />);
+
+    fireEvent.change(screen.getAllByLabelText(/Job title/i)[0], {
+      target: { value: "Warehouse Associate" },
+    });
+    fireEvent.change(screen.getAllByLabelText(/Job description/i)[0], {
+      target: {
+        value:
+          "Warehouse Associate role based in Madrid for a night shift operation. Salary starts at EUR 22,000 gross yearly and weekend availability is required.",
+      },
+    });
+
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /Generate draft/i })[0]!,
+    );
+
+    expect(
+      screen.getAllByRole("heading", { name: /Job conditions/i })[0],
+    ).toBeInTheDocument();
+    expect(screen.getAllByLabelText(/Salary label/i)[0]).toBeInTheDocument();
+  });
 });
