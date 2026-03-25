@@ -109,4 +109,33 @@ describe("create-job route", () => {
       screen.getByDisplayValue(/Pallet wrapping machines/i),
     ).toBeInTheDocument();
   });
+
+  it("allows recruiters to add interpersonal skills after extraction", () => {
+    render(<NewJobPage />);
+
+    fireEvent.change(screen.getAllByLabelText(/Job title/i)[0], {
+      target: { value: "Warehouse Associate" },
+    });
+    fireEvent.change(screen.getAllByLabelText(/Job description/i)[0], {
+      target: {
+        value:
+          "Warehouse Associate role based in Madrid. Candidates must have previous warehouse experience. Strong communication and teamwork are important in the loading dock.",
+      },
+    });
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /Generate draft/i })[0]!,
+    );
+
+    fireEvent.change(screen.getAllByLabelText(/New interpersonal skill/i)[0], {
+      target: { value: "Reliability under pressure" },
+    });
+    fireEvent.click(screen.getAllByRole("button", { name: /Add skill/i })[1]!);
+
+    expect(
+      screen.getAllByRole("heading", { name: /Interpersonal skills/i })[0],
+    ).toBeInTheDocument();
+    expect(
+      screen.getByDisplayValue(/Reliability under pressure/i),
+    ).toBeInTheDocument();
+  });
 });

@@ -62,6 +62,7 @@ export function CreateJobWorkspace() {
   const [newConditionLabel, setNewConditionLabel] = useState("");
   const [newConditionValue, setNewConditionValue] = useState("");
   const [newTechnicalSkill, setNewTechnicalSkill] = useState("");
+  const [newInterpersonalSkill, setNewInterpersonalSkill] = useState("");
 
   const canExtract =
     fields.title.trim().length > 0 && fields.description.trim().length >= 40;
@@ -164,7 +165,10 @@ export function CreateJobWorkspace() {
   }
 
   function updateRequirement(
-    section: "essentialRequirements" | "technicalSkills",
+    section:
+      | "essentialRequirements"
+      | "technicalSkills"
+      | "interpersonalSkills",
     requirementId: string,
     updates: Partial<JobRequirementInput>,
   ) {
@@ -185,7 +189,10 @@ export function CreateJobWorkspace() {
   }
 
   function removeRequirement(
-    section: "essentialRequirements" | "technicalSkills",
+    section:
+      | "essentialRequirements"
+      | "technicalSkills"
+      | "interpersonalSkills",
     requirementId: string,
   ) {
     setDraft((currentDraft) => {
@@ -203,14 +210,20 @@ export function CreateJobWorkspace() {
   }
 
   function toggleRequirementImportance(
-    section: "essentialRequirements" | "technicalSkills",
+    section:
+      | "essentialRequirements"
+      | "technicalSkills"
+      | "interpersonalSkills",
     requirementId: string,
     importance: RequirementImportance,
   ) {
     updateRequirement(section, requirementId, { importance });
   }
 
-  function addRequirement(section: "technicalSkills", label: string) {
+  function addRequirement(
+    section: "technicalSkills" | "interpersonalSkills",
+    label: string,
+  ) {
     const normalizedLabel = label.trim();
     if (!normalizedLabel) {
       return;
@@ -635,6 +648,121 @@ export function CreateJobWorkspace() {
                   onClick={() => {
                     addRequirement("technicalSkills", newTechnicalSkill);
                     setNewTechnicalSkill("");
+                  }}
+                >
+                  Add skill
+                </Button>
+              </div>
+            </div>
+          </SectionCard>
+        ) : null}
+
+        {draft ? (
+          <SectionCard
+            title="Interpersonal skills"
+            kicker="BRE-27"
+            description="Interpersonal skills are edited independently from technical capabilities so the behavioral block stays distinct."
+          >
+            <div className="grid gap-3">
+              {draft.interpersonalSkills.map((requirement) => (
+                <article
+                  key={requirement.id}
+                  className="rounded-[1.4rem] border border-slate-200/80 bg-white/82 p-4 shadow-[0_14px_32px_rgba(15,23,42,0.05)]"
+                >
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <Input
+                        aria-label={`${requirement.label} interpersonal skill`}
+                        onChange={(event) =>
+                          updateRequirement(
+                            "interpersonalSkills",
+                            requirement.id,
+                            {
+                              label: event.target.value,
+                            },
+                          )
+                        }
+                        value={requirement.label}
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        variant={
+                          requirement.importance === "MANDATORY"
+                            ? "secondary"
+                            : "outline"
+                        }
+                        className="rounded-full"
+                        onClick={() =>
+                          toggleRequirementImportance(
+                            "interpersonalSkills",
+                            requirement.id,
+                            "MANDATORY",
+                          )
+                        }
+                      >
+                        Mandatory
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={
+                          requirement.importance === "OPTIONAL"
+                            ? "secondary"
+                            : "outline"
+                        }
+                        className="rounded-full"
+                        onClick={() =>
+                          toggleRequirementImportance(
+                            "interpersonalSkills",
+                            requirement.id,
+                            "OPTIONAL",
+                          )
+                        }
+                      >
+                        Optional
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-full"
+                        onClick={() =>
+                          removeRequirement(
+                            "interpersonalSkills",
+                            requirement.id,
+                          )
+                        }
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-[1.4rem] border border-dashed border-slate-300/90 bg-slate-50/70 p-4">
+              <p className="ops-kicker text-slate-500">
+                Add interpersonal skill
+              </p>
+              <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto]">
+                <Input
+                  aria-label="New interpersonal skill"
+                  onChange={(event) =>
+                    setNewInterpersonalSkill(event.target.value)
+                  }
+                  placeholder="Communication, teamwork, reliability..."
+                  value={newInterpersonalSkill}
+                />
+                <Button
+                  type="button"
+                  className="rounded-full"
+                  onClick={() => {
+                    addRequirement(
+                      "interpersonalSkills",
+                      newInterpersonalSkill,
+                    );
+                    setNewInterpersonalSkill("");
                   }}
                 >
                   Add skill
