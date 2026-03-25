@@ -9,6 +9,12 @@ export type PublicApplyFormInput = {
   cvFileName: string | null;
 };
 
+export type NormalizedCandidateProfileSource = {
+  linkedinUrl: string | null;
+  cvAssetRef: string | null;
+  cvFileName: string | null;
+};
+
 export type PublicApplyFormErrors = Partial<
   Record<keyof PublicApplyFormInput, string>
 > & {
@@ -19,6 +25,11 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const linkedinPattern =
   /^https?:\/\/([a-z]{2,3}\.)?linkedin\.com\/.+/i;
 const phonePattern = /^\+?[0-9()\-.\s]{7,}$/;
+const supportedCvTypes = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
 
 export function validatePublicApplyForm(
   input: PublicApplyFormInput,
@@ -51,4 +62,57 @@ export function validatePublicApplyForm(
   }
 
   return errors;
+}
+
+function slugifyFileName(fileName: string) {
+  return fileName
+    .toLowerCase()
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+export function normalizeLinkedinUrl(value: string) {
+  return value.trim().replace(/^http:\/\//i, "https://").toLowerCase();
+}
+
+export function normalizeCandidateProfileSource(input: {
+  linkedinUrl: string;
+  cvFile: File | null;
+}):
+  | { success: true; data: NormalizedCandidateProfileSource }
+  | { success: false; error: string } {
+  const normalizedLinkedin = input.linkedinUrl.trim()
+    ? normalizeLinkedinUrl(input.linkedinUrl)
+    : null;
+
+  if (input.cvFile) {
+    if (!supportedCvTypes.has(input.cvFile.type)) {
+      return {
+        success: false,
+        error: "CV upload failed. Use a PDF, DOC, or DOCX file.",
+      };
+    }
+
+    const fileStem = slugifyFileName(input.cvFile.name) || "candidate-cv";
+
+    return {
+      success: true,
+      data: {
+        linkedinUrl: normalizedLinkedin,
+        cvAssetRef: `cv_upload/${fileStem}-${input.cvFile.size}`,
+        cvFileName: input.cvFile.name,
+      },
+    };
+  }
+
+  return {
+    success: true,
+    data: {
+      linkedinUrl: normalizedLinkedin,
+      cvAssetRef: null,
+      cvFileName: null,
+    },
+  };
 }

@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { SupportedLanguage } from "@/domain/shared/types";
 import {
+  normalizeCandidateProfileSource,
+  type NormalizedCandidateProfileSource,
   type PublicApplyFormInput,
   validatePublicApplyForm,
 } from "@/lib/public-apply";
@@ -41,6 +43,12 @@ export function PublicApplyForm({
   const [submissionState, setSubmissionState] = useState<"idle" | "valid">(
     "idle",
   );
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [profileSourceError, setProfileSourceError] = useState<string | null>(
+    null,
+  );
+  const [normalizedProfileSource, setNormalizedProfileSource] =
+    useState<NormalizedCandidateProfileSource | null>(null);
 
   function updateField<K extends keyof PublicApplyFormInput>(
     key: K,
@@ -55,6 +63,13 @@ export function PublicApplyForm({
     setErrors(validatePublicApplyForm(nextFields));
   }
 
+  function handleCvFileChange(file: File | null) {
+    setCvFile(file);
+    setProfileSourceError(null);
+    setNormalizedProfileSource(null);
+    updateField("cvFileName", file?.name ?? null);
+  }
+
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -66,6 +81,19 @@ export function PublicApplyForm({
       return;
     }
 
+    const normalizedProfileResult = normalizeCandidateProfileSource({
+      linkedinUrl: fields.linkedinUrl,
+      cvFile,
+    });
+
+    if (!normalizedProfileResult.success) {
+      setSubmissionState("idle");
+      setProfileSourceError(normalizedProfileResult.error);
+      return;
+    }
+
+    setProfileSourceError(null);
+    setNormalizedProfileSource(normalizedProfileResult.data);
     setSubmissionState("valid");
   }
 
@@ -122,19 +150,14 @@ export function PublicApplyForm({
         >
           <Input
             aria-label="CV upload"
-            onChange={(event) =>
-              updateField(
-                "cvFileName",
-                event.target.files?.[0]?.name ?? null,
-              )
-            }
+            onChange={(event) => handleCvFileChange(event.target.files?.[0] ?? null)}
             type="file"
           />
         </FormField>
         <FormField
           label="LinkedIn URL"
           hint="Use this when you prefer not to upload a CV."
-          error={errors.linkedinUrl || errors.profileSource}
+          error={profileSourceError || errors.linkedinUrl || errors.profileSource}
         >
           <Input
             aria-label="LinkedIn URL"
@@ -155,7 +178,13 @@ export function PublicApplyForm({
 
       {submissionState === "valid" ? (
         <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-          Application details look valid and ready for submission.
+          <p>Application details look valid and ready for submission.</p>
+          <p className="mt-2">
+            Profile source:{" "}
+            {normalizedProfileSource?.cvAssetRef
+              ? `CV stored as ${normalizedProfileSource.cvAssetRef}`
+              : `LinkedIn stored as ${normalizedProfileSource?.linkedinUrl}`}
+          </p>
         </div>
       ) : null}
 
