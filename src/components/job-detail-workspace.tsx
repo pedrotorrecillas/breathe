@@ -11,6 +11,7 @@ import {
   activePipelineStages,
   getCandidatesForStage,
   getJobPipelineSnapshot,
+  type JobDetailTab,
   jobDetailTabs,
 } from "@/lib/job-pipeline";
 
@@ -20,6 +21,7 @@ type JobDetailWorkspaceProps = {
 
 export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
   const snapshot = getJobPipelineSnapshot(jobId);
+  const [activeTab, setActiveTab] = useState<JobDetailTab>("Applicants");
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(
     snapshot?.candidates[0]?.id ?? null,
   );
@@ -118,95 +120,117 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
         >
           <div className="flex flex-wrap gap-2 border-b border-slate-200/80 pb-4">
             {jobDetailTabs.map((stage, index) => (
-              <div
+              <button
                 key={stage}
+                type="button"
+                onClick={() => setActiveTab(stage)}
                 className={
-                  index === 0
+                  activeTab === stage
                     ? "rounded-[0.55rem] border border-slate-950 bg-slate-950 px-3 py-1.5 text-xs font-medium tracking-[0.14em] text-white uppercase"
                     : "rounded-[0.55rem] border border-slate-300/90 bg-white/85 px-3 py-1.5 text-xs font-medium tracking-[0.14em] text-slate-500 uppercase"
                 }
               >
                 {stage}
-              </div>
+              </button>
             ))}
           </div>
 
-          <div className="mt-5 grid gap-4 xl:grid-cols-4">
-            {activePipelineStages.map((stage, index) => {
-              const stageCandidates = getCandidatesForStage(snapshot.candidates, stage);
-
-              return (
-              <section
-                key={stage}
-                className="rounded-[0.85rem] border border-slate-200/85 bg-white/84 p-4"
-              >
-                <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
-                  <div>
-                    <p className="ops-kicker text-slate-500">{stage}</p>
-                    <p className="mt-2 text-base font-semibold text-slate-950">
-                      {stageCandidates.length} candidates
-                    </p>
-                  </div>
-                  <StatusBadge
-                    intent={index === 0 ? "neutral" : index === 1 ? "info" : index === 2 ? "success" : "warning"}
-                    density="compact"
-                  >
-                    {stageCandidates.length}
-                  </StatusBadge>
+          {activeTab === "Rejected" ? (
+            <div className="mt-5 rounded-[0.85rem] border border-slate-200/85 bg-white/84 p-4">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+                <div>
+                  <p className="ops-kicker text-slate-500">Rejected</p>
+                  <p className="mt-2 text-base font-semibold text-slate-950">
+                    Separate review context
+                  </p>
                 </div>
-                <p className="mt-4 text-sm leading-6 text-slate-600">
-                  {stage === "Applicants"
-                    ? "Candidates waiting for interview progress or recruiter review."
-                    : stage === "Interviewed"
-                      ? "Completed interview runs ready for recruiter triage."
-                      : stage === "Shortlisted"
-                        ? "Candidates explicitly promoted for recruiter follow-up."
-                        : "Final recruiter-confirmed outcomes for this job."}
-                </p>
-                {stageCandidates.length > 0 ? (
-                  <div className="mt-4 grid gap-2">
-                    {stageCandidates.map((candidate) => (
-                      <CandidateStageCard
-                        key={candidate.id}
-                        candidate={candidate}
-                        isSelected={candidate.id === selectedCandidateId}
-                        onSelect={setSelectedCandidateId}
-                        showOperationalState={stage === "Applicants"}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-4">
-                    <EmptyState
-                      eyebrow="Stage empty"
-                      title="No candidates in this stage."
-                      description="The stage remains visible even when there is no current volume."
-                    />
-                  </div>
-                )}
-              </section>
-              );
-            })}
-          </div>
-
-          <div className="mt-5 rounded-[0.85rem] border border-slate-200/85 bg-white/84 p-4">
-            <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
-              <div>
-                <p className="ops-kicker text-slate-500">Rejected</p>
-                <p className="mt-2 text-base font-semibold text-slate-950">
-                  Separate review context
-                </p>
+                <StatusBadge intent="danger" density="compact">
+                  {getCandidatesForStage(snapshot.candidates, "Rejected").length}
+                </StatusBadge>
               </div>
-              <span className="rounded-[0.5rem] border border-slate-200 bg-slate-100/90 px-2 py-1 ops-kicker text-slate-500">
-                Tabbed
-              </span>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Rejected candidates stay accessible inside this job detail
+                surface, but separated from the active pipeline so triage stays
+                focused.
+              </p>
+
+              <div className="mt-4 grid gap-2 lg:grid-cols-2">
+                {getCandidatesForStage(snapshot.candidates, "Rejected").map((candidate) => (
+                  <CandidateStageCard
+                    key={candidate.id}
+                    candidate={candidate}
+                    isSelected={candidate.id === selectedCandidateId}
+                    onSelect={setSelectedCandidateId}
+                    extraBadges={
+                      candidate.rejectedReason ? (
+                        <StatusBadge intent="warning" density="compact">
+                          {candidate.rejectedReason}
+                        </StatusBadge>
+                      ) : null
+                    }
+                  />
+                ))}
+              </div>
             </div>
-            <p className="mt-4 text-sm leading-7 text-slate-600">
-              Rejected candidates stay accessible inside this job detail
-              surface, but separated from the active pipeline so triage stays
-              focused.
-            </p>
-          </div>
+          ) : (
+            <div className="mt-5 grid gap-4 xl:grid-cols-4">
+              {activePipelineStages.map((stage, index) => {
+                const stageCandidates = getCandidatesForStage(snapshot.candidates, stage);
+
+                return (
+                  <section
+                    key={stage}
+                    className="rounded-[0.85rem] border border-slate-200/85 bg-white/84 p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+                      <div>
+                        <p className="ops-kicker text-slate-500">{stage}</p>
+                        <p className="mt-2 text-base font-semibold text-slate-950">
+                          {stageCandidates.length} candidates
+                        </p>
+                      </div>
+                      <StatusBadge
+                        intent={index === 0 ? "neutral" : index === 1 ? "info" : index === 2 ? "success" : "warning"}
+                        density="compact"
+                      >
+                        {stageCandidates.length}
+                      </StatusBadge>
+                    </div>
+                    <p className="mt-4 text-sm leading-6 text-slate-600">
+                      {stage === "Applicants"
+                        ? "Candidates waiting for interview progress or recruiter review."
+                        : stage === "Interviewed"
+                          ? "Completed interview runs ready for recruiter triage."
+                          : stage === "Shortlisted"
+                            ? "Candidates explicitly promoted for recruiter follow-up."
+                            : "Final recruiter-confirmed outcomes for this job."}
+                    </p>
+                    {stageCandidates.length > 0 ? (
+                      <div className="mt-4 grid gap-2">
+                        {stageCandidates.map((candidate) => (
+                          <CandidateStageCard
+                            key={candidate.id}
+                            candidate={candidate}
+                            isSelected={candidate.id === selectedCandidateId}
+                            onSelect={setSelectedCandidateId}
+                            showOperationalState={stage === "Applicants"}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-4">
+                        <EmptyState
+                          eyebrow="Stage empty"
+                          title="No candidates in this stage."
+                          description="The stage remains visible even when there is no current volume."
+                        />
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          )}
         </SectionCard>
       </PlaceholderState>
     </div>
