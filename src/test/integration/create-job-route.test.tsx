@@ -56,4 +56,28 @@ describe("create-job route", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByLabelText(/Salary label/i)[0]).toBeInTheDocument();
   });
+
+  it("renders editable essential requirements after extraction", () => {
+    render(<NewJobPage />);
+
+    fireEvent.change(screen.getAllByLabelText(/Job title/i)[0], {
+      target: { value: "Warehouse Associate" },
+    });
+    fireEvent.change(screen.getAllByLabelText(/Job description/i)[0], {
+      target: {
+        value:
+          "Warehouse Associate role based in Madrid for a night shift operation. Candidates must have previous warehouse experience and be able to lift up to 20kg.",
+      },
+    });
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /Generate draft/i })[0]!,
+    );
+
+    expect(
+      screen.getAllByRole("heading", { name: /Essential requirements/i })[0],
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: /Mandatory/i })[0],
+    ).toBeInTheDocument();
+  });
 });

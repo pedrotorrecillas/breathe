@@ -14,6 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import type {
   JobConditionInput,
   JobExtractionDraft,
+  JobRequirementInput,
+  RequirementImportance,
 } from "@/domain/jobs/configuration";
 import { extractJobConfiguration } from "@/lib/job-extraction";
 
@@ -158,6 +160,53 @@ export function CreateJobWorkspace() {
 
     setNewConditionLabel("");
     setNewConditionValue("");
+  }
+
+  function updateRequirement(
+    section: "essentialRequirements",
+    requirementId: string,
+    updates: Partial<JobRequirementInput>,
+  ) {
+    setDraft((currentDraft) => {
+      if (!currentDraft) {
+        return currentDraft;
+      }
+
+      return {
+        ...currentDraft,
+        [section]: currentDraft[section].map((requirement) =>
+          requirement.id === requirementId
+            ? { ...requirement, ...updates }
+            : requirement,
+        ),
+      };
+    });
+  }
+
+  function removeRequirement(
+    section: "essentialRequirements",
+    requirementId: string,
+  ) {
+    setDraft((currentDraft) => {
+      if (!currentDraft) {
+        return currentDraft;
+      }
+
+      return {
+        ...currentDraft,
+        [section]: currentDraft[section].filter(
+          (requirement) => requirement.id !== requirementId,
+        ),
+      };
+    });
+  }
+
+  function toggleRequirementImportance(
+    section: "essentialRequirements",
+    requirementId: string,
+    importance: RequirementImportance,
+  ) {
+    updateRequirement(section, requirementId, { importance });
   }
 
   return (
@@ -378,6 +427,92 @@ export function CreateJobWorkspace() {
                   Add condition
                 </Button>
               </div>
+            </div>
+          </SectionCard>
+        ) : null}
+
+        {draft ? (
+          <SectionCard
+            title="Essential requirements"
+            kicker="BRE-25"
+            description="Essential requirements are editable scored items and remain clearly separated from operational job conditions."
+          >
+            <div className="grid gap-3">
+              {draft.essentialRequirements.map((requirement) => (
+                <article
+                  key={requirement.id}
+                  className="rounded-[1.4rem] border border-slate-200/80 bg-white/82 p-4 shadow-[0_14px_32px_rgba(15,23,42,0.05)]"
+                >
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <Input
+                        aria-label={`${requirement.label} essential requirement`}
+                        onChange={(event) =>
+                          updateRequirement(
+                            "essentialRequirements",
+                            requirement.id,
+                            {
+                              label: event.target.value,
+                            },
+                          )
+                        }
+                        value={requirement.label}
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        variant={
+                          requirement.importance === "MANDATORY"
+                            ? "secondary"
+                            : "outline"
+                        }
+                        className="rounded-full"
+                        onClick={() =>
+                          toggleRequirementImportance(
+                            "essentialRequirements",
+                            requirement.id,
+                            "MANDATORY",
+                          )
+                        }
+                      >
+                        Mandatory
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={
+                          requirement.importance === "OPTIONAL"
+                            ? "secondary"
+                            : "outline"
+                        }
+                        className="rounded-full"
+                        onClick={() =>
+                          toggleRequirementImportance(
+                            "essentialRequirements",
+                            requirement.id,
+                            "OPTIONAL",
+                          )
+                        }
+                      >
+                        Optional
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-full"
+                        onClick={() =>
+                          removeRequirement(
+                            "essentialRequirements",
+                            requirement.id,
+                          )
+                        }
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              ))}
             </div>
           </SectionCard>
         ) : null}
