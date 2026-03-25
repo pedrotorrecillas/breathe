@@ -62,6 +62,9 @@ describe("public apply route", () => {
     expect(
       screen.getByText(/Provide either a CV upload or a LinkedIn URL/i),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Candidates must accept the terms before submission/i),
+    ).toBeInTheDocument();
   });
 
   it("supports linkedin-only submission as a normalized profile source", async () => {
@@ -82,6 +85,7 @@ describe("public apply route", () => {
     fireEvent.change(screen.getByLabelText(/LinkedIn URL/i), {
       target: { value: "http://linkedin.com/in/Lucia-Torres" },
     });
+    fireEvent.click(screen.getByLabelText(/Accept terms and AI disclosure/i));
 
     fireEvent.click(
       screen.getByRole("button", { name: /Submit and receive call/i }),
@@ -90,6 +94,7 @@ describe("public apply route", () => {
     expect(
       screen.getByText(/LinkedIn stored as https:\/\/linkedin\.com\/in\/lucia-torres/i),
     ).toBeInTheDocument();
+    expect(screen.getByText(/Terms accepted: 2026-03-mvp at/i)).toBeInTheDocument();
   });
 
   it("surfaces a usable error for unsupported cv uploads", async () => {
@@ -116,6 +121,7 @@ describe("public apply route", () => {
         ],
       },
     });
+    fireEvent.click(screen.getByLabelText(/Accept terms and AI disclosure/i));
 
     fireEvent.click(
       screen.getByRole("button", { name: /Submit and receive call/i }),

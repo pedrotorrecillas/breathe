@@ -8,9 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { SupportedLanguage } from "@/domain/shared/types";
 import {
+  createLegalAcceptanceRecord,
   normalizeCandidateProfileSource,
   type NormalizedCandidateProfileSource,
+  type PublicApplyLegalAcceptance,
   type PublicApplyFormInput,
+  publicApplyTermsVersion,
   validatePublicApplyForm,
 } from "@/lib/public-apply";
 
@@ -25,6 +28,7 @@ const initialFields: PublicApplyFormInput = {
   language: "en",
   linkedinUrl: "",
   cvFileName: null,
+  acceptedTerms: false,
 };
 
 export function PublicApplyForm({
@@ -49,6 +53,8 @@ export function PublicApplyForm({
   );
   const [normalizedProfileSource, setNormalizedProfileSource] =
     useState<NormalizedCandidateProfileSource | null>(null);
+  const [legalAcceptance, setLegalAcceptance] =
+    useState<PublicApplyLegalAcceptance | null>(null);
 
   function updateField<K extends keyof PublicApplyFormInput>(
     key: K,
@@ -92,8 +98,18 @@ export function PublicApplyForm({
       return;
     }
 
+    const legalAcceptanceResult = createLegalAcceptanceRecord({
+      acceptedTerms: fields.acceptedTerms,
+    });
+
+    if (!legalAcceptanceResult.success) {
+      setSubmissionState("idle");
+      return;
+    }
+
     setProfileSourceError(null);
     setNormalizedProfileSource(normalizedProfileResult.data);
+    setLegalAcceptance(legalAcceptanceResult.data);
     setSubmissionState("valid");
   }
 
@@ -170,10 +186,27 @@ export function PublicApplyForm({
         </FormField>
       </div>
 
-      <FormField label="Consent and AI disclosure">
-        <div className="rounded-[1rem] border border-slate-300/90 bg-white/92 px-4 py-3 text-sm leading-7 text-slate-700">
-          I understand this interview uses AI to support human recruiters.
-        </div>
+      <FormField
+        label="Consent and AI disclosure"
+        required
+        error={errors.acceptedTerms}
+        hint={`Terms version ${publicApplyTermsVersion}`}
+      >
+        <label className="flex items-start gap-3 rounded-[1rem] border border-slate-300/90 bg-white/92 px-4 py-3 text-sm leading-7 text-slate-700">
+          <input
+            aria-label="Accept terms and AI disclosure"
+            checked={fields.acceptedTerms}
+            className="mt-1 size-4 rounded border border-slate-400"
+            onChange={(event) =>
+              updateField("acceptedTerms", event.target.checked)
+            }
+            type="checkbox"
+          />
+          <span>
+            I understand this interview uses AI to support human recruiters and
+            I accept the candidate terms for this application.
+          </span>
+        </label>
       </FormField>
 
       {submissionState === "valid" ? (
@@ -184,6 +217,10 @@ export function PublicApplyForm({
             {normalizedProfileSource?.cvAssetRef
               ? `CV stored as ${normalizedProfileSource.cvAssetRef}`
               : `LinkedIn stored as ${normalizedProfileSource?.linkedinUrl}`}
+          </p>
+          <p className="mt-2">
+            Terms accepted: {legalAcceptance?.termsVersion} at{" "}
+            {legalAcceptance?.acceptedAt}
           </p>
         </div>
       ) : null}

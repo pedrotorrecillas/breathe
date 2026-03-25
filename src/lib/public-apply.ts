@@ -7,6 +7,7 @@ export type PublicApplyFormInput = {
   language: SupportedLanguage;
   linkedinUrl: string;
   cvFileName: string | null;
+  acceptedTerms: boolean;
 };
 
 export type NormalizedCandidateProfileSource = {
@@ -15,11 +16,18 @@ export type NormalizedCandidateProfileSource = {
   cvFileName: string | null;
 };
 
+export type PublicApplyLegalAcceptance = {
+  acceptedAt: string;
+  termsVersion: string;
+};
+
 export type PublicApplyFormErrors = Partial<
   Record<keyof PublicApplyFormInput, string>
 > & {
   profileSource?: string;
 };
+
+export const publicApplyTermsVersion = "2026-03-mvp";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const linkedinPattern =
@@ -59,6 +67,10 @@ export function validatePublicApplyForm(
 
   if (!input.cvFileName && !input.linkedinUrl.trim()) {
     errors.profileSource = "Provide either a CV upload or a LinkedIn URL.";
+  }
+
+  if (!input.acceptedTerms) {
+    errors.acceptedTerms = "Candidates must accept the terms before submission.";
   }
 
   return errors;
@@ -113,6 +125,28 @@ export function normalizeCandidateProfileSource(input: {
       linkedinUrl: normalizedLinkedin,
       cvAssetRef: null,
       cvFileName: null,
+    },
+  };
+}
+
+export function createLegalAcceptanceRecord(input: {
+  acceptedTerms: boolean;
+  now?: string;
+}):
+  | { success: true; data: PublicApplyLegalAcceptance }
+  | { success: false; error: string } {
+  if (!input.acceptedTerms) {
+    return {
+      success: false,
+      error: "Candidates must accept the terms before submission.",
+    };
+  }
+
+  return {
+    success: true,
+    data: {
+      acceptedAt: input.now ?? new Date().toISOString(),
+      termsVersion: publicApplyTermsVersion,
     },
   };
 }

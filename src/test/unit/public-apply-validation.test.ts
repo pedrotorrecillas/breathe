@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  createLegalAcceptanceRecord,
   normalizeCandidateProfileSource,
+  publicApplyTermsVersion,
   validatePublicApplyForm,
 } from "@/lib/public-apply";
 
@@ -15,6 +17,7 @@ describe("public apply validation", () => {
         language: "en",
         linkedinUrl: "https://linkedin.com/in/lucia-torres",
         cvFileName: null,
+        acceptedTerms: true,
       }),
     ).toEqual({});
   });
@@ -28,11 +31,13 @@ describe("public apply validation", () => {
         language: "en",
         linkedinUrl: "",
         cvFileName: null,
+        acceptedTerms: false,
       }),
     ).toMatchObject({
       fullName: "Full name is required.",
       phone: "Phone is required.",
       profileSource: "Provide either a CV upload or a LinkedIn URL.",
+      acceptedTerms: "Candidates must accept the terms before submission.",
     });
   });
 
@@ -45,6 +50,7 @@ describe("public apply validation", () => {
         language: "en",
         linkedinUrl: "https://example.com/profile",
         cvFileName: null,
+        acceptedTerms: true,
       }),
     ).toMatchObject({
       email: "Email format looks invalid.",
@@ -79,6 +85,21 @@ describe("public apply validation", () => {
     ).toEqual({
       success: false,
       error: "CV upload failed. Use a PDF, DOC, or DOCX file.",
+    });
+  });
+
+  it("captures legal acceptance metadata with version and timestamp", () => {
+    expect(
+      createLegalAcceptanceRecord({
+        acceptedTerms: true,
+        now: "2026-03-25T12:00:00.000Z",
+      }),
+    ).toEqual({
+      success: true,
+      data: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
     });
   });
 });
