@@ -29,7 +29,7 @@ export function SectionCard({
   children,
 }: SectionCardProps) {
   return (
-    <section className={cn("rounded-[1.35rem] p-5 md:p-6", toneStyles[tone])}>
+    <section className={cn("rounded-[1rem] p-5 md:p-6", toneStyles[tone])}>
       <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           {kicker ? (
@@ -64,12 +64,14 @@ type DataPointProps = {
 
 export function DataPoint({ label, value, detail }: DataPointProps) {
   return (
-    <div className="rounded-[0.95rem] border border-slate-200/80 bg-white/86 px-3.5 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]">
+    <div className="rounded-[0.7rem] border border-slate-200/85 bg-white/88 px-3 py-2.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]">
       <p className="ops-kicker text-slate-500">{label}</p>
       <p className="mt-2 text-[1.55rem] leading-none font-semibold tracking-tight text-slate-950">
         {value}
       </p>
-      {detail ? <p className="mt-1 text-[11px] leading-5 text-slate-500">{detail}</p> : null}
+      {detail ? (
+        <p className="mt-1 text-[11px] leading-5 text-slate-500">{detail}</p>
+      ) : null}
     </div>
   );
 }
@@ -88,14 +90,18 @@ export function DetailPanel({
   children,
 }: DetailPanelProps) {
   return (
-    <aside className="ops-panel-strong rounded-[1.35rem] p-5 md:p-6">
-      {kicker ? <p className="ops-kicker text-cyan-900">{kicker}</p> : null}
-      <h2 className="font-heading mt-3 text-xl font-semibold text-slate-950">
-        {title}
-      </h2>
-      {description ? (
-        <p className="mt-2 text-sm leading-7 text-slate-600">{description}</p>
-      ) : null}
+    <aside className="ops-panel-strong rounded-[0.95rem] border-l-[3px] border-l-cyan-400 p-5 md:p-6">
+      <div className="border-b border-slate-200/80 pb-4">
+        {kicker ? <p className="ops-kicker text-cyan-900">{kicker}</p> : null}
+        <h2 className="font-heading mt-3 text-xl font-semibold text-slate-950">
+          {title}
+        </h2>
+        {description ? (
+          <p className="mt-2 text-sm leading-7 text-slate-600">
+            {description}
+          </p>
+        ) : null}
+      </div>
       <div className="mt-5">{children}</div>
     </aside>
   );

@@ -54,7 +54,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         title="Job detail is the bridge between configuration, pipeline counts, and recruiter decisions."
         description="The route is in place for candidate pipeline, detail navigation, and manual actions. Future issues can extend this without moving URLs or refactoring the recruiter shell."
       >
-        <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid gap-4 lg:grid-cols-[1.18fr_0.82fr]">
           <SectionCard
             title="Job state"
             kicker={jobId}
@@ -91,13 +91,30 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
             description="This side surface holds evidence and decision context for the selected candidate."
           >
             <div className="space-y-4">
-              <div className="rounded-[1rem] border border-slate-200/80 bg-slate-950 px-4 py-4 text-white shadow-[0_14px_30px_rgba(15,23,42,0.14)]">
-                <p className="ops-kicker text-cyan-200">Selected candidate</p>
-                <p className="mt-2 text-lg font-semibold">Lucia Torres</p>
+              <div className="rounded-[0.75rem] border border-cyan-400/30 bg-[linear-gradient(180deg,rgba(16,24,37,0.99),rgba(25,37,55,0.97))] px-4 py-4 text-white shadow-[0_14px_30px_rgba(15,23,42,0.16)]">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="ops-kicker text-cyan-200">Selected candidate</p>
+                  <span className="ops-kicker text-cyan-300">Inspection focus</span>
+                </div>
+                <p className="mt-3 text-lg font-semibold">Lucia Torres</p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
                   Warehouse operator with immediate availability and high volume
                   environment experience.
                 </p>
+                <div className="mt-4 grid gap-2 border-t border-white/10 pt-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-400">Latest signal</span>
+                    <span className="font-medium text-white">
+                      Night-ready, forklift certified
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-400">Review posture</span>
+                    <span className="font-medium text-cyan-200">
+                      Priority shortlist
+                    </span>
+                  </div>
+                </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <DataPoint
@@ -125,18 +142,24 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
               {candidatePreview.map((candidate) => (
                 <article
                   key={candidate.name}
-                  className="rounded-[1rem] border border-slate-200/80 border-l-2 border-l-cyan-300 bg-white/88 p-4 shadow-[0_12px_28px_rgba(15,23,42,0.045)]"
+                  className="rounded-[0.75rem] border border-slate-200/85 border-l-[3px] border-l-cyan-400 bg-white/90 p-4 shadow-[0_10px_22px_rgba(15,23,42,0.04)]"
                 >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="text-lg font-semibold text-slate-950">
-                        {candidate.name}
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-1 rounded-full bg-cyan-400" />
+                        <p className="text-lg font-semibold text-slate-950">
+                          {candidate.name}
+                        </p>
+                      </div>
+                      <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-400">
+                        Candidate note
                       </p>
                       <p className="mt-1 text-sm leading-6 text-slate-600">
                         {candidate.note}
                       </p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex shrink-0 flex-wrap gap-2 sm:max-w-[15rem] sm:justify-end">
                       <StatusBadge
                         intent={scoreBadgeIntent[candidate.score]}
                         density="compact"
