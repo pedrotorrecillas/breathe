@@ -1,57 +1,37 @@
 "use client";
 
+import { useState } from "react";
+
+import { CandidateStageCard } from "@/components/candidate-stage-card";
 import { DataPoint, DetailPanel, SectionCard } from "@/components/section-card";
 import { PlaceholderState } from "@/components/placeholder-state";
 import { EmptyState } from "@/components/shared-states";
 import { StatusBadge } from "@/components/status-badge";
-
-const stageLabels = [
-  "Applicants",
-  "Interviewed",
-  "Shortlisted",
-  "Hired",
-  "Rejected",
-] as const;
-
-const activeStages = [
-  {
-    key: "Applicants",
-    description: "Candidates waiting for interview progress or recruiter review.",
-    count: 6,
-    items: [
-      "Lucia Torres",
-      "Daniel Ruiz",
-      "Sofia Martin",
-      "Aitor Vega",
-      "Rocio Perez",
-      "Nora Alonso",
-    ],
-  },
-  {
-    key: "Interviewed",
-    description: "Completed interview runs ready for recruiter triage.",
-    count: 4,
-    items: ["Lucia Torres", "Tomas Vidal", "Bea Soto", "Daniel Ruiz"],
-  },
-  {
-    key: "Shortlisted",
-    description: "Candidates explicitly promoted for recruiter follow-up.",
-    count: 2,
-    items: ["Lucia Torres", "Bea Soto"],
-  },
-  {
-    key: "Hired",
-    description: "Final recruiter-confirmed outcomes for this job.",
-    count: 0,
-    items: [],
-  },
-] as const;
+import {
+  activePipelineStages,
+  getCandidatesForStage,
+  getJobPipelineSnapshot,
+  jobDetailTabs,
+} from "@/lib/job-pipeline";
 
 type JobDetailWorkspaceProps = {
   jobId: string;
 };
 
 export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
+  const snapshot = getJobPipelineSnapshot(jobId);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(
+    snapshot?.candidates[0]?.id ?? null,
+  );
+
+  if (!snapshot) {
+    return null;
+  }
+
+  const selectedCandidate =
+    snapshot.candidates.find((candidate) => candidate.id === selectedCandidateId) ??
+    null;
+
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6 md:px-8">
       <PlaceholderState
@@ -96,30 +76,37 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
             kicker="Lateral panel"
             description="The side surface stays anchored here so candidate inspection can open without navigating away from the job pipeline."
           >
-            <div className="space-y-3">
-              <div className="rounded-[0.75rem] border border-cyan-400/30 bg-[linear-gradient(180deg,rgba(16,24,37,0.99),rgba(25,37,55,0.97))] px-4 py-4 text-white">
-                <p className="ops-kicker text-cyan-200">Panel behavior</p>
-                <p className="mt-3 text-lg font-semibold">
-                  Selected candidate context stays in-place
-                </p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Report review, transcript context, and recruiter actions will
-                  open here from the pipeline.
-                </p>
+            {selectedCandidate ? (
+              <div className="space-y-3">
+                <div className="rounded-[0.72rem] border border-cyan-400/30 bg-[linear-gradient(180deg,rgba(16,24,37,0.99),rgba(25,37,55,0.97))] px-4 py-4 text-white">
+                  <p className="ops-kicker text-cyan-200">Selected candidate</p>
+                  <p className="mt-3 text-lg font-semibold">
+                    {selectedCandidate.fullName}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    {selectedCandidate.summary}
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                  <DataPoint
+                    label="Current stage"
+                    value={selectedCandidate.stage}
+                    detail="Selection persists while reviewing pipeline"
+                  />
+                  <DataPoint
+                    label={selectedCandidate.relevantDateLabel}
+                    value={selectedCandidate.relevantDateValue}
+                    detail="Most recent triage signal"
+                  />
+                </div>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <DataPoint
-                  label="Surface type"
-                  value="Lateral"
-                  detail="Not a full-page route"
-                />
-                <DataPoint
-                  label="Selection"
-                  value="From cards"
-                  detail="Keeps pipeline visible"
-                />
-              </div>
-            </div>
+            ) : (
+              <EmptyState
+                eyebrow="No selection"
+                title="Select a candidate card to inspect detail."
+                description="The lateral surface stays in this route and updates from the active pipeline."
+              />
+            )}
           </DetailPanel>
         </div>
 
@@ -130,7 +117,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
           tone="strong"
         >
           <div className="flex flex-wrap gap-2 border-b border-slate-200/80 pb-4">
-            {stageLabels.map((stage, index) => (
+            {jobDetailTabs.map((stage, index) => (
               <div
                 key={stage}
                 className={
@@ -145,37 +132,46 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
           </div>
 
           <div className="mt-5 grid gap-4 xl:grid-cols-4">
-            {activeStages.map((stage, index) => (
+            {activePipelineStages.map((stage, index) => {
+              const stageCandidates = getCandidatesForStage(snapshot.candidates, stage);
+
+              return (
               <section
-                key={stage.key}
+                key={stage}
                 className="rounded-[0.85rem] border border-slate-200/85 bg-white/84 p-4"
               >
                 <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
                   <div>
-                    <p className="ops-kicker text-slate-500">{stage.key}</p>
+                    <p className="ops-kicker text-slate-500">{stage}</p>
                     <p className="mt-2 text-base font-semibold text-slate-950">
-                      {stage.count} candidates
+                      {stageCandidates.length} candidates
                     </p>
                   </div>
                   <StatusBadge
                     intent={index === 0 ? "neutral" : index === 1 ? "info" : index === 2 ? "success" : "warning"}
                     density="compact"
                   >
-                    {stage.count}
+                    {stageCandidates.length}
                   </StatusBadge>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-slate-600">
-                  {stage.description}
+                  {stage === "Applicants"
+                    ? "Candidates waiting for interview progress or recruiter review."
+                    : stage === "Interviewed"
+                      ? "Completed interview runs ready for recruiter triage."
+                      : stage === "Shortlisted"
+                        ? "Candidates explicitly promoted for recruiter follow-up."
+                        : "Final recruiter-confirmed outcomes for this job."}
                 </p>
-                {stage.items.length > 0 ? (
+                {stageCandidates.length > 0 ? (
                   <div className="mt-4 grid gap-2">
-                    {stage.items.map((candidateName) => (
-                      <div
-                        key={candidateName}
-                        className="rounded-[0.7rem] border border-dashed border-slate-300/85 bg-slate-50/72 px-3 py-3 text-sm text-slate-600"
-                      >
-                        {candidateName}
-                      </div>
+                    {stageCandidates.map((candidate) => (
+                      <CandidateStageCard
+                        key={candidate.id}
+                        candidate={candidate}
+                        isSelected={candidate.id === selectedCandidateId}
+                        onSelect={setSelectedCandidateId}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -188,7 +184,8 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                   </div>
                 )}
               </section>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-5 rounded-[0.85rem] border border-slate-200/85 bg-white/84 p-4">
