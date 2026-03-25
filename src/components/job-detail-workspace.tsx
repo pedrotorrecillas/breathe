@@ -7,8 +7,10 @@ import { DataPoint, DetailPanel, SectionCard } from "@/components/section-card";
 import { PlaceholderState } from "@/components/placeholder-state";
 import { EmptyState } from "@/components/shared-states";
 import { StatusBadge } from "@/components/status-badge";
+import { Button } from "@/components/ui/button";
 import {
   activePipelineStages,
+  applyRecruiterAction,
   getCandidatesForStage,
   getJobPipelineSnapshot,
   type JobDetailTab,
@@ -22,6 +24,7 @@ type JobDetailWorkspaceProps = {
 export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
   const snapshot = getJobPipelineSnapshot(jobId);
   const [activeTab, setActiveTab] = useState<JobDetailTab>("Applicants");
+  const [candidates, setCandidates] = useState(() => snapshot?.candidates ?? []);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(
     snapshot?.candidates[0]?.id ?? null,
   );
@@ -31,7 +34,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
   }
 
   const selectedCandidate =
-    snapshot.candidates.find((candidate) => candidate.id === selectedCandidateId) ??
+    candidates.find((candidate) => candidate.id === selectedCandidateId) ??
     null;
 
   return (
@@ -119,7 +122,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
           tone="strong"
         >
           <div className="flex flex-wrap gap-2 border-b border-slate-200/80 pb-4">
-            {jobDetailTabs.map((stage, index) => (
+            {jobDetailTabs.map((stage) => (
               <button
                 key={stage}
                 type="button"
@@ -145,7 +148,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                   </p>
                 </div>
                 <StatusBadge intent="danger" density="compact">
-                  {getCandidatesForStage(snapshot.candidates, "Rejected").length}
+                  {getCandidatesForStage(candidates, "Rejected").length}
                 </StatusBadge>
               </div>
               <p className="mt-4 text-sm leading-7 text-slate-600">
@@ -155,7 +158,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
               </p>
 
               <div className="mt-4 grid gap-2 lg:grid-cols-2">
-                {getCandidatesForStage(snapshot.candidates, "Rejected").map((candidate) => (
+                {getCandidatesForStage(candidates, "Rejected").map((candidate) => (
                   <CandidateStageCard
                     key={candidate.id}
                     candidate={candidate}
@@ -175,7 +178,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
           ) : (
             <div className="mt-5 grid gap-4 xl:grid-cols-4">
               {activePipelineStages.map((stage, index) => {
-                const stageCandidates = getCandidatesForStage(snapshot.candidates, stage);
+                const stageCandidates = getCandidatesForStage(candidates, stage);
 
                 return (
                   <section
@@ -214,6 +217,46 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                             isSelected={candidate.id === selectedCandidateId}
                             onSelect={setSelectedCandidateId}
                             showOperationalState={stage === "Applicants"}
+                            footerActions={
+                              <>
+                                {stage === "Interviewed" ? (
+                                  <Button
+                                    size="xs"
+                                    variant="secondary"
+                                    onClick={() =>
+                                      setCandidates((currentCandidates) =>
+                                        applyRecruiterAction(
+                                          currentCandidates,
+                                          candidate.id,
+                                          "shortlist",
+                                        ),
+                                      )
+                                    }
+                                  >
+                                    Shortlist
+                                  </Button>
+                                ) : null}
+                                {stage === "Applicants" || stage === "Interviewed" ? (
+                                  <Button
+                                    size="xs"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setCandidates((currentCandidates) =>
+                                        applyRecruiterAction(
+                                          currentCandidates,
+                                          candidate.id,
+                                          "reject",
+                                        ),
+                                      );
+                                      setSelectedCandidateId(candidate.id);
+                                      setActiveTab("Rejected");
+                                    }}
+                                  >
+                                    Reject
+                                  </Button>
+                                ) : null}
+                              </>
+                            }
                           />
                         ))}
                       </div>

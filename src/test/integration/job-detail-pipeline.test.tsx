@@ -53,4 +53,17 @@ describe("job detail pipeline", () => {
       screen.queryByText(/Completed interview runs ready for recruiter triage/i),
     ).not.toBeInTheDocument();
   });
+
+  it("supports explicit shortlist and reject actions", () => {
+    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+
+    fireEvent.click(screen.getAllByRole("button", { name: /^Shortlist$/i })[0]!);
+
+    expect(screen.getAllByRole("button", { name: /^Shortlist$/i })).toHaveLength(3);
+
+    fireEvent.click(screen.getAllByRole("button", { name: /^Reject$/i })[0]!);
+
+    expect(screen.getByText(/Separate review context/i)).toBeInTheDocument();
+    expect(screen.getByText(/Rejected from applicants/i)).toBeInTheDocument();
+  });
 });

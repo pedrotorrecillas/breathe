@@ -37,6 +37,8 @@ export type PipelineCandidate = {
   rejectedReason?: string;
 };
 
+export type RecruiterAction = "shortlist" | "reject";
+
 type JobPipelineSeed = {
   title: string;
   candidates: PipelineCandidate[];
@@ -265,4 +267,37 @@ export function getOperationalStateLabel(
     case "no_response":
       return "No response yet";
   }
+}
+
+export function applyRecruiterAction(
+  candidates: PipelineCandidate[],
+  candidateId: string,
+  action: RecruiterAction,
+) {
+  return candidates.map((candidate) => {
+    if (candidate.id !== candidateId) {
+      return candidate;
+    }
+
+    if (action === "shortlist" && candidate.stage === "Interviewed") {
+      return {
+        ...candidate,
+        stage: "Shortlisted",
+        rejectedReason: undefined,
+      };
+    }
+
+    if (action === "reject") {
+      return {
+        ...candidate,
+        stage: "Rejected",
+        rejectedReason:
+          candidate.stage === "Applicants"
+            ? "Rejected from applicants"
+            : "Rejected after review",
+      };
+    }
+
+    return candidate;
+  });
 }
