@@ -1,11 +1,15 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import JobDetailPage from "@/app/(recruiter)/jobs/[jobId]/page";
 import NewJobPage from "@/app/(recruiter)/jobs/new/page";
 import ApplyPage from "@/app/(public)/apply/[jobId]/page";
 
 describe("shared route states", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("renders the loading state in the new-job placeholder", () => {
     render(<NewJobPage />);
 
@@ -32,7 +36,7 @@ describe("shared route states", () => {
       screen.getByText(/Pipeline workspace/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Separate review context/i),
+      screen.getByRole("button", { name: /Rejected/i }),
     ).toBeInTheDocument();
   });
 
