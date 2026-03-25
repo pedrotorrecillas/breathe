@@ -16,7 +16,7 @@ describe("shared route states", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the empty state in the recruiter job detail placeholder", async () => {
+  it("renders the pipeline workspace in recruiter job detail", async () => {
     const page = await JobDetailPage({
       params: Promise.resolve({
         jobId: "warehouse-associate-madrid",
@@ -26,7 +26,13 @@ describe("shared route states", () => {
     render(page);
 
     expect(
-      screen.getByText(/No candidates have reached this pipeline view yet/i),
+      screen.getByText(/Job detail is the main recruiter workspace/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Pipeline workspace/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Separate review context/i),
     ).toBeInTheDocument();
   });
 
