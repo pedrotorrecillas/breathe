@@ -91,7 +91,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
             description="This side surface holds evidence and decision context for the selected candidate."
           >
             <div className="space-y-4">
-              <div className="rounded-[1.4rem] border border-slate-200/80 bg-slate-950 px-4 py-4 text-white">
+              <div className="rounded-[1rem] border border-slate-200/80 bg-slate-950 px-4 py-4 text-white shadow-[0_14px_30px_rgba(15,23,42,0.14)]">
                 <p className="ops-kicker text-cyan-200">Selected candidate</p>
                 <p className="mt-2 text-lg font-semibold">Lucia Torres</p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -125,7 +125,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
               {candidatePreview.map((candidate) => (
                 <article
                   key={candidate.name}
-                  className="rounded-[1.4rem] border border-slate-200/80 bg-white/82 p-4 shadow-[0_14px_32px_rgba(15,23,42,0.05)]"
+                  className="rounded-[1rem] border border-slate-200/80 border-l-2 border-l-cyan-300 bg-white/88 p-4 shadow-[0_12px_28px_rgba(15,23,42,0.045)]"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
@@ -166,20 +166,28 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
             description="Score badges stay categorical and compact. Operational badges carry exceptions without overloading dense views."
             tone="subtle"
           >
-            <div className="mb-5 flex flex-wrap gap-2">
-              {scoreScale.map((score) => (
-                <StatusBadge key={score} intent={scoreBadgeIntent[score]}>
-                  {score}
-                </StatusBadge>
-              ))}
-            </div>
-            <div className="mb-5 flex flex-wrap gap-2">
-              <StatusBadge intent="neutral">Applicants</StatusBadge>
-              <StatusBadge intent="info">Interviewed</StatusBadge>
-              <StatusBadge intent="success">Shortlisted</StatusBadge>
-              <StatusBadge intent="warning">Draft</StatusBadge>
-              <StatusBadge intent="danger">Rejected</StatusBadge>
-              <StatusBadge intent="special">Human requested</StatusBadge>
+            <div className="grid gap-4">
+              <div>
+                <p className="ops-kicker text-slate-500">Score states</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {scoreScale.map((score) => (
+                    <StatusBadge key={score} intent={scoreBadgeIntent[score]}>
+                      {score}
+                    </StatusBadge>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="ops-kicker text-slate-500">Operational states</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <StatusBadge intent="neutral">Applicants</StatusBadge>
+                  <StatusBadge intent="info">Interviewed</StatusBadge>
+                  <StatusBadge intent="success">Shortlisted</StatusBadge>
+                  <StatusBadge intent="warning">Draft</StatusBadge>
+                  <StatusBadge intent="danger">Rejected</StatusBadge>
+                  <StatusBadge intent="special">Human requested</StatusBadge>
+                </div>
+              </div>
             </div>
             <EmptyState
               eyebrow="Shared empty"

@@ -47,13 +47,13 @@ function SharedStateShell({
   return (
     <div
       className={cn(
-        "ops-beacon rounded-[1.5rem] border p-5 shadow-[0_10px_30px_rgba(15,23,42,0.05)]",
+        "ops-beacon relative overflow-hidden rounded-[1.2rem] border p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)] md:p-5",
         toneStyles[tone].panel,
       )}
     >
       <div className="ops-divider mb-4 h-px w-full" />
       <div className="flex items-start gap-4">
-        <div className={cn("rounded-2xl p-3", toneStyles[tone].icon)}>
+        <div className={cn("rounded-[0.95rem] p-2.5", toneStyles[tone].icon)}>
           <Icon
             className={cn("size-5", tone === "loading" && "animate-spin")}
             aria-hidden="true"
@@ -106,7 +106,7 @@ export function LoadingState({
         {Array.from({ length: rows }).map((_, index) => (
           <div
             key={index}
-            className="h-4 animate-pulse rounded-full bg-sky-200/70"
+            className="h-4 animate-pulse rounded-sm bg-sky-200/75"
             style={{ width: `${85 - index * 12}%` }}
           />
         ))}

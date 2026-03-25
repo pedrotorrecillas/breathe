@@ -16,7 +16,7 @@ const toneStyles = {
   default: "ops-panel",
   strong: "ops-panel-strong",
   subtle:
-    "border border-slate-200/80 bg-white/72 shadow-[0_16px_44px_rgba(15,23,42,0.05)]",
+    "border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(246,249,252,0.9))] shadow-[0_12px_32px_rgba(15,23,42,0.045)]",
 } as const;
 
 export function SectionCard({
@@ -29,7 +29,7 @@ export function SectionCard({
   children,
 }: SectionCardProps) {
   return (
-    <section className={cn("rounded-[1.75rem] p-6", toneStyles[tone])}>
+    <section className={cn("rounded-[1.35rem] p-5 md:p-6", toneStyles[tone])}>
       <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           {kicker ? (
@@ -64,10 +64,12 @@ type DataPointProps = {
 
 export function DataPoint({ label, value, detail }: DataPointProps) {
   return (
-    <div className="rounded-[1.25rem] border border-slate-200/80 bg-white/78 px-4 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+    <div className="rounded-[0.95rem] border border-slate-200/80 bg-white/86 px-3.5 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]">
       <p className="ops-kicker text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
-      {detail ? <p className="mt-1 text-xs text-slate-500">{detail}</p> : null}
+      <p className="mt-2 text-[1.55rem] leading-none font-semibold tracking-tight text-slate-950">
+        {value}
+      </p>
+      {detail ? <p className="mt-1 text-[11px] leading-5 text-slate-500">{detail}</p> : null}
     </div>
   );
 }
@@ -86,7 +88,7 @@ export function DetailPanel({
   children,
 }: DetailPanelProps) {
   return (
-    <aside className="ops-panel-strong rounded-[1.75rem] p-6">
+    <aside className="ops-panel-strong rounded-[1.35rem] p-5 md:p-6">
       {kicker ? <p className="ops-kicker text-cyan-900">{kicker}</p> : null}
       <h2 className="font-heading mt-3 text-xl font-semibold text-slate-950">
         {title}

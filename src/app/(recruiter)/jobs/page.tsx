@@ -39,7 +39,7 @@ const jobs = [
 export default function JobsPage() {
   return (
     <div className="flex flex-1 flex-col">
-      <header className="border-b border-slate-200/80 px-6 py-6 md:px-8">
+      <header className="border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(246,249,252,0.88))] px-6 py-6 md:px-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="ops-kicker text-slate-500">Recruiter area</p>
@@ -56,7 +56,7 @@ export default function JobsPage() {
             href="/jobs/new"
             className={cn(
               buttonVariants(),
-              "rounded-full bg-slate-950 px-6 text-white shadow-[0_18px_30px_rgba(15,23,42,0.16)] hover:bg-slate-800",
+              "rounded-[0.75rem] bg-slate-950 px-6 text-white shadow-[0_12px_24px_rgba(15,23,42,0.14)] hover:bg-slate-800",
             )}
           >
             New job
@@ -64,7 +64,7 @@ export default function JobsPage() {
         </div>
       </header>
 
-      <div className="grid gap-6 px-6 py-6 md:px-8">
+      <div className="grid gap-6 px-6 py-6 md:px-8 xl:grid-cols-2">
         {jobs.map((job) => (
           <SectionCard
             key={job.id}
@@ -82,7 +82,7 @@ export default function JobsPage() {
           >
             <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
               <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[22rem]">
-                <div className="rounded-[1.25rem] border border-slate-200/80 bg-slate-950 px-4 py-4 text-white shadow-[0_20px_40px_rgba(15,23,42,0.16)]">
+                <div className="rounded-[1rem] border border-slate-200/80 bg-slate-950 px-4 py-4 text-white shadow-[0_14px_30px_rgba(15,23,42,0.14)]">
                   <p className="ops-kicker text-cyan-200">Public intake</p>
                   <p className="mt-2 text-lg font-semibold">Apply route live</p>
                   <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -90,7 +90,7 @@ export default function JobsPage() {
                     review.
                   </p>
                 </div>
-                <div className="rounded-[1.25rem] border border-slate-200/80 bg-white/78 px-4 py-4">
+                <div className="rounded-[1rem] border border-slate-200/80 bg-white/86 px-4 py-4">
                   <p className="ops-kicker text-slate-500">Recruiter action</p>
                   <p className="mt-2 text-lg font-semibold text-slate-950">
                     Review queue and lifecycle
@@ -128,7 +128,7 @@ export default function JobsPage() {
                 href={`/jobs/${job.id}`}
                 className={cn(
                   buttonVariants({ variant: "outline" }),
-                  "rounded-full",
+                  "rounded-[0.75rem]",
                 )}
               >
                 Open job detail
