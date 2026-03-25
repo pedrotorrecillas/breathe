@@ -1,0 +1,100 @@
+import type { Job } from "@/domain/jobs/types";
+
+export type PublicJobRecord = Job & {
+  description: string;
+  salary: string | null;
+  schedule: string | null;
+};
+
+const publicJobs: PublicJobRecord[] = [
+  {
+    id: "job_warehouse_madrid",
+    title: "Warehouse Associate",
+    summary: "Night shift warehouse intake with immediate phone interview.",
+    description:
+      "Join a high-volume warehouse operation in Madrid. You will manage picking, loading, barcode scanning, and shift handoff tasks in a fast-paced environment.",
+    location: "Madrid",
+    salary: "EUR 22,000 gross yearly",
+    schedule: "Night shift, weekend availability required",
+    status: "active",
+    interviewLanguage: "en",
+    createdAt: "2026-03-24T00:00:00.000Z",
+    publishedAt: "2026-03-24T12:00:00.000Z",
+    expiresAt: null,
+    publicApplyPath: "/apply/demo-warehouse-associate",
+    pipeline: {
+      applicants: 42,
+      interviewed: 28,
+      shortlisted: 9,
+      hired: 2,
+      rejected: 11,
+    },
+    requirements: [],
+    interviewLimits: {
+      maxInterviews: 60,
+      outstandingCap: null,
+      greatCap: null,
+    },
+  },
+  {
+    id: "job_retail_barcelona",
+    title: "Retail Shift Lead",
+    summary: "Public link retained for reference, but intake is currently paused.",
+    description:
+      "Lead an in-store shift with opening, closing, floor coordination, and team escalation responsibilities across a busy Barcelona retail location.",
+    location: "Barcelona",
+    salary: null,
+    schedule: "Rotating shift pattern",
+    status: "inactive",
+    interviewLanguage: "es",
+    createdAt: "2026-03-24T00:00:00.000Z",
+    publishedAt: "2026-03-24T13:00:00.000Z",
+    expiresAt: null,
+    publicApplyPath: "/apply/demo-retail-shift-lead",
+    pipeline: {
+      applicants: 8,
+      interviewed: 8,
+      shortlisted: 2,
+      hired: 0,
+      rejected: 6,
+    },
+    requirements: [],
+    interviewLimits: {
+      maxInterviews: 8,
+      outstandingCap: null,
+      greatCap: null,
+    },
+  },
+];
+
+export function listPublicJobs() {
+  return publicJobs;
+}
+
+export function findPublicJobBySlug(slug: string) {
+  return publicJobs.find((job) => job.publicApplyPath === `/apply/${slug}`) ?? null;
+}
+
+export function isPublicJobAvailable(job: PublicJobRecord) {
+  if (job.status !== "active") {
+    return {
+      isAvailable: false,
+      reason: "inactive" as const,
+    };
+  }
+
+  if (
+    job.interviewLimits.maxInterviews !== null &&
+    job.pipeline.interviewed >= job.interviewLimits.maxInterviews
+  ) {
+    return {
+      isAvailable: false,
+      reason: "limit_reached" as const,
+    };
+  }
+
+  return {
+    isAvailable: true,
+    reason: null,
+  };
+}

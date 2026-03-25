@@ -5,6 +5,7 @@ import { ErrorState } from "@/components/shared-states";
 import { StatusBadge } from "@/components/status-badge";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { findPublicJobBySlug } from "@/lib/public-jobs";
 
 type ApplyPageProps = {
   params: Promise<{
@@ -14,6 +15,21 @@ type ApplyPageProps = {
 
 export default async function ApplyPage({ params }: ApplyPageProps) {
   const { jobId } = await params;
+  const publicJob = findPublicJobBySlug(jobId);
+
+  if (!publicJob) {
+    return (
+      <div className="bg-ops-grid bg-ops-canvas flex flex-1">
+        <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-10">
+          <ErrorState
+            eyebrow="Public apply"
+            title="This job link is no longer available."
+            description="The public job identifier is missing, invalid, or no longer exposed for candidate intake."
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-ops-grid bg-ops-canvas flex flex-1">
@@ -22,21 +38,19 @@ export default async function ApplyPage({ params }: ApplyPageProps) {
           <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-6">
             <p className="ops-kicker text-cyan-900">Public apply route</p>
             <h1 className="font-heading max-w-3xl text-3xl font-semibold text-slate-950">
-              The candidate apply flow is public, lightweight, and ready for
-              immediate phone dispatch.
+              Apply to {publicJob.title} before entering Clara&apos;s interview
+              queue.
             </h1>
             <p className="max-w-3xl text-sm leading-7 text-slate-600">
-              This route anchors the public application surface where candidates
-              submit contact details, accept terms, and enter the interview
-              queue.
+              {publicJob.description}
             </p>
           </div>
 
           <div className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
             <SectionCard
               title="Public form surface"
-              kicker={jobId}
-              description="Candidate capture stays lightweight and operational so the interview can start immediately."
+              kicker={publicJob.publicApplyPath?.replace("/apply/", "") ?? jobId}
+              description="Candidate capture stays lightweight and operational so the interview can start immediately after a valid submit."
               tone="strong"
             >
               <form className="grid gap-4">
@@ -89,36 +103,38 @@ export default async function ApplyPage({ params }: ApplyPageProps) {
             </SectionCard>
 
             <SectionCard
-              title="Expected confirmation"
-              kicker="Post-submit state"
-              description="Actions and messaging stay direct so candidates know the next step immediately."
+              title="Job context"
+              kicker={publicJob.location ?? "Location pending"}
+              description={publicJob.summary}
             >
-              <StatusBadge intent="warning">
-                Calls happen after submit
-              </StatusBadge>
-              <p className="mt-4 text-sm leading-7 text-slate-600">
-                The MVP confirmation message is simple: “Thanks, we’ll call you
-                now.”
-              </p>
-              <Button className="mt-6 rounded-full bg-slate-950 text-white hover:bg-slate-800">
-                Continue later
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <StatusBadge intent="success">Active job</StatusBadge>
+                <StatusBadge intent="info">
+                  Interview language {publicJob.interviewLanguage.toUpperCase()}
+                </StatusBadge>
+              </div>
+              <dl className="mt-5 grid gap-4 border-t border-slate-200/80 pt-5 text-sm">
+                <div className="grid gap-1">
+                  <dt className="ops-kicker text-slate-500">Schedule</dt>
+                  <dd className="text-slate-900">
+                    {publicJob.schedule ?? "Shared after application review"}
+                  </dd>
+                </div>
+                <div className="grid gap-1">
+                  <dt className="ops-kicker text-slate-500">Compensation</dt>
+                  <dd className="text-slate-900">
+                    {publicJob.salary ?? "Shared during recruiter follow-up"}
+                  </dd>
+                </div>
+                <div className="grid gap-1">
+                  <dt className="ops-kicker text-slate-500">Interview flow</dt>
+                  <dd className="text-slate-600">
+                    After a valid submit, Clara confirms the intake and queues
+                    the first interview run.
+                  </dd>
+                </div>
+              </dl>
             </SectionCard>
-          </div>
-
-          <div className="ops-divider mt-6 h-px w-full" />
-
-          <div className="mt-6">
-            <ErrorState
-              eyebrow="Shared error"
-              title="This job is not currently accepting applications."
-              description="Reuse this when a public apply link is inactive, expired, or temporarily unavailable without building a one-off error surface."
-            >
-              <p className="text-sm leading-7 text-slate-600">
-                In later issues this can link candidates to an alternate flow or
-                a human contact path.
-              </p>
-            </ErrorState>
           </div>
         </div>
       </div>

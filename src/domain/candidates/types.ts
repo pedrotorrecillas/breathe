@@ -20,6 +20,11 @@ export type CandidatePipelineStage =
   | "rejected"
   | "needs_human";
 
+export type CandidateLegalAcceptance = {
+  acceptedAt: ISODateTimeString;
+  termsVersion: string;
+};
+
 export type CandidateProfile = {
   id: CandidateId;
   fullName: string;
@@ -42,4 +47,5 @@ export type CandidateApplication = {
   stage: CandidatePipelineStage;
   submittedAt: ISODateTimeString;
   needsHumanReviewAt: ISODateTimeString | null;
+  legalAcceptance: CandidateLegalAcceptance | null;
 };

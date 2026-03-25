@@ -33,14 +33,14 @@ describe("shared route states", () => {
   it("renders the error state in the public apply placeholder", async () => {
     const page = await ApplyPage({
       params: Promise.resolve({
-        jobId: "demo-warehouse-associate",
+        jobId: "missing-job-link",
       }),
     });
 
     render(page);
 
     expect(
-      screen.getByText(/This job is not currently accepting applications/i),
+      screen.getByText(/This job link is no longer available/i),
     ).toBeInTheDocument();
   });
 });

@@ -15,7 +15,7 @@ describe("public apply route", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: /The candidate apply flow is public/i,
+        name: /Apply to Warehouse Associate/i,
       }),
     ).toBeInTheDocument();
     expect(
@@ -23,5 +23,20 @@ describe("public apply route", () => {
         name: /Recruiter primary navigation/i,
       }),
     ).not.toBeInTheDocument();
+    expect(screen.getByText(/Night shift warehouse intake/i)).toBeInTheDocument();
+  });
+
+  it("renders a usable unavailable state for an invalid public job id", async () => {
+    const page = await ApplyPage({
+      params: Promise.resolve({
+        jobId: "missing-job-link",
+      }),
+    });
+
+    render(page);
+
+    expect(
+      screen.getByText(/This job link is no longer available/i),
+    ).toBeInTheDocument();
   });
 });

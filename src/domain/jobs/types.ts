@@ -38,7 +38,8 @@ export type JobRequirement = {
 
 export type JobInterviewLimits = {
   maxInterviews: number | null;
-  stopAfterStrongFits: number | null;
+  outstandingCap: number | null;
+  greatCap: number | null;
 };
 
 export type JobPipelineSnapshot = {
@@ -52,6 +53,8 @@ export type JobPipelineSnapshot = {
 export type Job = {
   id: JobId;
   title: string;
+  summary: string;
+  location: string | null;
   status: JobStatus;
   interviewLanguage: SupportedLanguage;
   createdAt: ISODateTimeString;

@@ -34,11 +34,17 @@ describe("domain boundaries", () => {
       stage: "applicant",
       submittedAt: "2026-03-24T00:00:00.000Z",
       needsHumanReviewAt: null,
+      legalAcceptance: {
+        acceptedAt: "2026-03-24T00:00:00.000Z",
+        termsVersion: "2026-03-mvp",
+      },
     };
 
     const job: Job = {
       id: "job_1",
       title: "Warehouse Associate",
+      summary: "Night shift warehouse role with forklift-friendly intake.",
+      location: "Madrid",
       status: "draft",
       interviewLanguage: "es",
       createdAt: "2026-03-24T00:00:00.000Z",
@@ -55,7 +61,8 @@ describe("domain boundaries", () => {
       requirements: [],
       interviewLimits: {
         maxInterviews: null,
-        stopAfterStrongFits: null,
+        outstandingCap: null,
+        greatCap: null,
       },
     };
 
@@ -90,6 +97,7 @@ describe("domain boundaries", () => {
     const interviewRun: InterviewRun = {
       id: "run_1",
       candidateId: candidate.id,
+      applicationId: application.id,
       jobId: job.id,
       provider: "happyrobot",
       status: "queued",

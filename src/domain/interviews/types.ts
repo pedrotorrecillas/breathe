@@ -11,6 +11,7 @@ export type InterviewProvider = "happyrobot";
 export type InterviewRun = {
   id: string;
   candidateId: string;
+  applicationId: string;
   jobId: string;
   provider: InterviewProvider;
   status: InterviewRunStatus;
