@@ -26,4 +26,14 @@ describe("job detail pipeline", () => {
       screen.getAllByText(/Consistent order-picking throughput/i).length,
     ).toBeGreaterThan(0);
   });
+
+  it("shows lightweight operational badges only in Applicants", () => {
+    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+
+    expect(screen.getAllByText(/Calling now/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Awaiting call/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Human requested/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Interview complete/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/human_requested/i)).not.toBeInTheDocument();
+  });
 });

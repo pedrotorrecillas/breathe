@@ -171,6 +171,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                         candidate={candidate}
                         isSelected={candidate.id === selectedCandidateId}
                         onSelect={setSelectedCandidateId}
+                        showOperationalState={stage === "Applicants"}
                       />
                     ))}
                   </div>

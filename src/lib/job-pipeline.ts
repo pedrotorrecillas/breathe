@@ -249,3 +249,20 @@ export function getCandidatesForStage(
 ) {
   return candidates.filter((candidate) => candidate.stage === stage);
 }
+
+export function getOperationalStateLabel(
+  operationalState: PipelineOperationalState,
+) {
+  switch (operationalState) {
+    case "pending":
+      return "Awaiting call";
+    case "calling":
+      return "Calling now";
+    case "completed":
+      return "Interview complete";
+    case "human_requested":
+      return "Human requested";
+    case "no_response":
+      return "No response yet";
+  }
+}

@@ -1,7 +1,10 @@
 "use client";
 
 import { StatusBadge, runtimeBadgeIntent, scoreBadgeIntent } from "@/components/status-badge";
-import type { PipelineCandidate } from "@/lib/job-pipeline";
+import {
+  getOperationalStateLabel,
+  type PipelineCandidate,
+} from "@/lib/job-pipeline";
 import { cn } from "@/lib/utils";
 
 type CandidateStageCardProps = {
@@ -10,6 +13,7 @@ type CandidateStageCardProps = {
   onSelect?: (candidateId: string) => void;
   extraBadges?: React.ReactNode;
   footerActions?: React.ReactNode;
+  showOperationalState?: boolean;
 };
 
 export function CandidateStageCard({
@@ -18,6 +22,7 @@ export function CandidateStageCard({
   onSelect,
   extraBadges,
   footerActions,
+  showOperationalState = false,
 }: CandidateStageCardProps) {
   return (
     <article
@@ -55,12 +60,12 @@ export function CandidateStageCard({
         <p className="text-sm leading-6 text-slate-600">{candidate.summary}</p>
 
         <div className="flex flex-wrap gap-2">
-          {candidate.operationalState ? (
+          {showOperationalState && candidate.operationalState ? (
             <StatusBadge
               intent={runtimeBadgeIntent[candidate.operationalState]}
               density="compact"
             >
-              {candidate.operationalState.replaceAll("_", " ")}
+              {getOperationalStateLabel(candidate.operationalState)}
             </StatusBadge>
           ) : null}
           {extraBadges}
