@@ -37,7 +37,13 @@ export type PipelineCandidate = {
   rejectedReason?: string;
 };
 
-export type RecruiterAction = "shortlist" | "reject";
+export type RecruiterAction =
+  | "shortlist"
+  | "reject"
+  | "hire"
+  | "move_to_interviewed"
+  | "move_to_shortlisted"
+  | "restore_to_interviewed";
 
 type JobPipelineSeed = {
   title: string;
@@ -273,7 +279,7 @@ export function applyRecruiterAction(
   candidates: PipelineCandidate[],
   candidateId: string,
   action: RecruiterAction,
-) {
+): PipelineCandidate[] {
   return candidates.map((candidate) => {
     if (candidate.id !== candidateId) {
       return candidate;
@@ -295,6 +301,38 @@ export function applyRecruiterAction(
           candidate.stage === "Applicants"
             ? "Rejected from applicants"
             : "Rejected after review",
+      };
+    }
+
+    if (action === "hire" && candidate.stage === "Shortlisted") {
+      return {
+        ...candidate,
+        stage: "Hired",
+        rejectedReason: undefined,
+      };
+    }
+
+    if (action === "move_to_interviewed" && candidate.stage === "Shortlisted") {
+      return {
+        ...candidate,
+        stage: "Interviewed",
+        rejectedReason: undefined,
+      };
+    }
+
+    if (action === "move_to_shortlisted" && candidate.stage === "Hired") {
+      return {
+        ...candidate,
+        stage: "Shortlisted",
+        rejectedReason: undefined,
+      };
+    }
+
+    if (action === "restore_to_interviewed" && candidate.stage === "Rejected") {
+      return {
+        ...candidate,
+        stage: "Interviewed",
+        rejectedReason: undefined,
       };
     }
 

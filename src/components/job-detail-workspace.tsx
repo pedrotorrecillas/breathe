@@ -171,6 +171,25 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                         </StatusBadge>
                       ) : null
                     }
+                    footerActions={
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        onClick={() => {
+                          setCandidates((currentCandidates) =>
+                            applyRecruiterAction(
+                              currentCandidates,
+                              candidate.id,
+                              "restore_to_interviewed",
+                            ),
+                          );
+                          setActiveTab("Applicants");
+                          setSelectedCandidateId(candidate.id);
+                        }}
+                      >
+                        Restore
+                      </Button>
+                    }
                   />
                 ))}
               </div>
@@ -234,6 +253,57 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                                     }
                                   >
                                     Shortlist
+                                  </Button>
+                                ) : null}
+                                {stage === "Shortlisted" ? (
+                                  <>
+                                    <Button
+                                      size="xs"
+                                      variant="default"
+                                      onClick={() =>
+                                        setCandidates((currentCandidates) =>
+                                          applyRecruiterAction(
+                                            currentCandidates,
+                                            candidate.id,
+                                            "hire",
+                                          ),
+                                        )
+                                      }
+                                    >
+                                      Hire
+                                    </Button>
+                                    <Button
+                                      size="xs"
+                                      variant="outline"
+                                      onClick={() =>
+                                        setCandidates((currentCandidates) =>
+                                          applyRecruiterAction(
+                                            currentCandidates,
+                                            candidate.id,
+                                            "move_to_interviewed",
+                                          ),
+                                        )
+                                      }
+                                    >
+                                      Back to interviewed
+                                    </Button>
+                                  </>
+                                ) : null}
+                                {stage === "Hired" ? (
+                                  <Button
+                                    size="xs"
+                                    variant="outline"
+                                    onClick={() =>
+                                      setCandidates((currentCandidates) =>
+                                        applyRecruiterAction(
+                                          currentCandidates,
+                                          candidate.id,
+                                          "move_to_shortlisted",
+                                        ),
+                                      )
+                                    }
+                                  >
+                                    Back to shortlisted
                                   </Button>
                                 ) : null}
                                 {stage === "Applicants" || stage === "Interviewed" ? (

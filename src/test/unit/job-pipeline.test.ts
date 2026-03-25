@@ -38,4 +38,44 @@ describe("job pipeline labels", () => {
       rejected.find((candidate) => candidate.id === "cand_daniel_ruiz")?.stage,
     ).toBe("Rejected");
   });
+
+  it("supports hire and reversible manual transitions", () => {
+    const snapshot = getJobPipelineSnapshot("warehouse-associate-madrid");
+
+    expect(snapshot).not.toBeNull();
+
+    const hired = applyRecruiterAction(
+      snapshot!.candidates,
+      "cand_ines_gomez",
+      "hire",
+    );
+    const movedBack = applyRecruiterAction(
+      hired,
+      "cand_ines_gomez",
+      "move_to_shortlisted",
+    );
+    const restored = applyRecruiterAction(
+      snapshot!.candidates,
+      "cand_marta_gil",
+      "restore_to_interviewed",
+    );
+    const rewound = applyRecruiterAction(
+      snapshot!.candidates,
+      "cand_omar_navarro",
+      "move_to_interviewed",
+    );
+
+    expect(
+      hired.find((candidate) => candidate.id === "cand_ines_gomez")?.stage,
+    ).toBe("Hired");
+    expect(
+      movedBack.find((candidate) => candidate.id === "cand_ines_gomez")?.stage,
+    ).toBe("Shortlisted");
+    expect(
+      restored.find((candidate) => candidate.id === "cand_marta_gil")?.stage,
+    ).toBe("Interviewed");
+    expect(
+      rewound.find((candidate) => candidate.id === "cand_omar_navarro")?.stage,
+    ).toBe("Interviewed");
+  });
 });

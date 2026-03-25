@@ -66,4 +66,21 @@ describe("job detail pipeline", () => {
     expect(screen.getByText(/Separate review context/i)).toBeInTheDocument();
     expect(screen.getByText(/Rejected from applicants/i)).toBeInTheDocument();
   });
+
+  it("supports hire and move-back actions for recruiter-controlled stages", () => {
+    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+
+    fireEvent.click(screen.getAllByRole("button", { name: /^Hire$/i })[0]!);
+
+    expect(screen.getAllByRole("button", { name: /^Hire$/i })).toHaveLength(1);
+    expect(
+      screen.getAllByRole("button", { name: /^Back to shortlisted$/i }),
+    ).toHaveLength(1);
+
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /^Back to shortlisted$/i })[0]!,
+    );
+
+    expect(screen.getAllByRole("button", { name: /^Hire$/i })).toHaveLength(2);
+  });
 });
