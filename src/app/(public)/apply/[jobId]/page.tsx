@@ -1,10 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { FormField } from "@/components/form-field";
+import { PublicApplyForm } from "@/components/public-apply-form";
 import { SectionCard } from "@/components/section-card";
 import { ErrorState } from "@/components/shared-states";
 import { StatusBadge } from "@/components/status-badge";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { findPublicJobBySlug } from "@/lib/public-jobs";
 
 type ApplyPageProps = {
@@ -53,53 +50,7 @@ export default async function ApplyPage({ params }: ApplyPageProps) {
               description="Candidate capture stays lightweight and operational so the interview can start immediately after a valid submit."
               tone="strong"
             >
-              <form className="grid gap-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField label="Full name" required>
-                    <Input defaultValue="Lucia Torres" />
-                  </FormField>
-                  <FormField label="Phone" required>
-                    <Input defaultValue="+34 600 123 456" />
-                  </FormField>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    label="Email"
-                    hint="Optional for the first call, useful for follow-up."
-                  >
-                    <Input defaultValue="lucia@example.com" type="email" />
-                  </FormField>
-                  <FormField label="Language preference" required>
-                    <Select defaultValue="en">
-                      <option value="en">English</option>
-                      <option value="es">Spanish</option>
-                    </Select>
-                  </FormField>
-                </div>
-
-                <FormField
-                  label="CV upload"
-                  hint="Optional in MVP. Candidates can continue without a file."
-                >
-                  <Input type="file" />
-                </FormField>
-
-                <FormField
-                  label="Consent and AI disclosure"
-                  required
-                  error="Candidates must accept the disclosure before entering the queue."
-                >
-                  <div className="rounded-[1rem] border border-slate-300/90 bg-white/92 px-4 py-3 text-sm leading-7 text-slate-700">
-                    I understand this interview uses AI to support human
-                    recruiters.
-                  </div>
-                </FormField>
-
-                <Button className="mt-2 rounded-full bg-slate-950 px-6 text-white hover:bg-slate-800">
-                  Submit and receive call
-                </Button>
-              </form>
+              <PublicApplyForm interviewLanguage={publicJob.interviewLanguage} />
             </SectionCard>
 
             <SectionCard

@@ -1,0 +1,170 @@
+"use client";
+
+import { useState } from "react";
+
+import { FormField } from "@/components/form-field";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import type { SupportedLanguage } from "@/domain/shared/types";
+import {
+  type PublicApplyFormInput,
+  validatePublicApplyForm,
+} from "@/lib/public-apply";
+
+type PublicApplyFormProps = {
+  interviewLanguage: SupportedLanguage;
+};
+
+const initialFields: PublicApplyFormInput = {
+  fullName: "",
+  phone: "",
+  email: "",
+  language: "en",
+  linkedinUrl: "",
+  cvFileName: null,
+};
+
+export function PublicApplyForm({
+  interviewLanguage,
+}: PublicApplyFormProps) {
+  const [fields, setFields] = useState<PublicApplyFormInput>({
+    ...initialFields,
+    language: interviewLanguage,
+  });
+  const [errors, setErrors] = useState(() =>
+    validatePublicApplyForm({
+      ...initialFields,
+      language: interviewLanguage,
+    }),
+  );
+  const [submissionState, setSubmissionState] = useState<"idle" | "valid">(
+    "idle",
+  );
+
+  function updateField<K extends keyof PublicApplyFormInput>(
+    key: K,
+    value: PublicApplyFormInput[K],
+  ) {
+    const nextFields = {
+      ...fields,
+      [key]: value,
+    };
+
+    setFields(nextFields);
+    setErrors(validatePublicApplyForm(nextFields));
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const nextErrors = validatePublicApplyForm(fields);
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      setSubmissionState("idle");
+      return;
+    }
+
+    setSubmissionState("valid");
+  }
+
+  return (
+    <form className="grid gap-4" onSubmit={handleSubmit}>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormField label="Full name" required error={errors.fullName}>
+          <Input
+            aria-label="Full name"
+            onChange={(event) => updateField("fullName", event.target.value)}
+            value={fields.fullName}
+          />
+        </FormField>
+        <FormField label="Phone" required error={errors.phone}>
+          <Input
+            aria-label="Phone"
+            onChange={(event) => updateField("phone", event.target.value)}
+            value={fields.phone}
+          />
+        </FormField>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormField
+          label="Email"
+          hint="Optional for the first call, useful for follow-up."
+          error={errors.email}
+        >
+          <Input
+            aria-label="Email"
+            onChange={(event) => updateField("email", event.target.value)}
+            type="email"
+            value={fields.email}
+          />
+        </FormField>
+        <FormField label="Language preference" required>
+          <Select
+            aria-label="Language preference"
+            onChange={(event) =>
+              updateField("language", event.target.value as SupportedLanguage)
+            }
+            value={fields.language}
+          >
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+          </Select>
+        </FormField>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormField
+          label="CV upload"
+          hint="Upload a CV or provide LinkedIn below."
+        >
+          <Input
+            aria-label="CV upload"
+            onChange={(event) =>
+              updateField(
+                "cvFileName",
+                event.target.files?.[0]?.name ?? null,
+              )
+            }
+            type="file"
+          />
+        </FormField>
+        <FormField
+          label="LinkedIn URL"
+          hint="Use this when you prefer not to upload a CV."
+          error={errors.linkedinUrl || errors.profileSource}
+        >
+          <Input
+            aria-label="LinkedIn URL"
+            onChange={(event) =>
+              updateField("linkedinUrl", event.target.value)
+            }
+            placeholder="https://linkedin.com/in/your-profile"
+            value={fields.linkedinUrl}
+          />
+        </FormField>
+      </div>
+
+      <FormField label="Consent and AI disclosure">
+        <div className="rounded-[1rem] border border-slate-300/90 bg-white/92 px-4 py-3 text-sm leading-7 text-slate-700">
+          I understand this interview uses AI to support human recruiters.
+        </div>
+      </FormField>
+
+      {submissionState === "valid" ? (
+        <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          Application details look valid and ready for submission.
+        </div>
+      ) : null}
+
+      <Button
+        className="mt-2 rounded-full bg-slate-950 px-6 text-white hover:bg-slate-800"
+        type="submit"
+      >
+        Submit and receive call
+      </Button>
+    </form>
+  );
+}
