@@ -8,7 +8,10 @@ import type { CandidateEvaluation } from "@/domain/evaluations/types";
 import type { InterviewPreparationPackage } from "@/domain/interview-preparation/types";
 import type { InterviewRun } from "@/domain/interviews/types";
 import type { Job } from "@/domain/jobs/types";
-import type { HappyRobotCallRequest } from "@/domain/runtime/happyrobot/types";
+import type {
+  HappyRobotCallRequest,
+  HappyRobotNormalizedDispatchPayload,
+} from "@/domain/runtime/happyrobot/types";
 
 describe("domain boundaries", () => {
   it("exposes coherent domain shapes for the Clara MVP", () => {
@@ -79,9 +82,36 @@ describe("domain boundaries", () => {
       jobId: job.id,
       candidateId: candidate.id,
       applicationId: application.id,
+      interviewRunId: "run_1",
+      interviewPackageId: prepPackage.id,
       language: "es",
       disclosureText: "This interview is conducted using an AI-powered system.",
+    };
+
+    const normalizedPayload: HappyRobotNormalizedDispatchPayload = {
+      interviewRunId: "run_1",
+      jobId: job.id,
+      candidateId: candidate.id,
+      applicationId: application.id,
       interviewPackageId: prepPackage.id,
+      language: "es",
+      candidateTimezone: {
+        timezone: "Europe/Madrid",
+        localDateTime: "2026-03-24T09:00:00.000Z",
+        utcDateTime: "2026-03-24T08:00:00.000Z",
+      },
+      outboundNumber: "+34910000000",
+      disclosureText:
+        "This interview is conducted using an AI-powered system.",
+      nowUtc: "2026-03-24T08:00:00.000Z",
+      nowLocal: "2026-03-24T09:00:00.000Z",
+      jobConditions: [],
+      scoredRequirements: [],
+      questions: [],
+      traceContext: {
+        source: "public_apply_link",
+        generatedAt: "2026-03-24T08:00:00.000Z",
+      },
     };
 
     const evaluation: CandidateEvaluation = {
@@ -99,16 +129,50 @@ describe("domain boundaries", () => {
       candidateId: candidate.id,
       applicationId: application.id,
       jobId: job.id,
+      interviewPreparationId: prepPackage.id,
       provider: "happyrobot",
-      status: "queued",
-      initiatedAt: null,
-      completedAt: null,
-      recordingUrl: null,
-      transcriptUrl: null,
+      status: "created",
+      pipelineStage: "applicant",
+      dispatch: {
+        dispatchedAt: null,
+        providerCallId: null,
+        providerAgentId: null,
+        providerSessionId: null,
+        outboundNumber: "+34910000000",
+      },
+      metadata: {
+        selectedLanguage: "es",
+        candidateTimezone: {
+          timezone: "Europe/Madrid",
+          localDateTime: "2026-03-24T09:00:00.000Z",
+          utcDateTime: "2026-03-24T08:00:00.000Z",
+        },
+        disclosedWithAi: true,
+        disclosureText:
+          "This interview is conducted using an AI-powered system.",
+        callbackRequestedAt: null,
+        failureReason: null,
+        providerOutcomeLabel: null,
+      },
+      trace: {
+        createdAt: "2026-03-24T08:00:00.000Z",
+        normalizedAt: null,
+        initiatedAt: null,
+        completedAt: null,
+        lastEventAt: null,
+      },
+      artifacts: {
+        recordingUrl: null,
+        transcriptUrl: null,
+        transcriptAssetRef: null,
+        providerPayloadSnapshotRef: null,
+        recordingDurationSeconds: null,
+      },
     };
 
     expect(candidate.id).toBe(application.candidateId);
     expect(runtimeRequest.applicationId).toBe(application.id);
+    expect(normalizedPayload.interviewRunId).toBe(interviewRun.id);
     expect(prepPackage.jobId).toBe(job.id);
     expect(interviewRun.jobId).toBe(job.id);
     expect(evaluation.interviewRunId).toBe(interviewRun.id);

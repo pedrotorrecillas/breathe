@@ -151,12 +151,44 @@ export function submitPublicApplication(
     candidateId: stagedCandidate.id,
     applicationId: stagedApplication.id,
     jobId: input.jobId,
+    interviewPreparationId: null,
     provider: "happyrobot",
     status: "queued",
-    initiatedAt: null,
-    completedAt: null,
-    recordingUrl: null,
-    transcriptUrl: null,
+    pipelineStage: "applicant",
+    dispatch: {
+      dispatchedAt: null,
+      providerCallId: null,
+      providerAgentId: null,
+      providerSessionId: null,
+      outboundNumber: stagedCandidate.normalizedPhone,
+    },
+    metadata: {
+      selectedLanguage: input.language,
+      candidateTimezone: {
+        timezone: null,
+        localDateTime: null,
+        utcDateTime: null,
+      },
+      disclosedWithAi: true,
+      disclosureText: "This interview is conducted using an AI-powered system.",
+      callbackRequestedAt: null,
+      failureReason: null,
+      providerOutcomeLabel: null,
+    },
+    trace: {
+      createdAt: input.legalAcceptance.acceptedAt,
+      normalizedAt: null,
+      initiatedAt: null,
+      completedAt: null,
+      lastEventAt: null,
+    },
+    artifacts: {
+      recordingUrl: null,
+      transcriptUrl: null,
+      transcriptAssetRef: null,
+      providerPayloadSnapshotRef: null,
+      recordingDurationSeconds: null,
+    },
   };
 
   if (existingCandidate) {
