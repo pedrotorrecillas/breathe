@@ -138,4 +138,34 @@ describe("create-job route", () => {
       screen.getByDisplayValue(/Reliability under pressure/i),
     ).toBeInTheDocument();
   });
+
+  it("validates contradictory interview limits", () => {
+    render(<NewJobPage />);
+
+    fireEvent.change(screen.getAllByLabelText(/Job title/i)[0], {
+      target: { value: "Warehouse Associate" },
+    });
+    fireEvent.change(screen.getAllByLabelText(/Job description/i)[0], {
+      target: {
+        value:
+          "Warehouse Associate role based in Madrid. Candidates must have previous warehouse experience. Strong communication and teamwork are important in the loading dock.",
+      },
+    });
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /Generate draft/i })[0]!,
+    );
+
+    fireEvent.change(screen.getAllByLabelText(/Total interview limit/i)[0], {
+      target: { value: "5" },
+    });
+    fireEvent.change(screen.getAllByLabelText(/Outstanding cap/i)[0], {
+      target: { value: "8" },
+    });
+
+    expect(
+      screen.getByText(
+        /Outstanding cap cannot exceed the total interview limit/i,
+      ),
+    ).toBeInTheDocument();
+  });
 });

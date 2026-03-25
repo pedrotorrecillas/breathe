@@ -31,6 +31,12 @@ type FieldErrors = {
   description?: string;
 };
 
+type InterviewLimitsState = {
+  maxInterviews: string;
+  outstandingCap: string;
+  greatCap: string;
+};
+
 function validateDraft(fields: DraftFields) {
   const errors: FieldErrors = {};
 
@@ -63,6 +69,11 @@ export function CreateJobWorkspace() {
   const [newConditionValue, setNewConditionValue] = useState("");
   const [newTechnicalSkill, setNewTechnicalSkill] = useState("");
   const [newInterpersonalSkill, setNewInterpersonalSkill] = useState("");
+  const [interviewLimits, setInterviewLimits] = useState<InterviewLimitsState>({
+    maxInterviews: "",
+    outstandingCap: "",
+    greatCap: "",
+  });
 
   const canExtract =
     fields.title.trim().length > 0 && fields.description.trim().length >= 40;
@@ -247,6 +258,28 @@ export function CreateJobWorkspace() {
       };
     });
   }
+
+  const limitErrors = {
+    maxInterviews:
+      interviewLimits.maxInterviews &&
+      Number.parseInt(interviewLimits.maxInterviews, 10) <= 0
+        ? "Total interview limit must be greater than zero."
+        : undefined,
+    outstandingCap:
+      interviewLimits.maxInterviews &&
+      interviewLimits.outstandingCap &&
+      Number.parseInt(interviewLimits.outstandingCap, 10) >
+        Number.parseInt(interviewLimits.maxInterviews, 10)
+        ? "Outstanding cap cannot exceed the total interview limit."
+        : undefined,
+    greatCap:
+      interviewLimits.maxInterviews &&
+      interviewLimits.greatCap &&
+      Number.parseInt(interviewLimits.greatCap, 10) >
+        Number.parseInt(interviewLimits.maxInterviews, 10)
+        ? "Great cap cannot exceed the total interview limit."
+        : undefined,
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6 md:px-8">
@@ -768,6 +801,70 @@ export function CreateJobWorkspace() {
                   Add skill
                 </Button>
               </div>
+            </div>
+          </SectionCard>
+        ) : null}
+
+        {draft ? (
+          <SectionCard
+            title="Interview limits"
+            kicker="BRE-28"
+            description="Operational limits let recruiters cap total interview volume and optionally stop after enough top-scoring candidates are collected."
+          >
+            <div className="grid gap-4 lg:grid-cols-3">
+              <FormField
+                label="Total interview limit"
+                hint="Leave empty to keep the job open-ended."
+                error={limitErrors.maxInterviews}
+              >
+                <Input
+                  aria-label="Total interview limit"
+                  inputMode="numeric"
+                  onChange={(event) =>
+                    setInterviewLimits((current) => ({
+                      ...current,
+                      maxInterviews: event.target.value,
+                    }))
+                  }
+                  value={interviewLimits.maxInterviews}
+                />
+              </FormField>
+
+              <FormField
+                label="Outstanding cap"
+                hint="Optional. Pause once enough top-tier candidates are found."
+                error={limitErrors.outstandingCap}
+              >
+                <Input
+                  aria-label="Outstanding cap"
+                  inputMode="numeric"
+                  onChange={(event) =>
+                    setInterviewLimits((current) => ({
+                      ...current,
+                      outstandingCap: event.target.value,
+                    }))
+                  }
+                  value={interviewLimits.outstandingCap}
+                />
+              </FormField>
+
+              <FormField
+                label="Great cap"
+                hint="Optional. Useful when the recruiter wants enough strong backups."
+                error={limitErrors.greatCap}
+              >
+                <Input
+                  aria-label="Great cap"
+                  inputMode="numeric"
+                  onChange={(event) =>
+                    setInterviewLimits((current) => ({
+                      ...current,
+                      greatCap: event.target.value,
+                    }))
+                  }
+                  value={interviewLimits.greatCap}
+                />
+              </FormField>
             </div>
           </SectionCard>
         ) : null}
