@@ -25,9 +25,8 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
   const snapshot = getJobPipelineSnapshot(jobId);
   const [activeTab, setActiveTab] = useState<JobDetailTab>("Applicants");
   const [candidates, setCandidates] = useState(() => snapshot?.candidates ?? []);
-  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(
-    snapshot?.candidates[0]?.id ?? null,
-  );
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   if (!snapshot) {
     return null;
@@ -36,6 +35,11 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
   const selectedCandidate =
     candidates.find((candidate) => candidate.id === selectedCandidateId) ??
     null;
+
+  const selectCandidate = (candidateId: string) => {
+    setSelectedCandidateId(candidateId);
+    setPanelOpen(true);
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6 md:px-8">
@@ -81,16 +85,37 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
             kicker="Lateral panel"
             description="The side surface stays anchored here so candidate inspection can open without navigating away from the job pipeline."
           >
-            {selectedCandidate ? (
+            {panelOpen && selectedCandidate ? (
               <div className="space-y-3">
                 <div className="rounded-[0.72rem] border border-cyan-400/30 bg-[linear-gradient(180deg,rgba(16,24,37,0.99),rgba(25,37,55,0.97))] px-4 py-4 text-white">
-                  <p className="ops-kicker text-cyan-200">Selected candidate</p>
-                  <p className="mt-3 text-lg font-semibold">
-                    {selectedCandidate.fullName}
-                  </p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="ops-kicker text-cyan-200">Selected candidate</p>
+                      <p className="mt-3 text-lg font-semibold">
+                        {selectedCandidate.fullName}
+                      </p>
+                    </div>
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      onClick={() => setPanelOpen(false)}
+                    >
+                      Close panel
+                    </Button>
+                  </div>
                   <p className="mt-2 text-sm leading-6 text-slate-300">
                     {selectedCandidate.summary}
                   </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <StatusBadge intent="info" density="compact">
+                      {selectedCandidate.stage}
+                    </StatusBadge>
+                    {selectedCandidate.scoreState ? (
+                      <StatusBadge intent="success" density="compact">
+                        {selectedCandidate.scoreState}
+                      </StatusBadge>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                   <DataPoint
@@ -104,6 +129,18 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                     detail="Most recent triage signal"
                   />
                 </div>
+                <section className="rounded-[0.72rem] border border-slate-200/85 bg-white/90 px-4 py-4">
+                  <p className="ops-kicker text-slate-500">Report review</p>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                    Recruiter-facing summary, decision support notes, and fit rationale stay here without breaking the pipeline context.
+                  </p>
+                </section>
+                <section className="rounded-[0.72rem] border border-slate-200/85 bg-white/90 px-4 py-4">
+                  <p className="ops-kicker text-slate-500">Audio review</p>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                    Reserve this panel space for interview playback, key moments, and future transcript slices.
+                  </p>
+                </section>
               </div>
             ) : (
               <EmptyState
@@ -163,7 +200,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                     key={candidate.id}
                     candidate={candidate}
                     isSelected={candidate.id === selectedCandidateId}
-                    onSelect={setSelectedCandidateId}
+                    onSelect={selectCandidate}
                     extraBadges={
                       candidate.rejectedReason ? (
                         <StatusBadge intent="warning" density="compact">
@@ -185,6 +222,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                           );
                           setActiveTab("Applicants");
                           setSelectedCandidateId(candidate.id);
+                          setPanelOpen(false);
                         }}
                       >
                         Restore
@@ -234,7 +272,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                             key={candidate.id}
                             candidate={candidate}
                             isSelected={candidate.id === selectedCandidateId}
-                            onSelect={setSelectedCandidateId}
+                            onSelect={selectCandidate}
                             showOperationalState={stage === "Applicants"}
                             footerActions={
                               <>
@@ -320,6 +358,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                                       );
                                       setSelectedCandidateId(candidate.id);
                                       setActiveTab("Rejected");
+                                      setPanelOpen(false);
                                     }}
                                   >
                                     Reject

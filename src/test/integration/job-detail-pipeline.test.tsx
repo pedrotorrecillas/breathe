@@ -29,6 +29,7 @@ describe("job detail pipeline", () => {
     expect(
       screen.getAllByText(/Consistent order-picking throughput/i).length,
     ).toBeGreaterThan(0);
+    expect(screen.getByText(/Audio review/i)).toBeInTheDocument();
   });
 
   it("shows lightweight operational badges only in Applicants", () => {
@@ -82,5 +83,24 @@ describe("job detail pipeline", () => {
     );
 
     expect(screen.getAllByRole("button", { name: /^Hire$/i })).toHaveLength(2);
+  });
+
+  it("opens and closes candidate detail without losing pipeline context", () => {
+    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Rejected/i })[0]!);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Open candidate Marta Gil/i }),
+    );
+
+    expect(screen.getByText(/Report review/i)).toBeInTheDocument();
+    expect(screen.getByText(/Audio review/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Close panel/i }));
+
+    expect(
+      screen.getByText(/Select a candidate card to inspect detail/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Separate review context/i)).toBeInTheDocument();
   });
 });
