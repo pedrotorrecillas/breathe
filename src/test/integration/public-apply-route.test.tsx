@@ -2,10 +2,15 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import ApplyPage from "@/app/(public)/apply/[jobId]/page";
+import {
+  getPublicApplySubmissionSnapshot,
+  resetPublicApplySubmissionStore,
+} from "@/lib/public-apply-submissions";
 
 describe("public apply route", () => {
   afterEach(() => {
     cleanup();
+    resetPublicApplySubmissionStore();
   });
 
   it("renders outside the recruiter shell", async () => {
@@ -130,5 +135,42 @@ describe("public apply route", () => {
     expect(
       screen.getByText(/CV upload failed. Use a PDF, DOC, or DOCX file/i),
     ).toBeInTheDocument();
+  });
+
+  it("creates candidate, application, and interview run records on valid submit", async () => {
+    const page = await ApplyPage({
+      params: Promise.resolve({
+        jobId: "demo-warehouse-associate",
+      }),
+    });
+
+    render(page);
+
+    fireEvent.change(screen.getByLabelText(/Full name/i), {
+      target: { value: "Lucia Torres" },
+    });
+    fireEvent.change(screen.getByLabelText(/Phone/i), {
+      target: { value: "+34 600 123 456" },
+    });
+    fireEvent.change(screen.getByLabelText(/Email/i), {
+      target: { value: "lucia@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/LinkedIn URL/i), {
+      target: { value: "https://linkedin.com/in/lucia-torres" },
+    });
+    fireEvent.click(screen.getByLabelText(/Accept terms and AI disclosure/i));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Submit and receive call/i }),
+    );
+
+    const snapshot = getPublicApplySubmissionSnapshot();
+
+    expect(snapshot.candidates).toHaveLength(1);
+    expect(snapshot.applications).toHaveLength(1);
+    expect(snapshot.interviewRuns).toHaveLength(1);
+    expect(snapshot.applications[0]?.candidateId).toBe(snapshot.candidates[0]?.id);
+    expect(snapshot.interviewRuns[0]?.applicationId).toBe(
+      snapshot.applications[0]?.id,
+    );
   });
 });

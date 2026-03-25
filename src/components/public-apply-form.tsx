@@ -16,8 +16,10 @@ import {
   publicApplyTermsVersion,
   validatePublicApplyForm,
 } from "@/lib/public-apply";
+import { submitPublicApplication } from "@/lib/public-apply-submissions";
 
 type PublicApplyFormProps = {
+  jobId: string;
   interviewLanguage: SupportedLanguage;
 };
 
@@ -32,6 +34,7 @@ const initialFields: PublicApplyFormInput = {
 };
 
 export function PublicApplyForm({
+  jobId,
   interviewLanguage,
 }: PublicApplyFormProps) {
   const [fields, setFields] = useState<PublicApplyFormInput>({
@@ -55,6 +58,7 @@ export function PublicApplyForm({
     useState<NormalizedCandidateProfileSource | null>(null);
   const [legalAcceptance, setLegalAcceptance] =
     useState<PublicApplyLegalAcceptance | null>(null);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   function updateField<K extends keyof PublicApplyFormInput>(
     key: K,
@@ -73,6 +77,7 @@ export function PublicApplyForm({
     setCvFile(file);
     setProfileSourceError(null);
     setNormalizedProfileSource(null);
+    setSubmissionError(null);
     updateField("cvFileName", file?.name ?? null);
   }
 
@@ -107,9 +112,26 @@ export function PublicApplyForm({
       return;
     }
 
+    const submissionResult = submitPublicApplication({
+      jobId,
+      fullName: fields.fullName,
+      phone: fields.phone,
+      email: fields.email,
+      language: fields.language,
+      profileSource: normalizedProfileResult.data,
+      legalAcceptance: legalAcceptanceResult.data,
+    });
+
+    if (!submissionResult.success) {
+      setSubmissionState("idle");
+      setSubmissionError(submissionResult.error);
+      return;
+    }
+
     setProfileSourceError(null);
     setNormalizedProfileSource(normalizedProfileResult.data);
     setLegalAcceptance(legalAcceptanceResult.data);
+    setSubmissionError(null);
     setSubmissionState("valid");
   }
 
@@ -222,6 +244,12 @@ export function PublicApplyForm({
             Terms accepted: {legalAcceptance?.termsVersion} at{" "}
             {legalAcceptance?.acceptedAt}
           </p>
+        </div>
+      ) : null}
+
+      {submissionError ? (
+        <div className="rounded-[1rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          {submissionError}
         </div>
       ) : null}
 

@@ -50,7 +50,10 @@ export default async function ApplyPage({ params }: ApplyPageProps) {
               description="Candidate capture stays lightweight and operational so the interview can start immediately after a valid submit."
               tone="strong"
             >
-              <PublicApplyForm interviewLanguage={publicJob.interviewLanguage} />
+              <PublicApplyForm
+                jobId={publicJob.id}
+                interviewLanguage={publicJob.interviewLanguage}
+              />
             </SectionCard>
 
             <SectionCard
