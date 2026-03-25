@@ -61,6 +61,7 @@ export function CreateJobWorkspace() {
   const [extractionError, setExtractionError] = useState<string | null>(null);
   const [newConditionLabel, setNewConditionLabel] = useState("");
   const [newConditionValue, setNewConditionValue] = useState("");
+  const [newTechnicalSkill, setNewTechnicalSkill] = useState("");
 
   const canExtract =
     fields.title.trim().length > 0 && fields.description.trim().length >= 40;
@@ -163,7 +164,7 @@ export function CreateJobWorkspace() {
   }
 
   function updateRequirement(
-    section: "essentialRequirements",
+    section: "essentialRequirements" | "technicalSkills",
     requirementId: string,
     updates: Partial<JobRequirementInput>,
   ) {
@@ -184,7 +185,7 @@ export function CreateJobWorkspace() {
   }
 
   function removeRequirement(
-    section: "essentialRequirements",
+    section: "essentialRequirements" | "technicalSkills",
     requirementId: string,
   ) {
     setDraft((currentDraft) => {
@@ -202,11 +203,36 @@ export function CreateJobWorkspace() {
   }
 
   function toggleRequirementImportance(
-    section: "essentialRequirements",
+    section: "essentialRequirements" | "technicalSkills",
     requirementId: string,
     importance: RequirementImportance,
   ) {
     updateRequirement(section, requirementId, { importance });
+  }
+
+  function addRequirement(section: "technicalSkills", label: string) {
+    const normalizedLabel = label.trim();
+    if (!normalizedLabel) {
+      return;
+    }
+
+    setDraft((currentDraft) => {
+      if (!currentDraft) {
+        return currentDraft;
+      }
+
+      return {
+        ...currentDraft,
+        [section]: [
+          ...currentDraft[section],
+          {
+            id: `${section}_${currentDraft[section].length + 1}`,
+            label: normalizedLabel,
+            importance: "OPTIONAL",
+          },
+        ],
+      };
+    });
   }
 
   return (
@@ -513,6 +539,107 @@ export function CreateJobWorkspace() {
                   </div>
                 </article>
               ))}
+            </div>
+          </SectionCard>
+        ) : null}
+
+        {draft ? (
+          <SectionCard
+            title="Technical skills"
+            kicker="BRE-26"
+            description="Technical skills keep task-specific or hard-skill requirements separate from general essentials and soft-skill criteria."
+          >
+            <div className="grid gap-3">
+              {draft.technicalSkills.map((requirement) => (
+                <article
+                  key={requirement.id}
+                  className="rounded-[1.4rem] border border-slate-200/80 bg-white/82 p-4 shadow-[0_14px_32px_rgba(15,23,42,0.05)]"
+                >
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <Input
+                        aria-label={`${requirement.label} technical skill`}
+                        onChange={(event) =>
+                          updateRequirement("technicalSkills", requirement.id, {
+                            label: event.target.value,
+                          })
+                        }
+                        value={requirement.label}
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        variant={
+                          requirement.importance === "MANDATORY"
+                            ? "secondary"
+                            : "outline"
+                        }
+                        className="rounded-full"
+                        onClick={() =>
+                          toggleRequirementImportance(
+                            "technicalSkills",
+                            requirement.id,
+                            "MANDATORY",
+                          )
+                        }
+                      >
+                        Mandatory
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={
+                          requirement.importance === "OPTIONAL"
+                            ? "secondary"
+                            : "outline"
+                        }
+                        className="rounded-full"
+                        onClick={() =>
+                          toggleRequirementImportance(
+                            "technicalSkills",
+                            requirement.id,
+                            "OPTIONAL",
+                          )
+                        }
+                      >
+                        Optional
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-full"
+                        onClick={() =>
+                          removeRequirement("technicalSkills", requirement.id)
+                        }
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-[1.4rem] border border-dashed border-slate-300/90 bg-slate-50/70 p-4">
+              <p className="ops-kicker text-slate-500">Add technical skill</p>
+              <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto]">
+                <Input
+                  aria-label="New technical skill"
+                  onChange={(event) => setNewTechnicalSkill(event.target.value)}
+                  placeholder="Forklift, scanner systems, inventory software..."
+                  value={newTechnicalSkill}
+                />
+                <Button
+                  type="button"
+                  className="rounded-full"
+                  onClick={() => {
+                    addRequirement("technicalSkills", newTechnicalSkill);
+                    setNewTechnicalSkill("");
+                  }}
+                >
+                  Add skill
+                </Button>
+              </div>
             </div>
           </SectionCard>
         ) : null}

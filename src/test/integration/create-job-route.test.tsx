@@ -80,4 +80,33 @@ describe("create-job route", () => {
       screen.getAllByRole("button", { name: /Mandatory/i })[0],
     ).toBeInTheDocument();
   });
+
+  it("allows recruiters to add technical skills after extraction", () => {
+    render(<NewJobPage />);
+
+    fireEvent.change(screen.getAllByLabelText(/Job title/i)[0], {
+      target: { value: "Warehouse Associate" },
+    });
+    fireEvent.change(screen.getAllByLabelText(/Job description/i)[0], {
+      target: {
+        value:
+          "Warehouse Associate role based in Madrid. Candidates must have previous warehouse experience and barcode scanner knowledge. Forklift experience is valuable.",
+      },
+    });
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /Generate draft/i })[0]!,
+    );
+
+    fireEvent.change(screen.getAllByLabelText(/New technical skill/i)[0], {
+      target: { value: "Pallet wrapping machines" },
+    });
+    fireEvent.click(screen.getAllByRole("button", { name: /Add skill/i })[0]!);
+
+    expect(
+      screen.getAllByRole("heading", { name: /Technical skills/i })[0],
+    ).toBeInTheDocument();
+    expect(
+      screen.getByDisplayValue(/Pallet wrapping machines/i),
+    ).toBeInTheDocument();
+  });
 });
