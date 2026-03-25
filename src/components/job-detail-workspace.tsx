@@ -2,6 +2,7 @@
 
 import { DataPoint, DetailPanel, SectionCard } from "@/components/section-card";
 import { PlaceholderState } from "@/components/placeholder-state";
+import { EmptyState } from "@/components/shared-states";
 import { StatusBadge } from "@/components/status-badge";
 
 const stageLabels = [
@@ -10,6 +11,40 @@ const stageLabels = [
   "Shortlisted",
   "Hired",
   "Rejected",
+] as const;
+
+const activeStages = [
+  {
+    key: "Applicants",
+    description: "Candidates waiting for interview progress or recruiter review.",
+    count: 6,
+    items: [
+      "Lucia Torres",
+      "Daniel Ruiz",
+      "Sofia Martin",
+      "Aitor Vega",
+      "Rocio Perez",
+      "Nora Alonso",
+    ],
+  },
+  {
+    key: "Interviewed",
+    description: "Completed interview runs ready for recruiter triage.",
+    count: 4,
+    items: ["Lucia Torres", "Tomas Vidal", "Bea Soto", "Daniel Ruiz"],
+  },
+  {
+    key: "Shortlisted",
+    description: "Candidates explicitly promoted for recruiter follow-up.",
+    count: 2,
+    items: ["Lucia Torres", "Bea Soto"],
+  },
+  {
+    key: "Hired",
+    description: "Final recruiter-confirmed outcomes for this job.",
+    count: 0,
+    items: [],
+  },
 ] as const;
 
 type JobDetailWorkspaceProps = {
@@ -110,25 +145,48 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
           </div>
 
           <div className="mt-5 grid gap-4 xl:grid-cols-4">
-            {stageLabels.slice(0, 4).map((stage) => (
+            {activeStages.map((stage, index) => (
               <section
-                key={stage}
+                key={stage.key}
                 className="rounded-[0.85rem] border border-slate-200/85 bg-white/84 p-4"
               >
                 <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
                   <div>
-                    <p className="ops-kicker text-slate-500">{stage}</p>
+                    <p className="ops-kicker text-slate-500">{stage.key}</p>
                     <p className="mt-2 text-base font-semibold text-slate-950">
-                      Stage lane ready
+                      {stage.count} candidates
                     </p>
                   </div>
-                  <span className="rounded-[0.5rem] border border-slate-200 bg-slate-100/90 px-2 py-1 ops-kicker text-slate-500">
-                    Pending
-                  </span>
+                  <StatusBadge
+                    intent={index === 0 ? "neutral" : index === 1 ? "info" : index === 2 ? "success" : "warning"}
+                    density="compact"
+                  >
+                    {stage.count}
+                  </StatusBadge>
                 </div>
-                <div className="mt-4 rounded-[0.75rem] border border-dashed border-slate-300/85 bg-slate-50/70 px-3 py-5 text-sm leading-6 text-slate-500">
-                  Candidate cards and stage counts will render in this lane.
-                </div>
+                <p className="mt-4 text-sm leading-6 text-slate-600">
+                  {stage.description}
+                </p>
+                {stage.items.length > 0 ? (
+                  <div className="mt-4 grid gap-2">
+                    {stage.items.map((candidateName) => (
+                      <div
+                        key={candidateName}
+                        className="rounded-[0.7rem] border border-dashed border-slate-300/85 bg-slate-50/72 px-3 py-3 text-sm text-slate-600"
+                      >
+                        {candidateName}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-4">
+                    <EmptyState
+                      eyebrow="Stage empty"
+                      title="No candidates in this stage."
+                      description="The stage remains visible even when there is no current volume."
+                    />
+                  </div>
+                )}
               </section>
             ))}
           </div>
