@@ -1,9 +1,19 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import NewJobPage from "@/app/(recruiter)/jobs/new/page";
 
 describe("create-job route", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("renders the core recruiter inputs", () => {
     render(<NewJobPage />);
 
@@ -167,5 +177,29 @@ describe("create-job route", () => {
         /Outstanding cap cannot exceed the total interview limit/i,
       ),
     ).toBeInTheDocument();
+  });
+
+  it("publishes a job and shows the generated public apply link", async () => {
+    render(<NewJobPage />);
+
+    fireEvent.change(screen.getAllByLabelText(/Job title/i)[0], {
+      target: { value: "Warehouse Associate Madrid" },
+    });
+    fireEvent.change(screen.getAllByLabelText(/Job description/i)[0], {
+      target: {
+        value:
+          "Warehouse Associate role based in Madrid. Candidates must have previous warehouse experience. Strong communication and teamwork are important in the loading dock. Salary starts at EUR 22,000 gross yearly.",
+      },
+    });
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /Generate draft/i })[0]!,
+    );
+    fireEvent.click(screen.getAllByLabelText(/Publish job action/i)[0]!);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/\/apply\/warehouse-associate-madrid/i),
+      ).toBeInTheDocument();
+    });
   });
 });

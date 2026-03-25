@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 import { FormField } from "@/components/form-field";
 import { PlaceholderState } from "@/components/placeholder-state";
 import { DataPoint, DetailPanel, SectionCard } from "@/components/section-card";
 import { LoadingState } from "@/components/shared-states";
 import { StatusBadge } from "@/components/status-badge";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -18,6 +20,7 @@ import type {
   RequirementImportance,
 } from "@/domain/jobs/configuration";
 import { extractJobConfiguration } from "@/lib/job-extraction";
+import { cn } from "@/lib/utils";
 
 type DraftFields = {
   title: string;
@@ -35,6 +38,19 @@ type InterviewLimitsState = {
   maxInterviews: string;
   outstandingCap: string;
   greatCap: string;
+};
+
+type PublishedJobState = {
+  title: string;
+  language: string;
+  description: string;
+  publicApplyPath: string;
+  draft: JobExtractionDraft;
+  interviewLimits: {
+    maxInterviews: number | null;
+    outstandingCap: number | null;
+    greatCap: number | null;
+  };
 };
 
 function validateDraft(fields: DraftFields) {
@@ -56,6 +72,14 @@ function validateDraft(fields: DraftFields) {
   return errors;
 }
 
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
 export function CreateJobWorkspace() {
   const [fields, setFields] = useState<DraftFields>({
     title: "",
@@ -74,6 +98,9 @@ export function CreateJobWorkspace() {
     outstandingCap: "",
     greatCap: "",
   });
+  const [publishedJob, setPublishedJob] = useState<PublishedJobState | null>(
+    null,
+  );
 
   const canExtract =
     fields.title.trim().length > 0 && fields.description.trim().length >= 40;
@@ -280,6 +307,39 @@ export function CreateJobWorkspace() {
         ? "Great cap cannot exceed the total interview limit."
         : undefined,
   };
+
+  const canPublish =
+    draft !== null &&
+    !limitErrors.maxInterviews &&
+    !limitErrors.outstandingCap &&
+    !limitErrors.greatCap;
+
+  function publishJob() {
+    if (!draft || !canPublish) {
+      return;
+    }
+
+    const slug = slugify(fields.title) || "job-draft";
+
+    setPublishedJob({
+      title: fields.title,
+      language: fields.language,
+      description: fields.description,
+      publicApplyPath: `/apply/${slug}`,
+      draft,
+      interviewLimits: {
+        maxInterviews: interviewLimits.maxInterviews
+          ? Number.parseInt(interviewLimits.maxInterviews, 10)
+          : null,
+        outstandingCap: interviewLimits.outstandingCap
+          ? Number.parseInt(interviewLimits.outstandingCap, 10)
+          : null,
+        greatCap: interviewLimits.greatCap
+          ? Number.parseInt(interviewLimits.greatCap, 10)
+          : null,
+      },
+    });
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6 md:px-8">
@@ -865,6 +925,97 @@ export function CreateJobWorkspace() {
                   value={interviewLimits.greatCap}
                 />
               </FormField>
+            </div>
+          </SectionCard>
+        ) : null}
+
+        {draft ? (
+          <SectionCard
+            title="Publish job"
+            kicker="BRE-29"
+            description="Publishing validates the current configuration and generates the public apply link recruiters will share."
+            tone="strong"
+            footer={
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  aria-label="Publish job action"
+                  type="button"
+                  className="rounded-full px-6"
+                  disabled={!canPublish}
+                  onClick={publishJob}
+                >
+                  Publish job
+                </Button>
+                <Link
+                  href="/jobs"
+                  className={cn(
+                    buttonVariants({ variant: "outline" }),
+                    "rounded-full px-6",
+                  )}
+                >
+                  Back to jobs
+                </Link>
+              </div>
+            }
+          >
+            <div className="grid gap-3 sm:grid-cols-3">
+              <DataPoint
+                label="Conditions"
+                value={draft.jobConditions.length}
+                detail="Normalized for publish"
+              />
+              <DataPoint
+                label="Scored items"
+                value={
+                  draft.essentialRequirements.length +
+                  draft.technicalSkills.length +
+                  draft.interpersonalSkills.length
+                }
+                detail="Across all requirement groups"
+              />
+              <DataPoint
+                label="Apply link"
+                value={publishedJob ? "Generated" : "Pending"}
+                detail="Created on publish"
+              />
+            </div>
+          </SectionCard>
+        ) : null}
+
+        {publishedJob ? (
+          <SectionCard
+            title="Job published"
+            kicker="Post-publish state"
+            description="The recruiter now has a usable application link and a normalized configuration snapshot ready for sharing."
+            tone="strong"
+            actions={<StatusBadge intent="success">Active</StatusBadge>}
+          >
+            <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="rounded-[1.4rem] border border-emerald-200/80 bg-emerald-50/70 p-4">
+                <p className="ops-kicker text-emerald-800">Public apply link</p>
+                <a
+                  className="mt-2 block text-sm font-medium text-emerald-950 underline underline-offset-4"
+                  href={publishedJob.publicApplyPath}
+                >
+                  {publishedJob.publicApplyPath}
+                </a>
+                <p className="mt-2 text-sm leading-6 text-emerald-900">
+                  Share this route directly with candidates once the job is
+                  live.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <DataPoint
+                  label="Language"
+                  value={publishedJob.language.toUpperCase()}
+                  detail="Configured interview locale"
+                />
+                <DataPoint
+                  label="Interview limit"
+                  value={publishedJob.interviewLimits.maxInterviews ?? "None"}
+                  detail="Total cap"
+                />
+              </div>
             </div>
           </SectionCard>
         ) : null}
