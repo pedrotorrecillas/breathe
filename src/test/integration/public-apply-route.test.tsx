@@ -49,6 +49,50 @@ describe("public apply route", () => {
     ).toBeInTheDocument();
   });
 
+  it("blocks entry for inactive jobs", async () => {
+    const page = await ApplyPage({
+      params: Promise.resolve({
+        jobId: "demo-retail-shift-lead",
+      }),
+    });
+
+    render(page);
+
+    expect(
+      screen.getByText(/This job is no longer accepting applications/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Submit and receive call/i }),
+    ).not.toBeInTheDocument();
+    expect(getPublicApplySubmissionSnapshot()).toEqual({
+      candidates: [],
+      applications: [],
+      interviewRuns: [],
+    });
+  });
+
+  it("blocks entry when the interview limit has already been reached", async () => {
+    const page = await ApplyPage({
+      params: Promise.resolve({
+        jobId: "demo-operations-coordinator",
+      }),
+    });
+
+    render(page);
+
+    expect(
+      screen.getByText(/This job has reached its interview limit/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Submit and receive call/i }),
+    ).not.toBeInTheDocument();
+    expect(getPublicApplySubmissionSnapshot()).toEqual({
+      candidates: [],
+      applications: [],
+      interviewRuns: [],
+    });
+  });
+
   it("blocks invalid submission and shows validation errors", async () => {
     const page = await ApplyPage({
       params: Promise.resolve({

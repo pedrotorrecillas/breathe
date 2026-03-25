@@ -2,7 +2,7 @@ import { PublicApplyForm } from "@/components/public-apply-form";
 import { SectionCard } from "@/components/section-card";
 import { ErrorState } from "@/components/shared-states";
 import { StatusBadge } from "@/components/status-badge";
-import { findPublicJobBySlug } from "@/lib/public-jobs";
+import { findPublicJobBySlug, isPublicJobAvailable } from "@/lib/public-jobs";
 
 type ApplyPageProps = {
   params: Promise<{
@@ -22,6 +22,30 @@ export default async function ApplyPage({ params }: ApplyPageProps) {
             eyebrow="Public apply"
             title="This job link is no longer available."
             description="The public job identifier is missing, invalid, or no longer exposed for candidate intake."
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const availability = isPublicJobAvailable(publicJob);
+
+  if (!availability.isAvailable) {
+    return (
+      <div className="bg-ops-grid bg-ops-canvas flex flex-1">
+        <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-10">
+          <ErrorState
+            eyebrow="Public apply"
+            title={
+              availability.reason === "inactive"
+                ? "This job is no longer accepting applications."
+                : "This job has reached its interview limit."
+            }
+            description={
+              availability.reason === "inactive"
+                ? "The role remains visible for reference, but candidate intake is currently closed."
+                : "The job is active, but the configured interview capacity has already been reached."
+            }
           />
         </div>
       </div>

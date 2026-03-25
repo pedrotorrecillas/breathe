@@ -65,6 +65,35 @@ const publicJobs: PublicJobRecord[] = [
       greatCap: null,
     },
   },
+  {
+    id: "job_ops_coordinator_valencia",
+    title: "Operations Coordinator",
+    summary: "Public intake is paused because the interview queue is full.",
+    description:
+      "Coordinate shift coverage, warehouse escalations, and reporting handoff across a busy Valencia operation.",
+    location: "Valencia",
+    salary: "EUR 26,000 gross yearly",
+    schedule: "Early and late shift rotation",
+    status: "active",
+    interviewLanguage: "es",
+    createdAt: "2026-03-24T00:00:00.000Z",
+    publishedAt: "2026-03-24T14:00:00.000Z",
+    expiresAt: null,
+    publicApplyPath: "/apply/demo-operations-coordinator",
+    pipeline: {
+      applicants: 14,
+      interviewed: 14,
+      shortlisted: 4,
+      hired: 1,
+      rejected: 9,
+    },
+    requirements: [],
+    interviewLimits: {
+      maxInterviews: 14,
+      outstandingCap: null,
+      greatCap: null,
+    },
+  },
 ];
 
 export function listPublicJobs() {
