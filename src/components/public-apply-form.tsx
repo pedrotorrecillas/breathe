@@ -10,8 +10,6 @@ import type { SupportedLanguage } from "@/domain/shared/types";
 import {
   createLegalAcceptanceRecord,
   normalizeCandidateProfileSource,
-  type NormalizedCandidateProfileSource,
-  type PublicApplyLegalAcceptance,
   type PublicApplyFormInput,
   publicApplyTermsVersion,
   validatePublicApplyForm,
@@ -47,17 +45,13 @@ export function PublicApplyForm({
       language: interviewLanguage,
     }),
   );
-  const [submissionState, setSubmissionState] = useState<"idle" | "valid">(
+  const [submissionState, setSubmissionState] = useState<"idle" | "submitted">(
     "idle",
   );
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [profileSourceError, setProfileSourceError] = useState<string | null>(
     null,
   );
-  const [normalizedProfileSource, setNormalizedProfileSource] =
-    useState<NormalizedCandidateProfileSource | null>(null);
-  const [legalAcceptance, setLegalAcceptance] =
-    useState<PublicApplyLegalAcceptance | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   function updateField<K extends keyof PublicApplyFormInput>(
@@ -76,7 +70,6 @@ export function PublicApplyForm({
   function handleCvFileChange(file: File | null) {
     setCvFile(file);
     setProfileSourceError(null);
-    setNormalizedProfileSource(null);
     setSubmissionError(null);
     updateField("cvFileName", file?.name ?? null);
   }
@@ -129,10 +122,36 @@ export function PublicApplyForm({
     }
 
     setProfileSourceError(null);
-    setNormalizedProfileSource(normalizedProfileResult.data);
-    setLegalAcceptance(legalAcceptanceResult.data);
     setSubmissionError(null);
-    setSubmissionState("valid");
+    setSubmissionState("submitted");
+  }
+
+  if (submissionState === "submitted") {
+    return (
+      <div className="grid gap-4">
+        <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
+          <p className="ops-kicker text-emerald-800">Application received</p>
+          <h3 className="mt-2 text-lg font-semibold text-emerald-950">
+            Clara will call you shortly.
+          </h3>
+          <p className="mt-3 leading-7">
+            We have your application for {fields.fullName}. The first interview
+            call will use {fields.phone}, and it may take a couple of minutes to
+            start.
+          </p>
+          <p className="mt-3 leading-7">
+            If the call does not begin immediately, keep your phone nearby and
+            avoid resubmitting the form.
+          </p>
+          {fields.email.trim() ? (
+            <p className="mt-3 leading-7">
+              We will also keep {fields.email.trim()} available for recruiter
+              follow-up if needed.
+            </p>
+          ) : null}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -230,22 +249,6 @@ export function PublicApplyForm({
           </span>
         </label>
       </FormField>
-
-      {submissionState === "valid" ? (
-        <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-          <p>Application details look valid and ready for submission.</p>
-          <p className="mt-2">
-            Profile source:{" "}
-            {normalizedProfileSource?.cvAssetRef
-              ? `CV stored as ${normalizedProfileSource.cvAssetRef}`
-              : `LinkedIn stored as ${normalizedProfileSource?.linkedinUrl}`}
-          </p>
-          <p className="mt-2">
-            Terms accepted: {legalAcceptance?.termsVersion} at{" "}
-            {legalAcceptance?.acceptedAt}
-          </p>
-        </div>
-      ) : null}
 
       {submissionError ? (
         <div className="rounded-[1rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">

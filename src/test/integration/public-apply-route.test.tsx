@@ -97,9 +97,11 @@ describe("public apply route", () => {
     );
 
     expect(
-      screen.getByText(/LinkedIn stored as https:\/\/linkedin\.com\/in\/lucia-torres/i),
+      screen.getByText(/Clara will call you shortly/i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Terms accepted: 2026-03-mvp at/i)).toBeInTheDocument();
+    expect(
+      getPublicApplySubmissionSnapshot().candidates[0]?.linkedinUrl,
+    ).toBe("https://linkedin.com/in/lucia-torres");
   });
 
   it("surfaces a usable error for unsupported cv uploads", async () => {
@@ -165,6 +167,9 @@ describe("public apply route", () => {
 
     const snapshot = getPublicApplySubmissionSnapshot();
 
+    expect(
+      screen.getByText(/The first interview call will use \+34 600 123 456/i),
+    ).toBeInTheDocument();
     expect(snapshot.candidates).toHaveLength(1);
     expect(snapshot.applications).toHaveLength(1);
     expect(snapshot.interviewRuns).toHaveLength(1);
