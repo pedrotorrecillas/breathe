@@ -6,6 +6,7 @@ import { getInterviewRecordingForCandidate } from "@/lib/candidate-recording";
 import {
   getPublicApplySubmissionSnapshot,
   getInterviewEvaluation,
+  getInterviewRunRuntimeSnapshot,
   receiveHappyRobotWebhook,
   resetPublicApplySubmissionStore,
   saveInterviewEvaluation,
@@ -150,6 +151,47 @@ describe("public apply submissions", () => {
       providerCallId: "hr_call_run_1",
       completedAt: "2026-03-25T12:05:00.000Z",
       transcriptUrl: "https://example.com/transcript.txt",
+    });
+
+    expect(getInterviewRunRuntimeSnapshot("run_1")).toMatchObject({
+      interviewRun: {
+        id: "run_1",
+        dispatch: {
+          providerCallId: "hr_call_run_1",
+          providerAgentId: "gala-v1",
+          providerSessionId: "hr_session_run_1",
+        },
+        metadata: {
+          providerOutcomeLabel: "completed",
+        },
+        artifacts: {
+          recordingUrl: "https://example.com/recording.mp3",
+          transcriptUrl: "https://example.com/transcript.txt",
+          providerPayloadSnapshotRef: "payloads/evt_1.json",
+        },
+      },
+      dispatchRequest: {
+        interviewRunId: "run_1",
+        interviewPackageId: "prep_job_warehouse_madrid_cand_1",
+      },
+      dispatchPayload: {
+        interviewRunId: "run_1",
+        outboundNumber: "+34910000000",
+      },
+      dispatchResponse: {
+        success: true,
+        result: {
+          providerCallId: "hr_call_run_1",
+          providerAgentId: "gala-v1",
+          providerSessionId: "hr_session_run_1",
+        },
+      },
+      webhookRecords: [
+        {
+          matchedInterviewRunId: "run_1",
+        },
+      ],
+      evaluation: null,
     });
   });
 

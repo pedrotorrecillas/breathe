@@ -35,6 +35,18 @@ type PublicApplySubmissionInput = {
 
 type PublicApplyFailureMode = "candidate" | "application" | "interview";
 
+export type InterviewRunRuntimeSnapshot = {
+  interviewRun: InterviewRun;
+  candidate: CandidateProfile | null;
+  application: CandidateApplication | null;
+  interviewPreparationPackage: InterviewPreparationPackage | null;
+  dispatchRequest: HappyRobotCallRequest | null;
+  dispatchPayload: HappyRobotNormalizedDispatchPayload | null;
+  dispatchResponse: HappyRobotDispatchResponse | null;
+  webhookRecords: HappyRobotWebhookRecord[];
+  evaluation: CandidateEvaluation | null;
+};
+
 const candidates: CandidateProfile[] = [];
 const applications: CandidateApplication[] = [];
 const interviewRuns: InterviewRun[] = [];
@@ -94,6 +106,49 @@ export function getInterviewEvaluation(
       (evaluation) => evaluation.interviewRunId === interviewRunId,
     ) ?? null
   );
+}
+
+export function getInterviewRunRuntimeSnapshot(
+  interviewRunId: string,
+): InterviewRunRuntimeSnapshot | null {
+  const interviewRun = interviewRuns.find((run) => run.id === interviewRunId);
+
+  if (!interviewRun) {
+    return null;
+  }
+
+  const candidate = candidates.find((item) => item.id === interviewRun.candidateId) ?? null;
+  const application =
+    applications.find((item) => item.id === interviewRun.applicationId) ?? null;
+  const interviewPreparationPackage =
+    interviewPreparationPackages.find(
+      (item) => item.id === interviewRun.interviewPreparationId,
+    ) ?? null;
+  const dispatchRequestIndex = dispatchRequests.findIndex(
+    (item) => item.interviewRunId === interviewRunId,
+  );
+  const dispatchRequest =
+    dispatchRequestIndex >= 0 ? dispatchRequests[dispatchRequestIndex] : null;
+  const dispatchPayload =
+    dispatchPayloads.find((item) => item.interviewRunId === interviewRunId) ?? null;
+  const dispatchResponse =
+    dispatchRequestIndex >= 0 ? dispatchResponses[dispatchRequestIndex] ?? null : null;
+  const webhookRecordsForRun = webhookRecords.filter(
+    (record) => record.matchedInterviewRunId === interviewRunId,
+  );
+  const evaluation = getInterviewEvaluation(interviewRunId);
+
+  return {
+    interviewRun,
+    candidate,
+    application,
+    interviewPreparationPackage,
+    dispatchRequest,
+    dispatchPayload,
+    dispatchResponse,
+    webhookRecords: webhookRecordsForRun,
+    evaluation,
+  };
 }
 
 export function getRecruiterCandidateSummary(
