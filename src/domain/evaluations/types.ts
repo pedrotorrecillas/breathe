@@ -1,26 +1,62 @@
 import type { EntityId, ISODateTimeString } from "@/domain/shared/types";
 
-export type EvaluationConfidence = "high" | "medium" | "low" | "pending";
+export type EvaluationScoreState =
+  | "Outstanding"
+  | "Great"
+  | "Good"
+  | "Average"
+  | "Low"
+  | "Poor"
+  | "Pending";
 
-export type OverallFit = "strong_fit" | "viable_fit" | "weak_fit" | "pending";
+export type EvaluationRequirementImportance = "MANDATORY" | "OPTIONAL";
 
-export type RequirementAssessment = {
+export type EvaluationBlockCategory =
+  | "essential"
+  | "technical"
+  | "interpersonal";
+
+export type EvaluationEvidence = {
+  highlightedQuote: string | null;
+  transcriptStartMs: number | null;
+  transcriptEndMs: number | null;
+};
+
+export type EvaluationRequirementResult = {
   requirementId: EntityId;
   label: string;
-  category: "condition" | "essential" | "technical" | "interpersonal";
-  score: number | null;
-  rationale: string;
-  highlightedQuote: string | null;
+  importance: EvaluationRequirementImportance;
+  numericScore: number | null;
+  scoreState: EvaluationScoreState;
+  explanation: string;
+  evidence: EvaluationEvidence | null;
+};
+
+export type EvaluationBlockResult = {
+  category: EvaluationBlockCategory;
+  label: string;
+  numericScore: number | null;
+  scoreState: EvaluationScoreState;
+  requirements: EvaluationRequirementResult[];
+};
+
+export type EvaluationWeightConfig = {
+  mandatoryRequirementWeight: number;
+  optionalRequirementWeight: number;
+  essentialBlockWeight: number;
+  technicalBlockWeight: number;
+  interpersonalBlockWeight: number;
 };
 
 export type CandidateEvaluation = {
   id: EntityId;
   interviewRunId: EntityId;
   generatedAt: ISODateTimeString;
-  overallFit: OverallFit;
-  confidence: EvaluationConfidence;
-  summary: string;
-  assessments: RequirementAssessment[];
+  finalNumericScore: number | null;
+  finalScoreState: EvaluationScoreState;
+  blocks: EvaluationBlockResult[];
+  weightConfigSnapshot: EvaluationWeightConfig;
+  fitClassification?: "strong_fit" | "viable_fit" | "weak_fit" | null;
 };
 
 export type EvaluationPipelineStatus = "pending" | "generated" | "reviewed";

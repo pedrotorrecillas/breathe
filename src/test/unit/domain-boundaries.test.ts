@@ -118,10 +118,39 @@ describe("domain boundaries", () => {
       id: "eval_1",
       interviewRunId: "run_1",
       generatedAt: "2026-03-24T00:00:00.000Z",
-      overallFit: "pending",
-      confidence: "pending",
-      summary: "Awaiting interview completion.",
-      assessments: [],
+      finalNumericScore: null,
+      finalScoreState: "Pending",
+      blocks: [
+        {
+          category: "essential",
+          label: "Essential requirements",
+          numericScore: null,
+          scoreState: "Pending",
+          requirements: [],
+        },
+        {
+          category: "technical",
+          label: "Technical skills",
+          numericScore: null,
+          scoreState: "Pending",
+          requirements: [],
+        },
+        {
+          category: "interpersonal",
+          label: "Interpersonal skills",
+          numericScore: null,
+          scoreState: "Pending",
+          requirements: [],
+        },
+      ],
+      weightConfigSnapshot: {
+        mandatoryRequirementWeight: 0.8,
+        optionalRequirementWeight: 0.2,
+        essentialBlockWeight: 0.45,
+        technicalBlockWeight: 0.45,
+        interpersonalBlockWeight: 0.1,
+      },
+      fitClassification: null,
     };
 
     const interviewRun: InterviewRun = {
