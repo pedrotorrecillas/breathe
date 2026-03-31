@@ -104,6 +104,10 @@ export function findPublicJobBySlug(slug: string) {
   return publicJobs.find((job) => job.publicApplyPath === `/apply/${slug}`) ?? null;
 }
 
+export function findPublicJobById(jobId: string) {
+  return publicJobs.find((job) => job.id === jobId) ?? null;
+}
+
 export function isPublicJobAvailable(job: PublicJobRecord) {
   if (job.status !== "active") {
     return {

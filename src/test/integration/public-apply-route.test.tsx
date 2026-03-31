@@ -68,6 +68,10 @@ describe("public apply route", () => {
       candidates: [],
       applications: [],
       interviewRuns: [],
+      interviewPreparationPackages: [],
+      dispatchRequests: [],
+      dispatchPayloads: [],
+      dispatchResponses: [],
     });
   });
 
@@ -90,6 +94,10 @@ describe("public apply route", () => {
       candidates: [],
       applications: [],
       interviewRuns: [],
+      interviewPreparationPackages: [],
+      dispatchRequests: [],
+      dispatchPayloads: [],
+      dispatchResponses: [],
     });
   });
 
@@ -217,9 +225,20 @@ describe("public apply route", () => {
     expect(snapshot.candidates).toHaveLength(1);
     expect(snapshot.applications).toHaveLength(1);
     expect(snapshot.interviewRuns).toHaveLength(1);
+    expect(snapshot.interviewPreparationPackages).toHaveLength(1);
+    expect(snapshot.dispatchRequests).toHaveLength(1);
+    expect(snapshot.dispatchPayloads).toHaveLength(1);
+    expect(snapshot.dispatchResponses).toHaveLength(1);
     expect(snapshot.applications[0]?.candidateId).toBe(snapshot.candidates[0]?.id);
     expect(snapshot.interviewRuns[0]?.applicationId).toBe(
       snapshot.applications[0]?.id,
+    );
+    expect(snapshot.interviewRuns[0]?.status).toBe("queued");
+    expect(snapshot.interviewRuns[0]?.interviewPreparationId).toBe(
+      snapshot.interviewPreparationPackages[0]?.id,
+    );
+    expect(snapshot.interviewRuns[0]?.dispatch.providerCallId).toBe(
+      "hr_call_run_1",
     );
   });
 });

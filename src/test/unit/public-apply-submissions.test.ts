@@ -41,6 +41,17 @@ describe("public apply submissions", () => {
     expect(result.data.interviewRun.applicationId).toBe(
       result.data.application.id,
     );
+    expect(result.data.interviewRun.status).toBe("queued");
+    expect(result.data.interviewRun.interviewPreparationId).toBe(
+      result.data.interviewPackage.id,
+    );
+    expect(result.data.callRequest.interviewPackageId).toBe(
+      result.data.interviewPackage.id,
+    );
+    expect(result.data.dispatchResponse.success).toBe(true);
+    expect(result.data.interviewRun.dispatch.providerCallId).toBe(
+      "hr_call_run_1",
+    );
   });
 
   it("does not persist partial state when a staged failure happens", () => {
@@ -74,6 +85,10 @@ describe("public apply submissions", () => {
       candidates: [],
       applications: [],
       interviewRuns: [],
+      interviewPreparationPackages: [],
+      dispatchRequests: [],
+      dispatchPayloads: [],
+      dispatchResponses: [],
     });
   });
 });

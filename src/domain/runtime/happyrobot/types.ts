@@ -57,13 +57,39 @@ export type HappyRobotNormalizedDispatchPayload = {
 
 export type HappyRobotCallResult = {
   providerCallId: string;
+  providerAgentId: string | null;
+  providerSessionId: string | null;
   status: HappyRobotCallStatus;
+  dispatchedAt: ISODateTimeString;
   recordingUrl: string | null;
   transcriptUrl: string | null;
   startedAt: ISODateTimeString | null;
   endedAt: ISODateTimeString | null;
   failureReason: string | null;
 };
+
+export type HappyRobotDispatchFailureCode =
+  | "missing_outbound_number"
+  | "unsupported_language"
+  | "provider_error";
+
+export type HappyRobotDispatchFailure = {
+  code: HappyRobotDispatchFailureCode;
+  message: string;
+  retryable: boolean;
+  providerStatus: HappyRobotCallStatus | null;
+  happenedAt: ISODateTimeString;
+};
+
+export type HappyRobotDispatchResponse =
+  | {
+      success: true;
+      result: HappyRobotCallResult;
+    }
+  | {
+      success: false;
+      error: HappyRobotDispatchFailure;
+    };
 
 export type HappyRobotWebhookEvent = {
   eventId: EntityId;

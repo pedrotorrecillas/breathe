@@ -3,12 +3,20 @@ import type {
   CandidateProfile,
   CandidateSource,
 } from "@/domain/candidates/types";
+import type { InterviewPreparationPackage } from "@/domain/interview-preparation/types";
 import type { InterviewRun } from "@/domain/interviews/types";
 import type { SupportedLanguage } from "@/domain/shared/types";
+import type {
+  HappyRobotCallRequest,
+  HappyRobotDispatchResponse,
+  HappyRobotNormalizedDispatchPayload,
+} from "@/domain/runtime/happyrobot/types";
+import { executeHappyRobotDispatch } from "@/lib/happyrobot-orchestration";
 import type {
   NormalizedCandidateProfileSource,
   PublicApplyLegalAcceptance,
 } from "@/lib/public-apply";
+import { findPublicJobById } from "@/lib/public-jobs";
 
 type PublicApplySubmissionInput = {
   jobId: string;
@@ -25,6 +33,10 @@ type PublicApplyFailureMode = "candidate" | "application" | "interview";
 const candidates: CandidateProfile[] = [];
 const applications: CandidateApplication[] = [];
 const interviewRuns: InterviewRun[] = [];
+const interviewPreparationPackages: InterviewPreparationPackage[] = [];
+const dispatchRequests: HappyRobotCallRequest[] = [];
+const dispatchPayloads: HappyRobotNormalizedDispatchPayload[] = [];
+const dispatchResponses: HappyRobotDispatchResponse[] = [];
 
 function normalizePhone(phone: string) {
   const trimmed = phone.trim();
@@ -46,6 +58,10 @@ export function resetPublicApplySubmissionStore() {
   candidates.length = 0;
   applications.length = 0;
   interviewRuns.length = 0;
+  interviewPreparationPackages.length = 0;
+  dispatchRequests.length = 0;
+  dispatchPayloads.length = 0;
+  dispatchResponses.length = 0;
 }
 
 export function getPublicApplySubmissionSnapshot() {
@@ -53,6 +69,10 @@ export function getPublicApplySubmissionSnapshot() {
     candidates: [...candidates],
     applications: [...applications],
     interviewRuns: [...interviewRuns],
+    interviewPreparationPackages: [...interviewPreparationPackages],
+    dispatchRequests: [...dispatchRequests],
+    dispatchPayloads: [...dispatchPayloads],
+    dispatchResponses: [...dispatchResponses],
   };
 }
 
@@ -68,6 +88,10 @@ export function submitPublicApplication(
         candidate: CandidateProfile;
         application: CandidateApplication;
         interviewRun: InterviewRun;
+        interviewPackage: InterviewPreparationPackage;
+        callRequest: HappyRobotCallRequest;
+        dispatchPayload: HappyRobotNormalizedDispatchPayload;
+        dispatchResponse: HappyRobotDispatchResponse;
       };
     }
   | {
@@ -146,6 +170,15 @@ export function submitPublicApplication(
     };
   }
 
+  const job = findPublicJobById(input.jobId);
+
+  if (!job) {
+    return {
+      success: false,
+      error: "Interview dispatch preparation failed because the job was not found.",
+    };
+  }
+
   const stagedInterviewRun: InterviewRun = {
     id: nextId("run", interviewRuns.length),
     candidateId: stagedCandidate.id,
@@ -153,17 +186,17 @@ export function submitPublicApplication(
     jobId: input.jobId,
     interviewPreparationId: null,
     provider: "happyrobot",
-    status: "queued",
+    status: "created",
     pipelineStage: "applicant",
     dispatch: {
       dispatchedAt: null,
       providerCallId: null,
       providerAgentId: null,
       providerSessionId: null,
-      outboundNumber: stagedCandidate.normalizedPhone,
+      outboundNumber: null,
     },
     metadata: {
-      selectedLanguage: input.language,
+      selectedLanguage: "auto_detected",
       candidateTimezone: {
         timezone: null,
         localDateTime: null,
@@ -187,9 +220,16 @@ export function submitPublicApplication(
       transcriptUrl: null,
       transcriptAssetRef: null,
       providerPayloadSnapshotRef: null,
-      recordingDurationSeconds: null,
-    },
-  };
+        recordingDurationSeconds: null,
+      },
+    };
+
+  const dispatchExecution = executeHappyRobotDispatch({
+    interviewRun: stagedInterviewRun,
+    candidate: stagedCandidate,
+    job,
+    now: new Date(input.legalAcceptance.acceptedAt),
+  });
 
   if (existingCandidate) {
     const candidateIndex = candidates.findIndex(
@@ -201,14 +241,22 @@ export function submitPublicApplication(
   }
 
   applications.push(stagedApplication);
-  interviewRuns.push(stagedInterviewRun);
+  interviewRuns.push(dispatchExecution.interviewRun);
+  interviewPreparationPackages.push(dispatchExecution.interviewPackage);
+  dispatchRequests.push(dispatchExecution.callRequest);
+  dispatchPayloads.push(dispatchExecution.dispatchPayload);
+  dispatchResponses.push(dispatchExecution.dispatchResponse);
 
   return {
     success: true,
     data: {
       candidate: stagedCandidate,
       application: stagedApplication,
-      interviewRun: stagedInterviewRun,
+      interviewRun: dispatchExecution.interviewRun,
+      interviewPackage: dispatchExecution.interviewPackage,
+      callRequest: dispatchExecution.callRequest,
+      dispatchPayload: dispatchExecution.dispatchPayload,
+      dispatchResponse: dispatchExecution.dispatchResponse,
     },
   };
 }

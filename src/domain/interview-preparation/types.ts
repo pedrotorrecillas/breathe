@@ -13,13 +13,29 @@ export type InterviewQuestionKind =
   | "language_check"
   | "closing";
 
-export type QuestionConfidenceLevel = 1 | 2 | 3 | 4 | 5 | 6;
+export type InterviewQuestionType = "standard" | "killer" | "language";
+
+export type QuestionConfidenceBand =
+  | "excellent"
+  | "very_good"
+  | "good"
+  | "adequate"
+  | "poor"
+  | "inadequate";
+
+export type QuestionConfidenceLevel = {
+  band: QuestionConfidenceBand;
+  level: string;
+  description: string;
+};
 
 export type InterviewQuestion = {
   id: EntityId;
   requirementId: EntityId | null;
   kind: InterviewQuestionKind;
+  type: InterviewQuestionType;
   prompt: string;
+  metadata: string | null;
   rubric: string;
   confidenceLevels: QuestionConfidenceLevel[];
 };
