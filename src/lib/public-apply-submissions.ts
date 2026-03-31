@@ -169,6 +169,20 @@ export function getInterviewRunRuntimeSnapshot(
   };
 }
 
+export function getInterviewRunRuntimeSnapshotByCandidateId(
+  candidateId: string,
+): InterviewRunRuntimeSnapshot | null {
+  const interviewRun = [...interviewRuns]
+    .reverse()
+    .find((run) => run.candidateId === candidateId);
+
+  if (!interviewRun) {
+    return null;
+  }
+
+  return getInterviewRunRuntimeSnapshot(interviewRun.id);
+}
+
 export function getRecruiterCandidateSummary(
   interviewRunId: string,
 ): EvaluationSummary | null {

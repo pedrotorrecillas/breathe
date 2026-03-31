@@ -7,14 +7,11 @@ import { CandidateStageCard } from "@/components/candidate-stage-card";
 import { DataPoint, DetailPanel, SectionCard } from "@/components/section-card";
 import { PlaceholderState } from "@/components/placeholder-state";
 import { EmptyState } from "@/components/shared-states";
-import type {
-  CandidateEvaluation,
-  EvaluationRequirementImportance,
-} from "@/domain/evaluations/types";
+import type { CandidateEvaluation } from "@/domain/evaluations/types";
 import { StatusBadge, scoreBadgeIntent } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { mapNumericScoreToState } from "@/lib/evaluation-scoring";
-import { getInterviewRecordingForCandidate } from "@/lib/candidate-recording";
+import { getInterviewRunRuntimeSnapshotByCandidateId } from "@/lib/public-apply-submissions";
 import {
   activePipelineStages,
   applyRecruiterAction,
@@ -268,45 +265,23 @@ function getCandidateReport(candidateId: string): CandidateReport {
   return reportDataByCandidateId[candidateId] ?? defaultReport;
 }
 
-function toRequirementImportance(
-  importance: ReportRequirementImportance,
-): EvaluationRequirementImportance {
-  return importance === "Mandatory" ? "MANDATORY" : "OPTIONAL";
-}
-
-function buildCandidateEvaluation(
-  candidateId: string,
-  report: CandidateReport,
-): CandidateEvaluation {
+function buildCandidateReportFromEvaluation(
+  evaluation: CandidateEvaluation,
+): CandidateReport {
   return {
-    id: `eval_${candidateId}`,
-    interviewRunId: `run_${candidateId}`,
-    generatedAt: "2026-03-31T09:00:00.000Z",
-    finalNumericScore: Math.round(report.finalNumericScore),
-    finalScoreState: mapNumericScoreToState(Math.round(report.finalNumericScore)),
-    blocks: report.blocks.map((block) => ({
+    finalNumericScore: evaluation.finalNumericScore ?? 0,
+    blocks: evaluation.blocks.map((block) => ({
       category: block.category,
-      label: block.title,
-      numericScore: Math.round(block.numericScore),
-      scoreState: mapNumericScoreToState(Math.round(block.numericScore)),
-      requirements: block.requirements.map((requirement, index) => ({
-        requirementId: `${candidateId}_${block.category}_${index}`,
+      title: block.label,
+      numericScore: block.numericScore ?? 0,
+      requirements: block.requirements.map((requirement) => ({
         label: requirement.label,
-        importance: toRequirementImportance(requirement.importance),
-        numericScore: Math.round(requirement.numericScore),
-        scoreState: mapNumericScoreToState(Math.round(requirement.numericScore)),
+        importance:
+          requirement.importance === "MANDATORY" ? "Mandatory" : "Optional",
+        numericScore: requirement.numericScore ?? 0,
         explanation: requirement.explanation,
-        evidence: null,
       })),
     })),
-    weightConfigSnapshot: {
-      mandatoryRequirementWeight: 0.8,
-      optionalRequirementWeight: 0.2,
-      essentialBlockWeight: 0.45,
-      technicalBlockWeight: 0.45,
-      interpersonalBlockWeight: 0.1,
-    },
-    fitClassification: null,
   };
 }
 
@@ -330,18 +305,21 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
   const selectedCandidate =
     candidates.find((candidate) => candidate.id === selectedCandidateId) ??
     null;
-  const selectedCandidateReport = selectedCandidate
-    ? getCandidateReport(selectedCandidate.id)
+  const selectedCandidateRuntime = selectedCandidate
+    ? getInterviewRunRuntimeSnapshotByCandidateId(selectedCandidate.id)
     : null;
   const selectedCandidateEvaluation =
-    selectedCandidate && selectedCandidateReport
-      ? buildCandidateEvaluation(
-          selectedCandidate.id,
-          selectedCandidateReport,
-        )
+    selectedCandidateRuntime?.evaluation ?? null;
+  const selectedCandidateReport = selectedCandidateEvaluation
+    ? buildCandidateReportFromEvaluation(selectedCandidateEvaluation)
+    : selectedCandidate
+      ? getCandidateReport(selectedCandidate.id)
       : null;
-  const selectedCandidateRecording = selectedCandidate
-    ? getInterviewRecordingForCandidate(selectedCandidate.fullName)
+  const selectedCandidateRecording = selectedCandidateRuntime?.interviewRun.artifacts.recordingUrl
+    ? {
+        recordingUrl: selectedCandidateRuntime.interviewRun.artifacts.recordingUrl,
+        completedAt: selectedCandidateRuntime.interviewRun.trace.completedAt,
+      }
     : null;
 
   const selectCandidate = (candidateId: string) => {

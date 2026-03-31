@@ -1,3 +1,9 @@
+import { buildEvaluationSummary } from "@/lib/evaluation-summary";
+import {
+  getInterviewRunRuntimeSnapshotByCandidateId,
+  getPublicApplySubmissionSnapshot,
+} from "@/lib/public-apply-submissions";
+
 export const activePipelineStages = [
   "Applicants",
   "Interviewed",
@@ -238,7 +244,177 @@ const jobPipelineSeeds: Record<string, JobPipelineSeed> = {
   },
 };
 
+const recruiterJobToPublicJobId: Record<string, string> = {
+  "warehouse-associate-madrid": "job_warehouse_madrid",
+  "retail-shift-lead-barcelona": "job_retail_barcelona",
+};
+
+function normalizeStage(stage: string): JobDetailTab {
+  switch (stage) {
+    case "interviewed":
+      return "Interviewed";
+    case "shortlisted":
+      return "Shortlisted";
+    case "hired":
+      return "Hired";
+    case "rejected":
+      return "Rejected";
+    default:
+      return "Applicants";
+  }
+}
+
+function pipelineScoreStateFromFinal(scoreState: string | null | undefined) {
+  if (
+    scoreState === "Outstanding" ||
+    scoreState === "Great" ||
+    scoreState === "Good" ||
+    scoreState === "Average" ||
+    scoreState === "Low" ||
+    scoreState === "Poor"
+  ) {
+    return scoreState;
+  }
+
+  return undefined;
+}
+
+function operationalStateFromRuntimeStatus(status?: string | null): PipelineOperationalState | undefined {
+  switch (status) {
+    case "queued":
+    case "normalized":
+    case "dispatching":
+    case "dialing":
+    case "in_progress":
+      return "calling";
+    case "completed":
+      return "completed";
+    case "human_requested":
+      return "human_requested";
+    case "no_response":
+      return "no_response";
+    default:
+      return undefined;
+  }
+}
+
+function formatRelevantDate(
+  stage: JobDetailTab,
+  submittedAt: string,
+  completedAt: string | null,
+  lastEventAt: string | null,
+) {
+  if (stage === "Interviewed" && completedAt) {
+    return {
+      label: "Interviewed",
+      value: completedAt,
+    };
+  }
+
+  if (stage === "Rejected" && lastEventAt) {
+    return {
+      label: "Rejected",
+      value: lastEventAt,
+    };
+  }
+
+  return {
+    label: "Applied",
+    value: submittedAt,
+  };
+}
+
+function buildLivePipelineSnapshot(jobId: string): JobPipelineSeed | null {
+  const publicJobId = recruiterJobToPublicJobId[jobId];
+
+  if (!publicJobId) {
+    return null;
+  }
+
+  const snapshot = getPublicApplySubmissionSnapshot();
+  const liveApplications = snapshot.applications.filter(
+    (application) => application.jobId === publicJobId,
+  );
+
+  if (liveApplications.length === 0) {
+    return null;
+  }
+
+  const candidates = liveApplications
+    .map((application) => {
+      const candidate = snapshot.candidates.find(
+        (item) => item.id === application.candidateId,
+      );
+      if (!candidate) {
+        return null;
+      }
+
+      const interviewRun = getInterviewRunRuntimeSnapshotByCandidateId(candidate.id);
+      const evaluation = interviewRun?.evaluation ?? null;
+      const summary = evaluation ? buildEvaluationSummary(evaluation) : null;
+      const stage = normalizeStage(application.stage);
+      const relevant = formatRelevantDate(
+        stage,
+        application.submittedAt,
+        interviewRun?.interviewRun.trace.completedAt ?? null,
+        interviewRun?.interviewRun.trace.lastEventAt ?? null,
+      );
+
+      return {
+        id: candidate.id,
+        fullName: candidate.fullName,
+        stage,
+        summary:
+          summary?.summary ??
+          (stage === "Interviewed"
+            ? "Completed interview and ready for recruiter review."
+            : stage === "Rejected"
+              ? "Interview outcome routed to rejected review."
+              : interviewRun?.interviewRun.status === "human_requested"
+                ? "Candidate asked for a human callback during the interview."
+                : "Public apply candidate awaiting runtime progression."),
+        relevantDateLabel: relevant.label,
+        relevantDateValue: relevant.value,
+        scoreState: pipelineScoreStateFromFinal(summary?.finalScoreState ?? null),
+        operationalState: operationalStateFromRuntimeStatus(
+          interviewRun?.interviewRun.status ?? null,
+        ),
+        rejectedReason:
+          stage === "Rejected"
+            ? interviewRun?.interviewRun.metadata.failureReason ?? "Rejected"
+            : undefined,
+      };
+    })
+    .filter((candidate): candidate is PipelineCandidate => candidate !== null)
+    .sort((left, right) => {
+      const order: Record<JobDetailTab, number> = {
+        Applicants: 0,
+        Interviewed: 1,
+        Shortlisted: 2,
+        Hired: 3,
+        Rejected: 4,
+      };
+
+      if (order[left.stage] !== order[right.stage]) {
+        return order[left.stage] - order[right.stage];
+      }
+
+      return left.fullName.localeCompare(right.fullName);
+    });
+
+  return {
+    title: jobPipelineSeeds[jobId]?.title ?? publicJobId,
+    candidates,
+  };
+}
+
 export function getJobPipelineSnapshot(jobId: string) {
+  const liveSnapshot = buildLivePipelineSnapshot(jobId);
+
+  if (liveSnapshot) {
+    return liveSnapshot;
+  }
+
   const seed = jobPipelineSeeds[jobId];
 
   if (!seed) {

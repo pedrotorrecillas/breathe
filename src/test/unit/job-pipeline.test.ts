@@ -1,12 +1,120 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
+import { publicApplyTermsVersion } from "@/lib/public-apply";
 import {
   applyRecruiterAction,
   getJobPipelineSnapshot,
   getOperationalStateLabel,
 } from "@/lib/job-pipeline";
+import {
+  receiveHappyRobotWebhook,
+  resetPublicApplySubmissionStore,
+  saveInterviewEvaluation,
+  submitPublicApplication,
+} from "@/lib/public-apply-submissions";
 
 describe("job pipeline labels", () => {
+  afterEach(() => {
+    resetPublicApplySubmissionStore();
+  });
+
+  it("derives a live recruiter snapshot from runtime state when available", () => {
+    submitPublicApplication({
+      jobId: "job_warehouse_madrid",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "en",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    receiveHappyRobotWebhook(
+      {
+        eventId: "evt_1",
+        interviewRunId: "run_1",
+        providerCallId: "hr_call_run_1",
+        status: "completed",
+        happenedAt: "2026-03-25T12:05:00.000Z",
+        recordingUrl: "https://example.com/recording.mp3",
+        transcriptUrl: "https://example.com/transcript.txt",
+        rawPayloadRef: "payloads/evt_1.json",
+      },
+      {
+        receivedAt: new Date("2026-03-25T12:05:01.000Z"),
+      },
+    );
+
+    saveInterviewEvaluation({
+      id: "eval_1",
+      interviewRunId: "run_1",
+      generatedAt: "2026-03-25T12:15:00.000Z",
+      finalNumericScore: 74,
+      finalScoreState: "Good",
+      blocks: [
+        {
+          category: "essential",
+          label: "Essential requirements",
+          numericScore: 84,
+          scoreState: "Great",
+          requirements: [
+            {
+              requirementId: "req_1",
+              label: "Warehouse experience",
+              importance: "MANDATORY",
+              numericScore: 92,
+              scoreState: "Great",
+              explanation: "Direct evidence of prior warehouse work.",
+              evidence: null,
+            },
+          ],
+        },
+        {
+          category: "technical",
+          label: "Technical skills",
+          numericScore: 69,
+          scoreState: "Good",
+          requirements: [],
+        },
+        {
+          category: "interpersonal",
+          label: "Interpersonal skills",
+          numericScore: 41,
+          scoreState: "Low",
+          requirements: [],
+        },
+      ],
+      weightConfigSnapshot: {
+        mandatoryRequirementWeight: 0.8,
+        optionalRequirementWeight: 0.2,
+        essentialBlockWeight: 0.45,
+        technicalBlockWeight: 0.45,
+        interpersonalBlockWeight: 0.1,
+      },
+      fitClassification: "viable_fit",
+    });
+
+    const snapshot = getJobPipelineSnapshot("warehouse-associate-madrid");
+
+    expect(snapshot).not.toBeNull();
+    expect(snapshot?.candidates[0]).toMatchObject({
+      id: "cand_1",
+      fullName: "Lucia Torres",
+      stage: "Interviewed",
+      scoreState: "Good",
+      operationalState: "completed",
+    });
+    expect(snapshot?.candidates[0]?.summary).toContain("Warehouse experience");
+
+  });
+
   it("maps operational states into recruiter-friendly labels", () => {
     expect(getOperationalStateLabel("pending")).toBe("Awaiting call");
     expect(getOperationalStateLabel("calling")).toBe("Calling now");

@@ -2,11 +2,13 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { JobDetailWorkspace } from "@/components/job-detail-workspace";
+import type { CandidateEvaluation } from "@/domain/evaluations/types";
 import { publicApplyTermsVersion } from "@/lib/public-apply";
 import { getInterviewRecordingForCandidate } from "@/lib/candidate-recording";
 import {
   receiveHappyRobotWebhook,
   resetPublicApplySubmissionStore,
+  saveInterviewEvaluation,
   submitPublicApplication,
 } from "@/lib/public-apply-submissions";
 
@@ -37,13 +39,6 @@ describe("job detail pipeline", () => {
     expect(
       screen.getAllByText(/Consistent order-picking throughput/i).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByText(/Quick triage read/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Essential requirements stand out as the strongest block/i,
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Watchouts/i)).toBeInTheDocument();
     expect(screen.getByText(/Candidate report/i)).toBeInTheDocument();
     expect(
       screen.getByText(/Recruiter-facing evaluation summary/i),
@@ -91,6 +86,57 @@ describe("job detail pipeline", () => {
       },
     );
 
+    const evaluation: CandidateEvaluation = {
+      id: "eval_1",
+      interviewRunId: "run_1",
+      generatedAt: "2026-03-25T12:15:00.000Z",
+      finalNumericScore: 74,
+      finalScoreState: "Good",
+      blocks: [
+        {
+          category: "essential",
+          label: "Essential requirements",
+          numericScore: 84,
+          scoreState: "Great",
+          requirements: [
+            {
+              requirementId: "req_1",
+              label: "Warehouse experience",
+              importance: "MANDATORY",
+              numericScore: 92,
+              scoreState: "Great",
+              explanation: "Direct evidence of prior warehouse work.",
+              evidence: null,
+            },
+          ],
+        },
+        {
+          category: "technical",
+          label: "Technical skills",
+          numericScore: 69,
+          scoreState: "Good",
+          requirements: [],
+        },
+        {
+          category: "interpersonal",
+          label: "Interpersonal skills",
+          numericScore: 41,
+          scoreState: "Low",
+          requirements: [],
+        },
+      ],
+      weightConfigSnapshot: {
+        mandatoryRequirementWeight: 0.8,
+        optionalRequirementWeight: 0.2,
+        essentialBlockWeight: 0.45,
+        technicalBlockWeight: 0.45,
+        interpersonalBlockWeight: 0.1,
+      },
+      fitClassification: "viable_fit",
+    };
+
+    saveInterviewEvaluation(evaluation);
+
     render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
 
     fireEvent.click(
@@ -103,6 +149,10 @@ describe("job detail pipeline", () => {
     expect(
       screen.getByText(/Runtime recording stored for this candidate/i),
     ).toBeInTheDocument();
+    expect(screen.getAllByText(/Quick triage read/i).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(/Essential requirements stand out as the strongest block/i).length,
+    ).toBeGreaterThan(0);
     expect(getInterviewRecordingForCandidate("Lucia Torres")).toEqual({
       recordingUrl: "https://example.com/recording.mp3",
       recordingDurationSeconds: null,
@@ -110,6 +160,9 @@ describe("job detail pipeline", () => {
       completedAt: "2026-03-25T12:05:00.000Z",
       transcriptUrl: "https://example.com/transcript.txt",
     });
+    expect(
+      screen.getAllByText(/Warehouse experience \(Great\)/i).length,
+    ).toBeGreaterThan(0);
   });
 
   it("shows lightweight operational badges only in Applicants", () => {
