@@ -12,6 +12,39 @@ import {
   mapDispatchFailureToRuntimeTransition,
 } from "@/lib/interview-pipeline-transitions";
 
+type HappyRobotWorkflowDispatchPayload = {
+  provider: "happyrobot";
+  interview_run_id: string;
+  job_id: string;
+  candidate_id: string;
+  application_id: string;
+  interview_package_id: string;
+  target_language: string;
+  allowed_languages: string[];
+  timezone: string | null;
+  local_datetime: string | null;
+  utc_datetime: string | null;
+  outbound_number: string | null;
+  disclosure_text: string;
+  job_conditions: HappyRobotRuntimeRequirement[];
+  scored_requirements: Array<
+    HappyRobotRuntimeRequirement & {
+      category: string;
+    }
+  >;
+  questions: Array<{
+    id: string;
+    kind: string;
+    prompt: string;
+    requirement_id: string | null;
+  }>;
+  candidate_phone: string;
+};
+
+function workflowWebhookUrl() {
+  return process.env.HAPPYROBOT_WORKFLOW_WEBHOOK_URL?.trim() || null;
+}
+
 function toRuntimeRequirement(
   requirement: Job["requirements"][number],
 ): HappyRobotRuntimeRequirement {
@@ -38,6 +71,7 @@ export function buildHappyRobotDispatchPayload(input: {
     candidateId: candidate.id,
     applicationId: interviewRun.applicationId,
     interviewPackageId: interviewPackage.id,
+    candidatePhone: candidate.phone,
     language: interviewRun.metadata.selectedLanguage,
     candidateTimezone: interviewRun.metadata.candidateTimezone,
     outboundNumber: interviewRun.dispatch.outboundNumber,
@@ -58,12 +92,45 @@ export function buildHappyRobotDispatchPayload(input: {
   };
 }
 
-export function dispatchHappyRobotCall(input: {
+function toWorkflowDispatchPayload(
+  payload: HappyRobotNormalizedDispatchPayload,
+): HappyRobotWorkflowDispatchPayload {
+  return {
+    provider: "happyrobot",
+    interview_run_id: payload.interviewRunId,
+    job_id: payload.jobId,
+    candidate_id: payload.candidateId,
+    application_id: payload.applicationId,
+    interview_package_id: payload.interviewPackageId,
+    target_language: payload.language,
+    allowed_languages: [payload.language],
+    timezone: payload.candidateTimezone.timezone,
+    local_datetime: payload.nowLocal,
+    utc_datetime: payload.nowUtc,
+    outbound_number: payload.outboundNumber,
+    disclosure_text: payload.disclosureText,
+    job_conditions: payload.jobConditions,
+    scored_requirements: payload.scoredRequirements.map((requirement) => ({
+      ...requirement,
+      category:
+        requirement.category === "essential" ? "must_have" : requirement.category,
+    })),
+    questions: payload.questions.map((question) => ({
+      id: question.id,
+      kind: question.kind,
+      prompt: question.prompt,
+      requirement_id: question.requirementId,
+    })),
+    candidate_phone: payload.candidatePhone,
+  };
+}
+
+export async function dispatchHappyRobotCall(input: {
   callRequest: HappyRobotCallRequest;
   payload: HappyRobotNormalizedDispatchPayload;
   now?: Date;
   simulateFailureReason?: string;
-}): HappyRobotDispatchResponse {
+}): Promise<HappyRobotDispatchResponse> {
   const happenedAt = (input.now ?? new Date()).toISOString();
 
   if (!input.payload.outboundNumber) {
@@ -105,6 +172,63 @@ export function dispatchHappyRobotCall(input: {
         happenedAt,
       },
     };
+  }
+
+  const webhookUrl = workflowWebhookUrl();
+
+  if (webhookUrl) {
+    try {
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(toWorkflowDispatchPayload(input.payload)),
+      });
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: {
+            code: "provider_error",
+            message: `HappyRobot workflow webhook returned ${response.status}.`,
+            retryable: response.status >= 500,
+            providerStatus: "failed",
+            happenedAt,
+          },
+        };
+      }
+
+      return {
+        success: true,
+        result: {
+          providerCallId: input.callRequest.interviewRunId,
+          providerAgentId: "gala-v1",
+          providerSessionId: null,
+          status: "queued",
+          dispatchedAt: happenedAt,
+          recordingUrl: null,
+          transcriptUrl: null,
+          startedAt: null,
+          endedAt: null,
+          failureReason: null,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: "provider_error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "HappyRobot workflow webhook request failed.",
+          retryable: true,
+          providerStatus: "failed",
+          happenedAt,
+        },
+      };
+    }
   }
 
   return {

@@ -40,11 +40,11 @@ export default function Home() {
         <section className="grid gap-8 rounded-[1.35rem] border border-slate-200/80 bg-white/94 p-7 shadow-[0_18px_48px_rgba(15,23,42,0.06)] md:grid-cols-[1.15fr_0.85fr] md:p-9">
           <div className="space-y-6">
             <div className="inline-flex items-center rounded-[0.7rem] border border-sky-200 bg-sky-50 px-3 py-1 font-mono text-xs tracking-[0.24em] text-sky-900 uppercase">
-              Clara MVP
+              Breathe
             </div>
             <div className="space-y-4">
               <h1 className="font-heading max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 md:text-6xl">
-                Clara helps recruiters publish jobs, run interviews, and review
+                Breathe helps recruiters publish jobs, run interviews, and review
                 candidate evidence in one workspace.
               </h1>
               <p className="max-w-2xl text-base leading-8 text-slate-600 md:text-lg">
@@ -95,7 +95,7 @@ export default function Home() {
               </ul>
             </div>
             <div className="mt-4 rounded-[1rem] border border-white/10 bg-white/5 p-4 text-sm leading-7 text-slate-200">
-              Recruiters make the final decision. Clara structures the workflow
+              Recruiters make the final decision. Breathe structures the workflow
               and the evidence, not the outcome.
             </div>
           </aside>

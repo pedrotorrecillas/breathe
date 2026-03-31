@@ -3,6 +3,7 @@ import type {
   HappyRobotWebhookEvent,
   HappyRobotWebhookIngestionResponse,
   HappyRobotWebhookRecord,
+  HappyRobotTranscriptSegment,
 } from "@/domain/runtime/happyrobot/types";
 import {
   mapRuntimeStatusToTransition,
@@ -19,6 +20,67 @@ function asTrimmedString(value: unknown) {
 
 function asNullableTrimmedString(value: unknown) {
   return typeof value === "string" ? value.trim() || null : null;
+}
+
+function asIsoDateTimeString(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return new Date(value).toISOString();
+  }
+
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  if (/^\d+$/.test(trimmed)) {
+    const asNumber = Number(trimmed);
+    if (Number.isFinite(asNumber)) {
+      return new Date(asNumber).toISOString();
+    }
+  }
+
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString();
+  }
+
+  return "";
+}
+
+function isTranscriptSegment(value: unknown): value is HappyRobotTranscriptSegment {
+  return (
+    isRecord(value) &&
+    typeof value.text === "string" &&
+    (value.startMs === undefined ||
+      value.startMs === null ||
+      typeof value.startMs === "number") &&
+    (value.endMs === undefined ||
+      value.endMs === null ||
+      typeof value.endMs === "number")
+  );
+}
+
+function normalizeTranscriptSegments(
+  value: unknown,
+): HappyRobotTranscriptSegment[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const transcriptSegments = value
+    .filter(isTranscriptSegment)
+    .map((segment) => ({
+      text: segment.text.trim(),
+      startMs: segment.startMs ?? null,
+      endMs: segment.endMs ?? null,
+    }))
+    .filter((segment) => segment.text.length > 0);
+
+  return transcriptSegments.length > 0 ? transcriptSegments : null;
 }
 
 function coalesceOutcomeDetail(rawPayload: Record<string, unknown>) {
@@ -43,6 +105,20 @@ function isHappyRobotStatus(value: string): value is HappyRobotWebhookEvent["sta
   );
 }
 
+function normalizeHappyRobotStatus(value: unknown) {
+  const normalized = asTrimmedString(value).toLowerCase().replace(/[\s-]+/g, "_");
+
+  if (normalized === "in_progress") {
+    return "connected";
+  }
+
+  if (normalized === "noresponse" || normalized === "no_answer") {
+    return "no_response";
+  }
+
+  return normalized;
+}
+
 export function parseHappyRobotWebhookEvent(
   rawPayload: unknown,
 ): HappyRobotWebhookIngestionResponse | { success: true; event: HappyRobotWebhookEvent } {
@@ -56,10 +132,12 @@ export function parseHappyRobotWebhookEvent(
     };
   }
 
-  const eventId = asTrimmedString(rawPayload.eventId);
   const providerCallId = asTrimmedString(rawPayload.providerCallId);
-  const happenedAt = asTrimmedString(rawPayload.happenedAt);
-  const status = asTrimmedString(rawPayload.status);
+  const happenedAt = asIsoDateTimeString(rawPayload.happenedAt);
+  const status = normalizeHappyRobotStatus(rawPayload.status);
+  const eventId =
+    asTrimmedString(rawPayload.eventId) ||
+    [providerCallId, status, happenedAt].filter(Boolean).join(":");
   const interviewRunIdValue = rawPayload.interviewRunId;
   const interviewRunId =
     interviewRunIdValue === null
@@ -89,6 +167,10 @@ export function parseHappyRobotWebhookEvent(
       happenedAt,
       recordingUrl: asNullableTrimmedString(rawPayload.recordingUrl),
       transcriptUrl: asNullableTrimmedString(rawPayload.transcriptUrl),
+      transcript: asNullableTrimmedString(rawPayload.transcript),
+      transcriptSegments: normalizeTranscriptSegments(
+        rawPayload.transcriptSegments,
+      ),
       failureReason: coalesceOutcomeDetail(rawPayload),
       rawPayloadRef: asNullableTrimmedString(rawPayload.rawPayloadRef),
     },

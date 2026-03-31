@@ -33,7 +33,7 @@ export function AppShell({ children }: AppShellProps) {
                 <LayoutDashboard className="size-5" aria-hidden="true" />
               </div>
               <div className="space-y-2">
-                <p className="ops-kicker text-cyan-900">Clara recruiter workspace</p>
+                <p className="ops-kicker text-cyan-900">Breathe recruiter workspace</p>
                 <h1 className="text-lg font-semibold text-slate-950">
                   Jobs, candidate review, and interview runtime
                 </h1>
@@ -144,7 +144,7 @@ export function AppShell({ children }: AppShellProps) {
                 <Sparkles className="size-3.5" aria-hidden="true" />
                 <span className="ops-kicker text-cyan-900">Jobs MVP</span>
               </span>
-              <span className="ops-kicker text-slate-400">Clara / Breath</span>
+              <span className="ops-kicker text-slate-400">Breathe</span>
             </div>
           </div>
         </header>

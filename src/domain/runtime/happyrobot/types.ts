@@ -36,12 +36,19 @@ export type HappyRobotRuntimeRequirement = Pick<
   "id" | "label" | "category" | "weight" | "isKnockout"
 >;
 
+export type HappyRobotTranscriptSegment = {
+  text: string;
+  startMs?: number | null;
+  endMs?: number | null;
+};
+
 export type HappyRobotNormalizedDispatchPayload = {
   interviewRunId: EntityId;
   jobId: EntityId;
   candidateId: EntityId;
   applicationId: EntityId;
   interviewPackageId: EntityId;
+  candidatePhone: string;
   language: InterviewRuntimeLanguage;
   candidateTimezone: InterviewRuntimeTimezone;
   outboundNumber: string | null;
@@ -101,6 +108,8 @@ export type HappyRobotWebhookEvent = {
   happenedAt: ISODateTimeString;
   recordingUrl?: string | null;
   transcriptUrl?: string | null;
+  transcript?: string | null;
+  transcriptSegments?: HappyRobotTranscriptSegment[] | null;
   failureReason?: string | null;
   rawPayloadRef?: string | null;
 };

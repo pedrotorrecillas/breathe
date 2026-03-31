@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Clara MVP",
-  description: "Recruiter and candidate surfaces for the Clara hiring flow.",
+  title: "Breathe",
+  description: "Recruiter and candidate surfaces for the Breathe hiring flow.",
 };
 
 const locale = "en";

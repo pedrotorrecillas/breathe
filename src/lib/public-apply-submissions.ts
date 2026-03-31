@@ -58,7 +58,7 @@ type TranscriptResolver = (input: {
   candidate: CandidateProfile;
   application: CandidateApplication;
   job: PublicJobRecord;
-  transcriptUrl: string;
+  transcriptUrl: string | null;
   webhookRecord: HappyRobotWebhookRecord;
 }) => string | TranscriptSegment[] | null;
 
@@ -139,6 +139,30 @@ function normalizeTranscriptResolution(
   return segments.length > 0 ? segments : null;
 }
 
+function resolveTranscriptFromWebhookRecord(
+  webhookRecord: HappyRobotWebhookRecord,
+): string | TranscriptSegment[] | null {
+  if (typeof webhookRecord.event.transcript === "string") {
+    const transcript = webhookRecord.event.transcript.trim();
+    if (transcript.length > 0) {
+      return transcript;
+    }
+  }
+
+  if (
+    Array.isArray(webhookRecord.event.transcriptSegments) &&
+    webhookRecord.event.transcriptSegments.length > 0
+  ) {
+    return webhookRecord.event.transcriptSegments.map((segment) => ({
+      text: segment.text,
+      startMs: segment.startMs ?? null,
+      endMs: segment.endMs ?? null,
+    }));
+  }
+
+  return null;
+}
+
 function buildRuntimeSnapshot(
   state: RuntimeStoreState,
   interviewRunId: string,
@@ -213,7 +237,7 @@ async function maybeGenerateInterviewEvaluation(input: {
   }
 
   const transcriptUrl = snapshot.interviewRun.artifacts.transcriptUrl;
-  if (!transcriptUrl || !input.transcriptResolver) {
+  if (!input.transcriptResolver) {
     return null;
   }
 
@@ -429,10 +453,14 @@ export async function receiveHappyRobotWebhook(
   state.interviewRuns[interviewRunIndex] = result.interviewRun;
   syncApplicationFromInterviewRun(state, result.interviewRun);
   state.webhookRecords.push(result.record);
+  const directTranscript = resolveTranscriptFromWebhookRecord(result.record);
   await maybeGenerateInterviewEvaluation({
     state,
     interviewRun: result.interviewRun,
-    transcriptResolver: options?.transcriptResolver,
+    transcriptResolver:
+      directTranscript !== null
+        ? () => directTranscript
+        : options?.transcriptResolver,
   });
   await saveRuntimeStoreState(state);
 
@@ -593,7 +621,7 @@ export async function submitPublicApplication(
     },
   };
 
-  const dispatchExecution = executeHappyRobotDispatch({
+  const dispatchExecution = await executeHappyRobotDispatch({
     interviewRun: stagedInterviewRun,
     candidate: stagedCandidate,
     job,

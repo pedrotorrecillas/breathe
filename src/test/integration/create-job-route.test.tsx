@@ -5,13 +5,88 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import NewJobPage from "@/app/(recruiter)/jobs/new/page";
 
+const extractionDraft = {
+  jobConditions: [
+    {
+      id: "cond_salary",
+      code: "salary",
+      label: "Salary",
+      value: "EUR 22,000 gross yearly",
+      state: "complete",
+      details: "",
+    },
+    {
+      id: "cond_location",
+      code: "location",
+      label: "Location",
+      value: "Madrid",
+      state: "complete",
+      details: "",
+    },
+  ],
+  essentialRequirements: [
+    {
+      id: "essential_warehouse_experience",
+      label: "Have previous warehouse experience in outbound operations.",
+      importance: "MANDATORY",
+    },
+  ],
+  technicalSkills: [
+    {
+      id: "technical_scanner_use",
+      label: "Use barcode scanners and inventory systems accurately during each shift.",
+      importance: "MANDATORY",
+    },
+  ],
+  interpersonalSkills: [
+    {
+      id: "interpersonal_teamwork",
+      label:
+        "Coordinate clearly with teammates during loading peaks and shift handovers.",
+      importance: "MANDATORY",
+    },
+  ],
+};
+
 describe("create-job route", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input) => {
+        const url = typeof input === "string" ? input : input.url;
+
+        if (url.includes("/api/recruiter/jobs/extract")) {
+          return {
+            ok: true,
+            json: async () => ({
+              success: true,
+              data: extractionDraft,
+              warnings: [],
+            }),
+          };
+        }
+
+        return {
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: {
+              id: "job_warehouse-associate-madrid",
+              publicApplyPath: "/apply/warehouse-associate-madrid",
+            },
+          }),
+        };
+      }),
+    );
+  });
+
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
 
   it("renders the core recruiter inputs", () => {
@@ -44,7 +119,7 @@ describe("create-job route", () => {
     expect(generateButton).not.toBeDisabled();
   });
 
-  it("renders editable job conditions after extraction", () => {
+  it("renders editable job conditions after extraction", async () => {
     render(<NewJobPage />);
 
     fireEvent.change(screen.getAllByLabelText(/Job title/i)[0], {
@@ -61,13 +136,15 @@ describe("create-job route", () => {
       screen.getAllByRole("button", { name: /Generate draft/i })[0]!,
     );
 
-    expect(
-      screen.getAllByRole("heading", { name: /Job conditions/i })[0],
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.getAllByRole("heading", { name: /Job conditions/i })[0],
+      ).toBeInTheDocument();
+    });
     expect(screen.getAllByLabelText(/Salary label/i)[0]).toBeInTheDocument();
   });
 
-  it("renders editable essential requirements after extraction", () => {
+  it("renders editable essential requirements after extraction", async () => {
     render(<NewJobPage />);
 
     fireEvent.change(screen.getAllByLabelText(/Job title/i)[0], {
@@ -83,15 +160,17 @@ describe("create-job route", () => {
       screen.getAllByRole("button", { name: /Generate draft/i })[0]!,
     );
 
-    expect(
-      screen.getAllByRole("heading", { name: /Essential requirements/i })[0],
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.getAllByRole("heading", { name: /Essential requirements/i })[0],
+      ).toBeInTheDocument();
+    });
     expect(
       screen.getAllByRole("button", { name: /Mandatory/i })[0],
     ).toBeInTheDocument();
   });
 
-  it("allows recruiters to add technical skills after extraction", () => {
+  it("allows recruiters to add technical skills after extraction", async () => {
     render(<NewJobPage />);
 
     fireEvent.change(screen.getAllByLabelText(/Job title/i)[0], {
@@ -107,20 +186,23 @@ describe("create-job route", () => {
       screen.getAllByRole("button", { name: /Generate draft/i })[0]!,
     );
 
+    await waitFor(() => {
+      expect(
+        screen.getAllByRole("heading", { name: /Technical skills/i })[0],
+      ).toBeInTheDocument();
+    });
+
     fireEvent.change(screen.getAllByLabelText(/New technical skill/i)[0], {
       target: { value: "Pallet wrapping machines" },
     });
     fireEvent.click(screen.getAllByRole("button", { name: /Add skill/i })[0]!);
 
     expect(
-      screen.getAllByRole("heading", { name: /Technical skills/i })[0],
-    ).toBeInTheDocument();
-    expect(
       screen.getByDisplayValue(/Pallet wrapping machines/i),
     ).toBeInTheDocument();
   });
 
-  it("allows recruiters to add interpersonal skills after extraction", () => {
+  it("allows recruiters to add interpersonal skills after extraction", async () => {
     render(<NewJobPage />);
 
     fireEvent.change(screen.getAllByLabelText(/Job title/i)[0], {
@@ -135,6 +217,12 @@ describe("create-job route", () => {
     fireEvent.click(
       screen.getAllByRole("button", { name: /Generate draft/i })[0]!,
     );
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByRole("heading", { name: /Interpersonal skills/i })[0],
+      ).toBeInTheDocument();
+    });
 
     fireEvent.change(screen.getAllByLabelText(/New interpersonal skill/i)[0], {
       target: { value: "Reliability under pressure" },
@@ -142,14 +230,11 @@ describe("create-job route", () => {
     fireEvent.click(screen.getAllByRole("button", { name: /Add skill/i })[1]!);
 
     expect(
-      screen.getAllByRole("heading", { name: /Interpersonal skills/i })[0],
-    ).toBeInTheDocument();
-    expect(
       screen.getByDisplayValue(/Reliability under pressure/i),
     ).toBeInTheDocument();
   });
 
-  it("validates contradictory interview limits", () => {
+  it("validates contradictory interview limits", async () => {
     render(<NewJobPage />);
 
     fireEvent.change(screen.getAllByLabelText(/Job title/i)[0], {
@@ -164,6 +249,10 @@ describe("create-job route", () => {
     fireEvent.click(
       screen.getAllByRole("button", { name: /Generate draft/i })[0]!,
     );
+
+    await waitFor(() => {
+      expect(screen.getAllByLabelText(/Total interview limit/i)[0]).toBeInTheDocument();
+    });
 
     fireEvent.change(screen.getAllByLabelText(/Total interview limit/i)[0], {
       target: { value: "5" },
@@ -194,11 +283,15 @@ describe("create-job route", () => {
     fireEvent.click(
       screen.getAllByRole("button", { name: /Generate draft/i })[0]!,
     );
+
+    await waitFor(() => {
+      expect(screen.getAllByLabelText(/Publish job action/i)[0]).toBeInTheDocument();
+    });
     fireEvent.click(screen.getAllByLabelText(/Publish job action/i)[0]!);
 
     await waitFor(() => {
       expect(
-        screen.getByText(/\/apply\/warehouse-associate-madrid/i),
+        screen.getByText(/warehouse-associate-madrid/i),
       ).toBeInTheDocument();
     });
   });

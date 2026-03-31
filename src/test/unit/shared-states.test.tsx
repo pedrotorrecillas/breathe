@@ -12,7 +12,7 @@ describe("shared states", () => {
     render(
       <LoadingState
         title="Preparing the job draft"
-        description="Clara is extracting the initial configuration."
+        description="Breathe is extracting the initial configuration."
       />,
     );
 

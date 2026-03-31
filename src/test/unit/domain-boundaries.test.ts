@@ -14,7 +14,7 @@ import type {
 } from "@/domain/runtime/happyrobot/types";
 
 describe("domain boundaries", () => {
-  it("exposes coherent domain shapes for the Clara MVP", () => {
+  it("exposes coherent domain shapes for the Breathe MVP", () => {
     const candidate: CandidateProfile = {
       id: "cand_1",
       fullName: "Ana Torres",

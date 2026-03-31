@@ -29,8 +29,79 @@ describe("happyrobot webhooks", () => {
         happenedAt: "2026-03-24T08:20:00.000Z",
         recordingUrl: "https://example.com/recording.mp3",
         transcriptUrl: "https://example.com/transcript.txt",
+        transcript: null,
+        transcriptSegments: null,
         failureReason: null,
         rawPayloadRef: "payloads/evt_1.json",
+      },
+    });
+  });
+
+  it("parses transcript text and transcript segments from a webhook payload", () => {
+    const parsed = parseHappyRobotWebhookEvent({
+      eventId: "evt_10",
+      interviewRunId: "run_1",
+      providerCallId: "hr_call_run_1",
+      status: "completed",
+      happenedAt: "2026-03-24T08:20:00.000Z",
+      transcript: "Candidate answered clearly.",
+      transcriptSegments: [
+        {
+          text: "Candidate answered clearly.",
+          startMs: 1200,
+          endMs: 2500,
+        },
+      ],
+    });
+
+    expect(parsed).toEqual({
+      success: true,
+      event: {
+        eventId: "evt_10",
+        interviewRunId: "run_1",
+        providerCallId: "hr_call_run_1",
+        status: "completed",
+        happenedAt: "2026-03-24T08:20:00.000Z",
+        recordingUrl: null,
+        transcriptUrl: null,
+        transcript: "Candidate answered clearly.",
+        transcriptSegments: [
+          {
+            text: "Candidate answered clearly.",
+            startMs: 1200,
+            endMs: 2500,
+          },
+        ],
+        failureReason: null,
+        rawPayloadRef: null,
+      },
+    });
+  });
+
+  it("normalizes real HappyRobot callback payload quirks", () => {
+    const parsed = parseHappyRobotWebhookEvent({
+      interviewRunId: "\nrun_bre41_prod_001\n",
+      providerCallId: "\n8e8a80b0-72fe6214c2b78\n",
+      status: "\nin-progress\n",
+      happenedAt: "1774975802051",
+      transcript: "\nTengo tres anos de experiencia en almacen.\n",
+    });
+
+    expect(parsed).toEqual({
+      success: true,
+      event: {
+        eventId:
+          "8e8a80b0-72fe6214c2b78:connected:2026-03-31T16:50:02.051Z",
+        interviewRunId: "run_bre41_prod_001",
+        providerCallId: "8e8a80b0-72fe6214c2b78",
+        status: "connected",
+        happenedAt: "2026-03-31T16:50:02.051Z",
+        recordingUrl: null,
+        transcriptUrl: null,
+        transcript: "Tengo tres anos de experiencia en almacen.",
+        transcriptSegments: null,
+        failureReason: null,
+        rawPayloadRef: null,
       },
     });
   });
@@ -72,6 +143,8 @@ describe("happyrobot webhooks", () => {
         happenedAt: "2026-03-24T08:20:00.000Z",
         recordingUrl: null,
         transcriptUrl: null,
+        transcript: null,
+        transcriptSegments: null,
         failureReason: "Retries exhausted after repeated no response",
         rawPayloadRef: null,
       },

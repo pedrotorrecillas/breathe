@@ -211,8 +211,8 @@ const jobPipelineSeeds: Record<string, JobPipelineSeed> = {
         scoreState: "Great",
       },
       {
-        id: "cand_clara_nieto",
-        fullName: "Clara Nieto",
+        id: "cand_carla_nieto",
+        fullName: "Carla Nieto",
         stage: "Shortlisted",
         summary: "Team leadership signal is strong, with stable weekend availability.",
         relevantDateLabel: "Shortlisted",

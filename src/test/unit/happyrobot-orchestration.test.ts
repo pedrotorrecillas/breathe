@@ -113,8 +113,8 @@ describe("happyrobot orchestration", () => {
     expect(preparation.dispatchPayload.questions).toHaveLength(1);
   });
 
-  it("executes dispatch and persists the provider-facing dispatch result on the run", () => {
-    const execution = executeHappyRobotDispatch({
+  it("executes dispatch and persists the provider-facing dispatch result on the run", async () => {
+    const execution = await executeHappyRobotDispatch({
       interviewRun: {
         id: "run_1",
         candidateId: "cand_1",

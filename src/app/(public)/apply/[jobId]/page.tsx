@@ -106,7 +106,7 @@ export default async function ApplyPage({ params }: ApplyPageProps) {
                 <div className="grid gap-1">
                   <dt className="ops-kicker text-slate-500">Interview flow</dt>
                   <dd className="text-slate-600">
-                    After a valid submit, Clara confirms the application and
+                    After a valid submit, Breathe confirms the application and
                     queues the first interview run.
                   </dd>
                 </div>

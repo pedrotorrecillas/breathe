@@ -128,8 +128,8 @@ describe("happyrobot dispatch payload", () => {
     expect(payload.traceContext.generatedAt).toBe("2026-03-24T08:01:00.000Z");
   });
 
-  it("returns a structured dispatch success with provider identifiers", () => {
-    const response = dispatchHappyRobotCall({
+  it("returns a structured dispatch success with provider identifiers", async () => {
+    const response = await dispatchHappyRobotCall({
       callRequest: {
         jobId: "job_1",
         candidateId: "cand_1",
@@ -178,8 +178,8 @@ describe("happyrobot dispatch payload", () => {
     });
   });
 
-  it("returns a structured dispatch failure when outbound routing data is missing", () => {
-    const response = dispatchHappyRobotCall({
+  it("returns a structured dispatch failure when outbound routing data is missing", async () => {
+    const response = await dispatchHappyRobotCall({
       callRequest: {
         jobId: "job_1",
         candidateId: "cand_1",

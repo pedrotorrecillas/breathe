@@ -56,6 +56,10 @@ const memoryState: RuntimeStoreState = {
   evaluations: [],
 };
 
+function fallbackToMemoryState() {
+  return cloneState(memoryState);
+}
+
 function cloneState(state: RuntimeStoreState): RuntimeStoreState {
   return {
     jobs: [...state.jobs],
@@ -105,73 +109,77 @@ async function ensureSeedJobs() {
 
 export async function loadRuntimeStoreState(): Promise<RuntimeStoreState> {
   if (!hasDatabaseUrl()) {
-    return cloneState(memoryState);
+    return fallbackToMemoryState();
   }
 
-  await ensureSeedJobs();
-  const db = getDatabaseClient();
+  try {
+    await ensureSeedJobs();
+    const db = getDatabaseClient();
 
-  const [
-    jobs,
-    candidates,
-    applications,
-    interviewRuns,
-    interviewPreparationPackages,
-    dispatchRequests,
-    dispatchPayloads,
-    dispatchResponses,
-    webhookRecords,
-    runtimeTraceEvents,
-    evaluations,
-  ] = await Promise.all([
-    db.select().from(jobsTable),
-    db.select().from(candidatesTable),
-    db.select().from(applicationsTable),
-    db.select().from(interviewRunsTable),
-    db.select().from(interviewPreparationPackagesTable),
-    db.select().from(dispatchRequestsTable),
-    db.select().from(dispatchPayloadsTable),
-    db.select().from(dispatchResponsesTable),
-    db.select().from(webhookRecordsTable),
-    db.select().from(runtimeTraceEventsTable),
-    db.select().from(evaluationsTable),
-  ]);
+    const [
+      jobs,
+      candidates,
+      applications,
+      interviewRuns,
+      interviewPreparationPackages,
+      dispatchRequests,
+      dispatchPayloads,
+      dispatchResponses,
+      webhookRecords,
+      runtimeTraceEvents,
+      evaluations,
+    ] = await Promise.all([
+      db.select().from(jobsTable),
+      db.select().from(candidatesTable),
+      db.select().from(applicationsTable),
+      db.select().from(interviewRunsTable),
+      db.select().from(interviewPreparationPackagesTable),
+      db.select().from(dispatchRequestsTable),
+      db.select().from(dispatchPayloadsTable),
+      db.select().from(dispatchResponsesTable),
+      db.select().from(webhookRecordsTable),
+      db.select().from(runtimeTraceEventsTable),
+      db.select().from(evaluationsTable),
+    ]);
 
-  return {
-    jobs: jobs
-      .sort((left, right) => left.position - right.position)
-      .map((row) => row.payload as SeededPublicJobRecord),
-    candidates: candidates
-      .sort((left, right) => left.position - right.position)
-      .map((row) => row.payload as CandidateProfile),
-    applications: applications
-      .sort((left, right) => left.position - right.position)
-      .map((row) => row.payload as CandidateApplication),
-    interviewRuns: interviewRuns
-      .sort((left, right) => left.position - right.position)
-      .map((row) => row.payload as InterviewRun),
-    interviewPreparationPackages: interviewPreparationPackages
-      .sort((left, right) => left.position - right.position)
-      .map((row) => row.payload as InterviewPreparationPackage),
-    dispatchRequests: dispatchRequests
-      .sort((left, right) => left.position - right.position)
-      .map((row) => row.payload as HappyRobotCallRequest),
-    dispatchPayloads: dispatchPayloads
-      .sort((left, right) => left.position - right.position)
-      .map((row) => row.payload as HappyRobotNormalizedDispatchPayload),
-    dispatchResponses: dispatchResponses
-      .sort((left, right) => left.position - right.position)
-      .map((row) => row.payload as HappyRobotDispatchResponse),
-    webhookRecords: webhookRecords
-      .sort((left, right) => left.position - right.position)
-      .map((row) => row.payload as HappyRobotWebhookRecord),
-    runtimeTraceEvents: runtimeTraceEvents
-      .sort((left, right) => left.position - right.position)
-      .map((row) => row.payload as RuntimeTraceEvent),
-    evaluations: evaluations
-      .sort((left, right) => left.position - right.position)
-      .map((row) => row.payload as CandidateEvaluation),
-  };
+    return {
+      jobs: jobs
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as SeededPublicJobRecord),
+      candidates: candidates
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as CandidateProfile),
+      applications: applications
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as CandidateApplication),
+      interviewRuns: interviewRuns
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as InterviewRun),
+      interviewPreparationPackages: interviewPreparationPackages
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as InterviewPreparationPackage),
+      dispatchRequests: dispatchRequests
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as HappyRobotCallRequest),
+      dispatchPayloads: dispatchPayloads
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as HappyRobotNormalizedDispatchPayload),
+      dispatchResponses: dispatchResponses
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as HappyRobotDispatchResponse),
+      webhookRecords: webhookRecords
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as HappyRobotWebhookRecord),
+      runtimeTraceEvents: runtimeTraceEvents
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as RuntimeTraceEvent),
+      evaluations: evaluations
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as CandidateEvaluation),
+    };
+  } catch {
+    return fallbackToMemoryState();
+  }
 }
 
 export async function saveRuntimeStoreState(state: RuntimeStoreState) {
@@ -180,9 +188,10 @@ export async function saveRuntimeStoreState(state: RuntimeStoreState) {
     return;
   }
 
-  const db = getDatabaseClient();
+  try {
+    const db = getDatabaseClient();
 
-  await db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
     await tx.delete(candidatesTable);
     await tx.delete(applicationsTable);
     await tx.delete(interviewRunsTable);
@@ -320,7 +329,10 @@ export async function saveRuntimeStoreState(state: RuntimeStoreState) {
         })),
       );
     }
-  });
+    });
+  } catch {
+    Object.assign(memoryState, cloneState(state));
+  }
 }
 
 export async function resetRuntimeStoreState() {
@@ -376,4 +388,19 @@ export async function findStoredJobByRecruiterSlug(slug: string) {
 export async function listStoredJobs() {
   const state = await loadRuntimeStoreState();
   return state.jobs;
+}
+
+export async function saveStoredJob(job: SeededPublicJobRecord) {
+  const state = await loadRuntimeStoreState();
+  const existingIndex = state.jobs.findIndex((item) => item.id === job.id);
+
+  if (existingIndex >= 0) {
+    state.jobs[existingIndex] = job;
+  } else {
+    state.jobs.push(job);
+  }
+
+  await saveRuntimeStoreState(state);
+
+  return job;
 }

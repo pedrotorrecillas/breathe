@@ -100,14 +100,14 @@ export function prepareHappyRobotDispatch(input: {
   };
 }
 
-export function executeHappyRobotDispatch(input: {
+export async function executeHappyRobotDispatch(input: {
   interviewRun: InterviewRun;
   candidate: CandidateProfile;
   job: Job;
   now?: Date;
   simulateFailureReason?: string;
   traceSink?: RuntimeTraceSink;
-}): HappyRobotDispatchExecution {
+}): Promise<HappyRobotDispatchExecution> {
   const preparation = prepareHappyRobotDispatch(input);
   const dispatchedAt = (input.now ?? new Date()).toISOString();
 
@@ -122,7 +122,7 @@ export function executeHappyRobotDispatch(input: {
     outboundNumber: preparation.dispatchPayload.outboundNumber,
   });
 
-  const dispatchResponse = dispatchHappyRobotCall({
+  const dispatchResponse = await dispatchHappyRobotCall({
     callRequest: preparation.callRequest,
     payload: preparation.dispatchPayload,
     now: input.now,

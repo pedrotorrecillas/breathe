@@ -19,7 +19,6 @@ import type {
   JobRequirementInput,
   RequirementImportance,
 } from "@/domain/jobs/configuration";
-import { extractJobConfiguration } from "@/lib/job-extraction";
 import { cn } from "@/lib/utils";
 
 type DraftFields = {
@@ -41,10 +40,12 @@ type InterviewLimitsState = {
 };
 
 type PublishedJobState = {
+  id: string;
   title: string;
   language: string;
   description: string;
   publicApplyPath: string;
+  publicApplyUrl: string;
   draft: JobExtractionDraft;
   interviewLimits: {
     maxInterviews: number | null;
@@ -72,14 +73,6 @@ function validateDraft(fields: DraftFields) {
   return errors;
 }
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
-}
-
 export function CreateJobWorkspace() {
   const [fields, setFields] = useState<DraftFields>({
     title: "",
@@ -88,7 +81,9 @@ export function CreateJobWorkspace() {
   });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [draft, setDraft] = useState<JobExtractionDraft | null>(null);
+  const [extractionWarnings, setExtractionWarnings] = useState<string[]>([]);
   const [extractionError, setExtractionError] = useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
   const [newConditionLabel, setNewConditionLabel] = useState("");
   const [newConditionValue, setNewConditionValue] = useState("");
   const [newTechnicalSkill, setNewTechnicalSkill] = useState("");
@@ -101,6 +96,8 @@ export function CreateJobWorkspace() {
   const [publishedJob, setPublishedJob] = useState<PublishedJobState | null>(
     null,
   );
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const canExtract =
     fields.title.trim().length > 0 && fields.description.trim().length >= 40;
@@ -114,7 +111,7 @@ export function CreateJobWorkspace() {
     setErrors(validateDraft(nextFields));
   }
 
-  function handleGenerateDraft() {
+  async function handleGenerateDraft() {
     const nextErrors = validateDraft(fields);
     setErrors(nextErrors);
 
@@ -122,19 +119,40 @@ export function CreateJobWorkspace() {
       return;
     }
 
-    const result = extractJobConfiguration({
-      title: fields.title,
-      description: fields.description,
-    });
-
-    if (!result.success) {
-      setExtractionError(result.error);
-      setDraft(null);
-      return;
-    }
-
+    setIsExtracting(true);
     setExtractionError(null);
-    setDraft(result.data);
+    setExtractionWarnings([]);
+
+    try {
+      const response = await fetch("/api/recruiter/jobs/extract", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: fields.title,
+          description: fields.description,
+          language: fields.language,
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setExtractionError(result.error ?? "Draft generation failed.");
+        setDraft(null);
+        return;
+      }
+
+      setDraft(result.data);
+      setExtractionWarnings(result.warnings ?? []);
+    } catch (error) {
+      setExtractionError(
+        error instanceof Error ? error.message : "Draft generation failed.",
+      );
+      setDraft(null);
+    } finally {
+      setIsExtracting(false);
+    }
   }
 
   function updateCondition(
@@ -314,31 +332,71 @@ export function CreateJobWorkspace() {
     !limitErrors.outstandingCap &&
     !limitErrors.greatCap;
 
-  function publishJob() {
+  async function publishJob() {
     if (!draft || !canPublish) {
       return;
     }
 
-    const slug = slugify(fields.title) || "job-draft";
+    setPublishError(null);
+    setIsPublishing(true);
 
-    setPublishedJob({
-      title: fields.title,
-      language: fields.language,
-      description: fields.description,
-      publicApplyPath: `/apply/${slug}`,
-      draft,
-      interviewLimits: {
-        maxInterviews: interviewLimits.maxInterviews
-          ? Number.parseInt(interviewLimits.maxInterviews, 10)
-          : null,
-        outstandingCap: interviewLimits.outstandingCap
-          ? Number.parseInt(interviewLimits.outstandingCap, 10)
-          : null,
-        greatCap: interviewLimits.greatCap
-          ? Number.parseInt(interviewLimits.greatCap, 10)
-          : null,
-      },
-    });
+    const parsedLimits = {
+      maxInterviews: interviewLimits.maxInterviews
+        ? Number.parseInt(interviewLimits.maxInterviews, 10)
+        : null,
+      outstandingCap: interviewLimits.outstandingCap
+        ? Number.parseInt(interviewLimits.outstandingCap, 10)
+        : null,
+      greatCap: interviewLimits.greatCap
+        ? Number.parseInt(interviewLimits.greatCap, 10)
+        : null,
+    };
+
+    try {
+      const response = await fetch("/api/recruiter/jobs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: fields.title,
+          language: fields.language,
+          description: fields.description,
+          draft,
+          interviewLimits: parsedLimits,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setPublishError(result.error ?? "Publishing failed.");
+        return;
+      }
+
+      const publicApplyPath = result.data.publicApplyPath;
+      const publicApplyUrl =
+        typeof window === "undefined"
+          ? publicApplyPath
+          : new URL(publicApplyPath, window.location.origin).toString();
+
+      setPublishedJob({
+        id: result.data.id,
+        title: fields.title,
+        language: fields.language,
+        description: fields.description,
+        publicApplyPath,
+        publicApplyUrl,
+        draft,
+        interviewLimits: parsedLimits,
+      });
+    } catch (error) {
+      setPublishError(
+        error instanceof Error ? error.message : "Publishing failed.",
+      );
+    } finally {
+      setIsPublishing(false);
+    }
   }
 
   return (
@@ -358,11 +416,11 @@ export function CreateJobWorkspace() {
               <div className="flex flex-wrap gap-3">
                 <Button
                   className="rounded-full px-6"
-                  disabled={!canExtract}
+                  disabled={!canExtract || isExtracting}
                   onClick={handleGenerateDraft}
                   type="button"
                 >
-                  Generate draft
+                  {isExtracting ? "Generating..." : "Generate draft"}
                 </Button>
                 <Button
                   variant="outline"
@@ -435,6 +493,13 @@ export function CreateJobWorkspace() {
               <div className="rounded-[1.4rem] border border-emerald-200/80 bg-emerald-50/70 px-4 py-4 text-sm leading-7 text-emerald-900">
                 Draft ready. Review and edit the extracted sections below.
               </div>
+            ) : isExtracting ? (
+              <LoadingState
+                eyebrow="Preparing draft"
+                title="Breathe is extracting the job configuration."
+                description="Claude is turning the role brief into editable sections."
+                rows={2}
+              />
             ) : (
               <LoadingState
                 eyebrow="Preparing draft"
@@ -462,6 +527,11 @@ export function CreateJobWorkspace() {
             {extractionError ? (
               <div className="mt-4 rounded-[1.2rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
                 {extractionError}
+              </div>
+            ) : null}
+            {extractionWarnings.length > 0 ? (
+              <div className="mt-4 rounded-[1.2rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                {extractionWarnings.join(" ")}
               </div>
             ) : null}
           </SectionCard>
@@ -940,10 +1010,10 @@ export function CreateJobWorkspace() {
                   aria-label="Publish job action"
                   type="button"
                   className="rounded-full px-6"
-                  disabled={!canPublish}
+                  disabled={!canPublish || isPublishing}
                   onClick={publishJob}
                 >
-                  Publish job
+                  {isPublishing ? "Publishing..." : "Publish job"}
                 </Button>
                 <Link
                   href="/jobs"
@@ -994,9 +1064,9 @@ export function CreateJobWorkspace() {
                 <p className="ops-kicker text-emerald-800">Public apply link</p>
                 <a
                   className="mt-2 block text-sm font-medium text-emerald-950 underline underline-offset-4"
-                  href={publishedJob.publicApplyPath}
+                  href={publishedJob.publicApplyUrl}
                 >
-                  {publishedJob.publicApplyPath}
+                  {publishedJob.publicApplyUrl}
                 </a>
                 <p className="mt-2 text-sm leading-6 text-emerald-900">
                   Share this route directly with candidates once the job is
@@ -1017,6 +1087,14 @@ export function CreateJobWorkspace() {
               </div>
             </div>
           </SectionCard>
+        ) : null}
+
+        {publishError ? (
+          <SectionCard
+            title="Publish error"
+            kicker="Persistence"
+            description={publishError}
+          />
         ) : null}
 
         <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">

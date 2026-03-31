@@ -1,6 +1,6 @@
-# Clara MVP Scaffold
+# Breathe MVP Scaffold
 
-Foundational Next.js application for the Breath project and the Clara MVP.
+Foundational Next.js application for the Breathe project and its recruiter workflow MVP.
 
 This repository currently covers the first Foundations issue (`BRE-15`) and establishes:
 

@@ -20,12 +20,12 @@ vi.mock("next/link", () => ({
 import Home from "@/app/page";
 
 describe("root smoke", () => {
-  it("renders the Clara landing shell", () => {
+  it("renders the Breathe landing shell", () => {
     render(<Home />);
 
     expect(
       screen.getByRole("heading", {
-        name: /Clara helps recruiters publish jobs, run interviews/i,
+        name: /Breathe helps recruiters publish jobs, run interviews/i,
       }),
     ).toBeInTheDocument();
     expect(

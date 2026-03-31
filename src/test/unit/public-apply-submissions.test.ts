@@ -316,25 +316,11 @@ describe("public apply submissions", () => {
         happenedAt: "2026-03-25T12:05:00.000Z",
         recordingUrl: "https://example.com/recording.mp3",
         transcriptUrl: "https://example.com/transcript.txt",
+        transcript: "I worked in a warehouse for four years and used handheld scanners daily. I communicate clearly with shift leads and can work nights.",
         rawPayloadRef: "payloads/evt_2.json",
       },
       {
         receivedAt: new Date("2026-03-25T12:05:01.000Z"),
-        transcriptResolver: ({ transcriptUrl }) =>
-          transcriptUrl
-            ? [
-                {
-                  startMs: 10000,
-                  endMs: 18000,
-                  text: "I worked in a warehouse for four years and used handheld scanners daily.",
-                },
-                {
-                  startMs: 18000,
-                  endMs: 26000,
-                  text: "I communicate clearly with shift leads and can work nights.",
-                },
-              ]
-            : null,
       },
     );
 
