@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { publicApplyTermsVersion } from "@/lib/public-apply";
 import {
   getPublicApplySubmissionSnapshot,
+  receiveHappyRobotWebhook,
   resetPublicApplySubmissionStore,
   submitPublicApplication,
 } from "@/lib/public-apply-submissions";
@@ -89,6 +90,55 @@ describe("public apply submissions", () => {
       dispatchRequests: [],
       dispatchPayloads: [],
       dispatchResponses: [],
+      webhookRecords: [],
     });
+  });
+
+  it("stores webhook records and updates the linked interview run", () => {
+    submitPublicApplication({
+      jobId: "job_warehouse_madrid",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "en",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    const webhookResult = receiveHappyRobotWebhook(
+      {
+        eventId: "evt_1",
+        interviewRunId: "run_1",
+        providerCallId: "hr_call_run_1",
+        status: "completed",
+        happenedAt: "2026-03-25T12:05:00.000Z",
+        recordingUrl: "https://example.com/recording.mp3",
+        transcriptUrl: "https://example.com/transcript.txt",
+        rawPayloadRef: "payloads/evt_1.json",
+      },
+      {
+        receivedAt: new Date("2026-03-25T12:05:01.000Z"),
+      },
+    );
+
+    expect(webhookResult.success).toBe(true);
+
+    const snapshot = getPublicApplySubmissionSnapshot();
+
+    expect(snapshot.webhookRecords).toHaveLength(1);
+    expect(snapshot.interviewRuns[0]?.status).toBe("completed");
+    expect(snapshot.interviewRuns[0]?.artifacts.recordingUrl).toBe(
+      "https://example.com/recording.mp3",
+    );
+    expect(snapshot.interviewRuns[0]?.trace.completedAt).toBe(
+      "2026-03-25T12:05:00.000Z",
+    );
   });
 });

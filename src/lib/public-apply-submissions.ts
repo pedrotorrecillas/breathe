@@ -10,8 +10,11 @@ import type {
   HappyRobotCallRequest,
   HappyRobotDispatchResponse,
   HappyRobotNormalizedDispatchPayload,
+  HappyRobotWebhookIngestionResponse,
+  HappyRobotWebhookRecord,
 } from "@/domain/runtime/happyrobot/types";
 import { executeHappyRobotDispatch } from "@/lib/happyrobot-orchestration";
+import { ingestHappyRobotWebhookEvent } from "@/lib/happyrobot-webhooks";
 import type {
   NormalizedCandidateProfileSource,
   PublicApplyLegalAcceptance,
@@ -37,6 +40,7 @@ const interviewPreparationPackages: InterviewPreparationPackage[] = [];
 const dispatchRequests: HappyRobotCallRequest[] = [];
 const dispatchPayloads: HappyRobotNormalizedDispatchPayload[] = [];
 const dispatchResponses: HappyRobotDispatchResponse[] = [];
+const webhookRecords: HappyRobotWebhookRecord[] = [];
 
 function normalizePhone(phone: string) {
   const trimmed = phone.trim();
@@ -62,6 +66,7 @@ export function resetPublicApplySubmissionStore() {
   dispatchRequests.length = 0;
   dispatchPayloads.length = 0;
   dispatchResponses.length = 0;
+  webhookRecords.length = 0;
 }
 
 export function getPublicApplySubmissionSnapshot() {
@@ -73,7 +78,34 @@ export function getPublicApplySubmissionSnapshot() {
     dispatchRequests: [...dispatchRequests],
     dispatchPayloads: [...dispatchPayloads],
     dispatchResponses: [...dispatchResponses],
+    webhookRecords: [...webhookRecords],
   };
+}
+
+export function receiveHappyRobotWebhook(
+  rawPayload: unknown,
+  options?: {
+    receivedAt?: Date;
+  },
+): HappyRobotWebhookIngestionResponse {
+  const result = ingestHappyRobotWebhookEvent({
+    rawPayload,
+    interviewRuns,
+    receivedAt: options?.receivedAt,
+  });
+
+  if (!result.success) {
+    return result;
+  }
+
+  const interviewRunIndex = interviewRuns.findIndex(
+    (interviewRun) => interviewRun.id === result.record.matchedInterviewRunId,
+  );
+
+  interviewRuns[interviewRunIndex] = result.interviewRun;
+  webhookRecords.push(result.record);
+
+  return result;
 }
 
 export function submitPublicApplication(
@@ -220,9 +252,9 @@ export function submitPublicApplication(
       transcriptUrl: null,
       transcriptAssetRef: null,
       providerPayloadSnapshotRef: null,
-        recordingDurationSeconds: null,
-      },
-    };
+      recordingDurationSeconds: null,
+    },
+  };
 
   const dispatchExecution = executeHappyRobotDispatch({
     interviewRun: stagedInterviewRun,

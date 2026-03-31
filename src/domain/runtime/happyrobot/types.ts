@@ -4,6 +4,7 @@ import type {
   SupportedLanguage,
 } from "@/domain/shared/types";
 import type {
+  InterviewRun,
   InterviewRuntimeLanguage,
   InterviewRuntimeTimezone,
   InterviewRunStatus,
@@ -102,6 +103,33 @@ export type HappyRobotWebhookEvent = {
   failureReason?: string | null;
   rawPayloadRef?: string | null;
 };
+
+export type HappyRobotWebhookRecord = {
+  event: HappyRobotWebhookEvent;
+  matchedInterviewRunId: EntityId | null;
+  receivedAt: ISODateTimeString;
+  rawPayload: unknown;
+};
+
+export type HappyRobotWebhookIngestionFailureCode =
+  | "invalid_payload"
+  | "unmatched_run";
+
+export type HappyRobotWebhookIngestionFailure = {
+  code: HappyRobotWebhookIngestionFailureCode;
+  message: string;
+};
+
+export type HappyRobotWebhookIngestionResponse =
+  | {
+      success: true;
+      record: HappyRobotWebhookRecord;
+      interviewRun: InterviewRun;
+    }
+  | {
+      success: false;
+      error: HappyRobotWebhookIngestionFailure;
+    };
 
 export type ProviderOutcomeMapping = {
   internalStatus: InterviewRunStatus;

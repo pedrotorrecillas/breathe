@@ -72,6 +72,7 @@ describe("public apply route", () => {
       dispatchRequests: [],
       dispatchPayloads: [],
       dispatchResponses: [],
+      webhookRecords: [],
     });
   });
 
@@ -98,6 +99,7 @@ describe("public apply route", () => {
       dispatchRequests: [],
       dispatchPayloads: [],
       dispatchResponses: [],
+      webhookRecords: [],
     });
   });
 
