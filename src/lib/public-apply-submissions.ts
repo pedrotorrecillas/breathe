@@ -6,7 +6,6 @@ import type {
 import type { CandidateEvaluation } from "@/domain/evaluations/types";
 import type { InterviewPreparationPackage } from "@/domain/interview-preparation/types";
 import type { InterviewRun } from "@/domain/interviews/types";
-import type { Job } from "@/domain/jobs/types";
 import type { SupportedLanguage } from "@/domain/shared/types";
 import type {
   HappyRobotCallRequest,
@@ -16,7 +15,8 @@ import type {
   HappyRobotWebhookRecord,
 } from "@/domain/runtime/happyrobot/types";
 import { buildEvaluationSummary, type EvaluationSummary } from "@/lib/evaluation-summary";
-import { extractEvaluationFromInterview } from "@/lib/evaluation-extraction";
+import { extractRequirementEvidenceFromTranscript } from "@/lib/evaluation-requirement-extraction";
+import { scoreEvaluationFromRequirementEvidence } from "@/lib/evaluation-scoring";
 import { executeHappyRobotDispatch } from "@/lib/happyrobot-orchestration";
 import { ingestHappyRobotWebhookEvent } from "@/lib/happyrobot-webhooks";
 import { transitionCandidateApplicationForInterviewRun } from "@/lib/interview-pipeline-transitions";
@@ -125,20 +125,6 @@ function syncApplicationFromInterviewRun(interviewRun: InterviewRun) {
   );
 }
 
-function buildEvaluationJob(input: {
-  job: PublicJobRecord;
-  interviewPreparationPackage: InterviewPreparationPackage;
-}): Job {
-  return {
-    ...input.job,
-    requirements: input.interviewPreparationPackage.requirements.map(
-      (requirement) => ({
-        ...requirement,
-      }),
-    ),
-  };
-}
-
 function normalizeTranscriptResolution(
   transcript: string | TranscriptSegment[],
 ): string | TranscriptSegment[] | null {
@@ -218,21 +204,28 @@ function maybeGenerateInterviewEvaluation(input: {
     return null;
   }
 
-  const evaluation = extractEvaluationFromInterview({
-    interviewRun: snapshot.interviewRun,
-    job: buildEvaluationJob({
-      job,
-      interviewPreparationPackage: snapshot.interviewPreparationPackage,
-    }),
+  const generatedAt = new Date(
+    snapshot.interviewRun.trace.completedAt ??
+      snapshot.interviewRun.trace.lastEventAt ??
+      snapshot.interviewRun.trace.createdAt,
+  );
+
+  const requirementEvidence = extractRequirementEvidenceFromTranscript({
+    interviewRunId: snapshot.interviewRun.id,
+    jobId: job.id,
+    requirements: snapshot.interviewPreparationPackage.requirements,
     transcript,
+    generatedAt,
+  });
+
+  const evaluation = scoreEvaluationFromRequirementEvidence({
+    interviewRun: snapshot.interviewRun,
+    requirements: snapshot.interviewPreparationPackage.requirements,
+    requirementEvidence,
     classification: "success",
     generateOutput: true,
     eligible: true,
-    generatedAt: new Date(
-      snapshot.interviewRun.trace.completedAt ??
-        snapshot.interviewRun.trace.lastEventAt ??
-        snapshot.interviewRun.trace.createdAt,
-    ),
+    generatedAt,
   });
 
   const saveResult = saveInterviewEvaluation(evaluation);

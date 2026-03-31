@@ -1,4 +1,5 @@
 import type { EntityId, ISODateTimeString } from "@/domain/shared/types";
+import type { JobRequirementCategory } from "@/domain/jobs/types";
 
 export type EvaluationScoreState =
   | "Outstanding"
@@ -46,6 +47,25 @@ export type EvaluationWeightConfig = {
   essentialBlockWeight: number;
   technicalBlockWeight: number;
   interpersonalBlockWeight: number;
+};
+
+export type EvaluationRequirementEvidence = {
+  requirementId: EntityId;
+  requirementLabel: string;
+  requirementCategory: JobRequirementCategory;
+  answerText: string | null;
+  highlightedQuote: string | null;
+  transcriptStartMs: number | null;
+  transcriptEndMs: number | null;
+  extractionConfidence: number;
+  extractionExplanation: string;
+};
+
+export type EvaluationRequirementEvidenceSet = {
+  interviewRunId: EntityId;
+  jobId: EntityId;
+  generatedAt: ISODateTimeString;
+  requirementEvidence: EvaluationRequirementEvidence[];
 };
 
 export type CandidateEvaluation = {
