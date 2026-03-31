@@ -278,6 +278,69 @@ describe("happyrobot webhooks", () => {
     expect(result.metadata.callbackRequestedAt).toBe("2026-03-24T08:15:00.000Z");
   });
 
+  it("preserves a human requested candidate when a later rejection-style event arrives", () => {
+    const result = applyHappyRobotWebhookEvent({
+      interviewRun: {
+        id: "run_1",
+        candidateId: "cand_1",
+        applicationId: "app_1",
+        jobId: "job_1",
+        interviewPreparationId: "prep_1",
+        provider: "happyrobot",
+        status: "human_requested",
+        pipelineStage: "applicant",
+        dispatch: {
+          dispatchedAt: "2026-03-24T08:10:00.000Z",
+          providerCallId: "hr_call_run_1",
+          providerAgentId: "gala-v1",
+          providerSessionId: "hr_session_run_1",
+          outboundNumber: "+34910000000",
+        },
+        metadata: {
+          selectedLanguage: "es",
+          candidateTimezone: {
+            timezone: "Europe/Madrid",
+            localDateTime: "2026-03-24T09:00:00.000Z",
+            utcDateTime: "2026-03-24T08:00:00.000Z",
+          },
+          disclosedWithAi: true,
+          disclosureText: "AI disclosure text",
+          callbackRequestedAt: "2026-03-24T08:15:00.000Z",
+          failureReason: null,
+          providerOutcomeLabel: "needs_human",
+        },
+        trace: {
+          createdAt: "2026-03-24T08:00:00.000Z",
+          normalizedAt: "2026-03-24T08:05:00.000Z",
+          initiatedAt: "2026-03-24T08:10:00.000Z",
+          completedAt: null,
+          lastEventAt: "2026-03-24T08:10:00.000Z",
+        },
+        artifacts: {
+          recordingUrl: null,
+          transcriptUrl: null,
+          transcriptAssetRef: null,
+          providerPayloadSnapshotRef: null,
+          recordingDurationSeconds: null,
+        },
+      },
+      event: {
+        eventId: "evt_5",
+        interviewRunId: "run_1",
+        providerCallId: "hr_call_run_1",
+        status: "no_response",
+        happenedAt: "2026-03-24T08:30:00.000Z",
+        rawPayloadRef: "payloads/evt_5.json",
+      },
+    });
+
+    expect(result.status).toBe("human_requested");
+    expect(result.pipelineStage).toBe("applicant");
+    expect(result.metadata.callbackRequestedAt).toBe("2026-03-24T08:15:00.000Z");
+    expect(result.metadata.providerOutcomeLabel).toBe("needs_human");
+    expect(result.trace.lastEventAt).toBe("2026-03-24T08:30:00.000Z");
+  });
+
   it("moves no response outcomes into Rejected", () => {
     const result = applyHappyRobotWebhookEvent({
       interviewRun: {

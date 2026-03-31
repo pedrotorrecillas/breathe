@@ -4,7 +4,10 @@ import type {
   HappyRobotWebhookIngestionResponse,
   HappyRobotWebhookRecord,
 } from "@/domain/runtime/happyrobot/types";
-import { mapRuntimeStatusToTransition } from "@/lib/interview-pipeline-transitions";
+import {
+  mapRuntimeStatusToTransition,
+  protectHumanRequestedTransition,
+} from "@/lib/interview-pipeline-transitions";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -96,11 +99,15 @@ export function applyHappyRobotWebhookEvent(input: {
   interviewRun: InterviewRun;
   event: HappyRobotWebhookEvent;
 }): InterviewRun {
-  const transition = mapRuntimeStatusToTransition(
-    input.event.status,
-    input.event.happenedAt,
-    input.event.failureReason,
+  const transition = protectHumanRequestedTransition(
+    input.interviewRun.status,
+    mapRuntimeStatusToTransition(
+      input.event.status,
+      input.event.happenedAt,
+      input.event.failureReason,
+    ),
   );
+  const preserveExistingHumanRequest = input.interviewRun.status === "human_requested";
 
   return {
     ...input.interviewRun,
@@ -116,12 +123,17 @@ export function applyHappyRobotWebhookEvent(input: {
       callbackRequestedAt:
         transition.needsHumanReviewAt ??
         input.interviewRun.metadata.callbackRequestedAt,
-      failureReason:
-        input.event.failureReason ??
-        (input.event.status === "failed"
-          ? "HappyRobot reported a failed runtime outcome."
-          : null),
-      providerOutcomeLabel: input.event.failureReason ?? input.event.status,
+      failureReason: preserveExistingHumanRequest
+        ? input.interviewRun.metadata.failureReason
+        : input.event.failureReason ??
+          (input.event.status === "failed"
+            ? "HappyRobot reported a failed runtime outcome."
+            : null),
+      providerOutcomeLabel: preserveExistingHumanRequest
+        ? input.interviewRun.metadata.providerOutcomeLabel ??
+          input.event.failureReason ??
+          input.event.status
+        : input.event.failureReason ?? input.event.status,
     },
     trace: {
       ...input.interviewRun.trace,

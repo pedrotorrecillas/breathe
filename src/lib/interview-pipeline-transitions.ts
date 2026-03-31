@@ -13,6 +13,14 @@ type RuntimePipelineTransition = {
   needsHumanReviewAt: ISODateTimeString | null;
 };
 
+function isRejectingTransition(transition: RuntimePipelineTransition) {
+  return (
+    transition.pipelineStage === "rejected" ||
+    transition.interviewRunStatus === "failed_job_condition" ||
+    transition.interviewRunStatus === "no_response"
+  );
+}
+
 function normalizeOutcomeDetail(value: string | null | undefined) {
   return value?.trim().toLowerCase() ?? "";
 }
@@ -172,6 +180,26 @@ export function mapRuntimeStatusToTransition(
                 : "in_progress",
     pipelineStage: runtimeStatusToPipelineStage(status),
     applicationStage: runtimeStatusToApplicationStage(status),
+    needsHumanReviewAt: null,
+  };
+}
+
+export function protectHumanRequestedTransition(
+  currentInterviewRunStatus: InterviewRunStatus,
+  transition: RuntimePipelineTransition,
+): RuntimePipelineTransition {
+  if (
+    currentInterviewRunStatus !== "human_requested" ||
+    !isRejectingTransition(transition)
+  ) {
+    return transition;
+  }
+
+  return {
+    ...transition,
+    interviewRunStatus: "human_requested",
+    pipelineStage: "applicant",
+    applicationStage: "applicant",
     needsHumanReviewAt: null,
   };
 }

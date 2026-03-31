@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   mapDispatchFailureToRuntimeTransition,
   mapRuntimeStatusToTransition,
+  protectHumanRequestedTransition,
   transitionCandidateApplicationForInterviewRun,
 } from "@/lib/interview-pipeline-transitions";
 
@@ -108,6 +109,22 @@ describe("interview pipeline transitions", () => {
       ),
     ).toMatchObject({
       stage: "interviewed",
+      needsHumanReviewAt: null,
+    });
+  });
+
+  it("keeps human requested transitions out of rejecting states", () => {
+    expect(
+      protectHumanRequestedTransition("human_requested", {
+        interviewRunStatus: "no_response",
+        pipelineStage: "rejected",
+        applicationStage: "rejected",
+        needsHumanReviewAt: null,
+      }),
+    ).toEqual({
+      interviewRunStatus: "human_requested",
+      pipelineStage: "applicant",
+      applicationStage: "applicant",
       needsHumanReviewAt: null,
     });
   });
