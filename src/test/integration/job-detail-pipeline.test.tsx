@@ -19,7 +19,7 @@ describe("job detail pipeline", () => {
     expect(screen.getAllByText(/Applied · Today, 09:12/i).length).toBeGreaterThan(0);
   });
 
-  it("updates the reserved detail surface when a card is selected", () => {
+  it("updates the reserved detail surface with a candidate report", () => {
     render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
 
     fireEvent.click(screen.getAllByRole("button", { name: /Open candidate Bea Soto/i })[0]!);
@@ -29,6 +29,16 @@ describe("job detail pipeline", () => {
     expect(
       screen.getAllByText(/Consistent order-picking throughput/i).length,
     ).toBeGreaterThan(0);
+    expect(screen.getByText(/Candidate report/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Recruiter-facing evaluation summary/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Essential requirements/i)).toBeInTheDocument();
+    expect(screen.getByText(/Technical skills/i)).toBeInTheDocument();
+    expect(screen.getByText(/Interpersonal skills/i)).toBeInTheDocument();
+    expect(screen.getByText(/Forklift certification/i)).toBeInTheDocument();
+    expect(screen.getByText(/AI recommendation/i)).toBeInTheDocument();
+    expect(screen.getByText(/84\.3 \/ 100/i)).toBeInTheDocument();
     expect(screen.getByText(/Audio review/i)).toBeInTheDocument();
   });
 
@@ -93,7 +103,10 @@ describe("job detail pipeline", () => {
       screen.getByRole("button", { name: /Open candidate Marta Gil/i }),
     );
 
-    expect(screen.getByText(/Report review/i)).toBeInTheDocument();
+    expect(screen.getByText(/Candidate report/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/^Low$/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/47\.8 \/ 100/i)).toBeInTheDocument();
+    expect(screen.getByText(/AI recommendation/i)).toBeInTheDocument();
     expect(screen.getByText(/Audio review/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Close panel/i }));

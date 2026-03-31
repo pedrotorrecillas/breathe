@@ -6,8 +6,9 @@ import { CandidateStageCard } from "@/components/candidate-stage-card";
 import { DataPoint, DetailPanel, SectionCard } from "@/components/section-card";
 import { PlaceholderState } from "@/components/placeholder-state";
 import { EmptyState } from "@/components/shared-states";
-import { StatusBadge } from "@/components/status-badge";
+import { StatusBadge, scoreBadgeIntent } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
+import { mapNumericScoreToState } from "@/lib/evaluation-scoring";
 import {
   activePipelineStages,
   applyRecruiterAction,
@@ -20,6 +21,252 @@ import {
 type JobDetailWorkspaceProps = {
   jobId: string;
 };
+
+type ReportRequirementImportance = "Mandatory" | "Optional";
+type ReportBlockCategory = "essential" | "technical" | "interpersonal";
+
+type ReportRequirement = {
+  label: string;
+  importance: ReportRequirementImportance;
+  numericScore: number;
+  explanation: string;
+};
+
+type ReportBlock = {
+  category: ReportBlockCategory;
+  title: string;
+  numericScore: number;
+  requirements: ReportRequirement[];
+};
+
+type CandidateReport = {
+  finalNumericScore: number;
+  blocks: ReportBlock[];
+};
+
+const reportBlockTitles: Record<ReportBlockCategory, string> = {
+  essential: "Essential requirements",
+  technical: "Technical skills",
+  interpersonal: "Interpersonal skills",
+};
+
+const reportDataByCandidateId: Record<string, CandidateReport> = {
+  cand_bea_soto: {
+    finalNumericScore: 84.3,
+    blocks: [
+      {
+        category: "essential",
+        title: reportBlockTitles.essential,
+        numericScore: 89.2,
+        requirements: [
+          {
+            label: "Forklift certification",
+            importance: "Mandatory",
+            numericScore: 95,
+            explanation:
+              "Clear certification evidence and direct equipment familiarity support this requirement strongly.",
+          },
+          {
+            label: "Weekend shift flexibility",
+            importance: "Optional",
+            numericScore: 80,
+            explanation:
+              "Candidate confirmed reliable weekend coverage and a workable shift pattern for the rota.",
+          },
+        ],
+      },
+      {
+        category: "technical",
+        title: reportBlockTitles.technical,
+        numericScore: 82.4,
+        requirements: [
+          {
+            label: "Order-picking throughput",
+            importance: "Mandatory",
+            numericScore: 87,
+            explanation:
+              "Described consistent picking volume with clean attendance and stable pace across busy shifts.",
+          },
+          {
+            label: "Warehouse system fluency",
+            importance: "Optional",
+            numericScore: 76,
+            explanation:
+              "Has practical scanner and inventory workflow exposure, but not deep systems administration experience.",
+          },
+        ],
+      },
+      {
+        category: "interpersonal",
+        title: reportBlockTitles.interpersonal,
+        numericScore: 80.6,
+        requirements: [
+          {
+            label: "Shift handoff communication",
+            importance: "Mandatory",
+            numericScore: 84,
+            explanation:
+              "Explained handoffs clearly and gave examples of staying concise during shift changes.",
+          },
+          {
+            label: "Team coordination",
+            importance: "Optional",
+            numericScore: 74,
+            explanation:
+              "Shows calm collaboration and reliable response to supervisor direction under time pressure.",
+          },
+        ],
+      },
+    ],
+  },
+  cand_marta_gil: {
+    finalNumericScore: 47.8,
+    blocks: [
+      {
+        category: "essential",
+        title: reportBlockTitles.essential,
+        numericScore: 55.6,
+        requirements: [
+          {
+            label: "Forklift certification",
+            importance: "Mandatory",
+            numericScore: 61,
+            explanation:
+              "Basic exposure exists, but the interview evidence does not fully confirm current active certification.",
+          },
+          {
+            label: "Weekend shift flexibility",
+            importance: "Optional",
+            numericScore: 46,
+            explanation:
+              "Availability is constrained on several weekends, which weakens coverage for the role.",
+          },
+        ],
+      },
+      {
+        category: "technical",
+        title: reportBlockTitles.technical,
+        numericScore: 49.2,
+        requirements: [
+          {
+            label: "Order-picking throughput",
+            importance: "Mandatory",
+            numericScore: 53,
+            explanation:
+              "The candidate can do the work, but the evidence for steady high-volume output is limited.",
+          },
+          {
+            label: "Warehouse system fluency",
+            importance: "Optional",
+            numericScore: 42,
+            explanation:
+              "Familiarity with common warehouse tools is present, but day-to-day system confidence still looks uneven.",
+          },
+        ],
+      },
+      {
+        category: "interpersonal",
+        title: reportBlockTitles.interpersonal,
+        numericScore: 38.4,
+        requirements: [
+          {
+            label: "Shift handoff communication",
+            importance: "Mandatory",
+            numericScore: 44,
+            explanation:
+              "Communication is clear enough, but the answers were short and not yet fully operational.",
+          },
+          {
+            label: "Team coordination",
+            importance: "Optional",
+            numericScore: 33,
+            explanation:
+              "Team support examples were limited, so the interpersonal signal stays below the strongest candidates.",
+          },
+        ],
+      },
+    ],
+  },
+};
+
+const defaultReport: CandidateReport = {
+  finalNumericScore: 61.5,
+  blocks: [
+    {
+      category: "essential",
+      title: reportBlockTitles.essential,
+      numericScore: 63.5,
+      requirements: [
+        {
+          label: "Core role requirement",
+          importance: "Mandatory",
+          numericScore: 66,
+          explanation:
+            "This mock report uses the same block structure as the candidate-specific examples.",
+        },
+        {
+          label: "Support requirement",
+          importance: "Optional",
+          numericScore: 61,
+          explanation:
+            "Deterministic fallback content keeps the report surface stable for any selected candidate.",
+        },
+      ],
+    },
+    {
+      category: "technical",
+      title: reportBlockTitles.technical,
+      numericScore: 60.4,
+      requirements: [
+        {
+          label: "Workflow execution",
+          importance: "Mandatory",
+          numericScore: 64,
+          explanation:
+            "The fallback report keeps a balanced technical block with visible scoring metadata.",
+        },
+        {
+          label: "Tool familiarity",
+          importance: "Optional",
+          numericScore: 57,
+          explanation:
+            "This row is intentionally conservative so the layout remains readable in the sidebar.",
+        },
+      ],
+    },
+    {
+      category: "interpersonal",
+      title: reportBlockTitles.interpersonal,
+      numericScore: 60.6,
+      requirements: [
+        {
+          label: "Communication quality",
+          importance: "Mandatory",
+          numericScore: 62,
+          explanation:
+            "The report surface still shows one explanation per row, even when using fallback data.",
+        },
+        {
+          label: "Collaboration signal",
+          importance: "Optional",
+          numericScore: 59,
+          explanation:
+            "Fallback data keeps the panel deterministic without introducing transcript or CV tabs.",
+        },
+      ],
+    },
+  ],
+};
+
+function getCandidateReport(candidateId: string): CandidateReport {
+  return reportDataByCandidateId[candidateId] ?? defaultReport;
+}
+
+function scoreBadgeIntentFor(score: number | null) {
+  const scoreState = mapNumericScoreToState(score);
+
+  return scoreState === "Pending" ? "neutral" : scoreBadgeIntent[scoreState];
+}
 
 export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
   const snapshot = getJobPipelineSnapshot(jobId);
@@ -35,6 +282,9 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
   const selectedCandidate =
     candidates.find((candidate) => candidate.id === selectedCandidateId) ??
     null;
+  const selectedCandidateReport = selectedCandidate
+    ? getCandidateReport(selectedCandidate.id)
+    : null;
 
   const selectCandidate = (candidateId: string) => {
     setSelectedCandidateId(candidateId);
@@ -111,7 +361,10 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                       {selectedCandidate.stage}
                     </StatusBadge>
                     {selectedCandidate.scoreState ? (
-                      <StatusBadge intent="success" density="compact">
+                      <StatusBadge
+                        intent={scoreBadgeIntent[selectedCandidate.scoreState]}
+                        density="compact"
+                      >
                         {selectedCandidate.scoreState}
                       </StatusBadge>
                     ) : null}
@@ -130,10 +383,122 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                   />
                 </div>
                 <section className="rounded-[0.72rem] border border-slate-200/85 bg-white/90 px-4 py-4">
-                  <p className="ops-kicker text-slate-500">Report review</p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="ops-kicker text-slate-500">Candidate report</p>
+                      <p className="mt-2 text-base font-semibold text-slate-950">
+                        Recruiter-facing evaluation summary
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <StatusBadge
+                        intent={scoreBadgeIntentFor(selectedCandidateReport?.finalNumericScore ?? null)}
+                        density="compact"
+                      >
+                        {mapNumericScoreToState(
+                          selectedCandidateReport?.finalNumericScore ?? null,
+                        )}
+                      </StatusBadge>
+                      <p className="mt-2 font-mono text-xs tracking-[0.14em] text-slate-500 uppercase">
+                        {selectedCandidateReport
+                          ? `${selectedCandidateReport.finalNumericScore.toFixed(1)} / 100`
+                          : "Pending"}
+                      </p>
+                    </div>
+                  </div>
                   <p className="mt-3 text-sm leading-6 text-slate-600">
-                    Recruiter-facing summary, decision support notes, and fit rationale stay here without breaking the pipeline context.
+                    This report combines essential, technical, and interpersonal
+                    blocks using deterministic mock evaluation data for the
+                    current candidate.
                   </p>
+
+                  {selectedCandidateReport ? (
+                    <div className="mt-4 space-y-3">
+                      {selectedCandidateReport.blocks.map((block) => {
+                        const blockScoreState = mapNumericScoreToState(block.numericScore);
+
+                        return (
+                          <section
+                            key={block.category}
+                            className="rounded-[0.72rem] border border-slate-200/85 bg-slate-50/80 px-3 py-3"
+                          >
+                            <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-3">
+                              <div>
+                                <p className="ops-kicker text-slate-500">
+                                  {block.title}
+                                </p>
+                                <p className="mt-2 text-sm font-semibold text-slate-950">
+                                  Block score
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <StatusBadge
+                                  intent={scoreBadgeIntentFor(block.numericScore)}
+                                  density="compact"
+                                >
+                                  {blockScoreState}
+                                </StatusBadge>
+                                <p className="mt-2 font-mono text-xs tracking-[0.14em] text-slate-500 uppercase">
+                                  {block.numericScore.toFixed(1)} / 100
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="mt-3 space-y-2">
+                              {block.requirements.map((requirement) => {
+                                const requirementScoreState = mapNumericScoreToState(
+                                  requirement.numericScore,
+                                );
+
+                                return (
+                                  <div
+                                    key={requirement.label}
+                                    className="rounded-[0.64rem] border border-white/80 bg-white/90 px-3 py-3 shadow-[0_1px_0_rgba(15,23,42,0.03)]"
+                                  >
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div>
+                                        <p className="text-sm font-semibold text-slate-950">
+                                          {requirement.label}
+                                        </p>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                          <StatusBadge intent="neutral" density="compact">
+                                            {requirement.importance}
+                                          </StatusBadge>
+                                          <StatusBadge
+                                            intent={scoreBadgeIntentFor(
+                                              requirement.numericScore,
+                                            )}
+                                            density="compact"
+                                          >
+                                            {requirementScoreState}
+                                          </StatusBadge>
+                                        </div>
+                                      </div>
+                                      <p className="font-mono text-xs tracking-[0.12em] text-slate-500 uppercase">
+                                        {requirement.numericScore.toFixed(1)}
+                                      </p>
+                                    </div>
+                                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                                      {requirement.explanation}
+                                    </p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </section>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+
+                  <div className="mt-4 rounded-[0.72rem] border border-amber-200/85 bg-amber-50/85 px-3 py-3">
+                    <p className="ops-kicker text-amber-700">AI recommendation</p>
+                    <p className="mt-2 text-sm leading-6 text-amber-950/90">
+                      This output is decision support only. Review the evidence,
+                      recruiter context, and job requirements before acting on
+                      the recommendation.
+                    </p>
+                  </div>
                 </section>
                 <section className="rounded-[0.72rem] border border-slate-200/85 bg-white/90 px-4 py-4">
                   <p className="ops-kicker text-slate-500">Audio review</p>
