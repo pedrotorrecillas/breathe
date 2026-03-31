@@ -6,6 +6,7 @@ import type {
   QuestionConfidenceLevel,
 } from "@/domain/interview-preparation/types";
 import type { Job } from "@/domain/jobs/types";
+import type { SupportedLanguage } from "@/domain/shared/types";
 
 const confidenceLevelBaselines: Array<{
   band: QuestionConfidenceBand;
@@ -66,12 +67,82 @@ function toQuestionKind(
   }
 }
 
+function toLanguageName(language: SupportedLanguage) {
+  return language === "es" ? "Spanish" : "English";
+}
+
+function toLanguageNameInBaseLanguage(
+  language: SupportedLanguage,
+  baseLanguage: SupportedLanguage,
+) {
+  if (baseLanguage === "es") {
+    return language === "es" ? "español" : "inglés";
+  }
+
+  return language === "es" ? "Spanish" : "English";
+}
+
+function normalizeText(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function detectLanguageRequirement(
+  requirement: Job["requirements"][number],
+): { lang: SupportedLanguage; certificate: string | null } | null {
+  const text = normalizeText(
+    [requirement.label, requirement.description, requirement.code ?? ""].join(" "),
+  );
+
+  if (
+    text.includes("language") ||
+    text.includes("english") ||
+    text.includes("inglés") ||
+    text.includes("español") ||
+    text.includes("spanish")
+  ) {
+    const lang: SupportedLanguage =
+      text.includes("spanish") || text.includes("español") ? "es" : "en";
+
+    const certificateMatch =
+      requirement.description.match(
+        /\b(certification|certificate|certified)\b(?:\s*(?:in|for))?\s*([A-Za-z0-9+ -]{2,40})/i,
+      ) ?? requirement.label.match(
+        /\b(certification|certificate|certified)\b(?:\s*(?:in|for))?\s*([A-Za-z0-9+ -]{2,40})/i,
+      );
+
+    return {
+      lang,
+      certificate: certificateMatch?.[2]?.trim() || null,
+    };
+  }
+
+  return null;
+}
+
 function buildQuestionPrompt(requirement: Job["requirements"][number]) {
   if (requirement.category === "condition") {
     return `Before we continue, could you confirm how ${requirement.label.toLowerCase()} works for you?`;
   }
 
   return `Could you walk me through your experience with ${requirement.label.toLowerCase()}?`;
+}
+
+function buildLanguageQuestionPrompt(input: {
+  requirement: Job["requirements"][number];
+  interviewLanguage: SupportedLanguage;
+  requiredLanguage: SupportedLanguage;
+}) {
+  const intro =
+    input.interviewLanguage === "es"
+      ? `Para la siguiente pregunta, vamos a cambiar a ${toLanguageNameInBaseLanguage(input.requiredLanguage, "es")}, ¿te parece bien? (espera la respuesta del candidato)`
+      : `For the next question, we are going to change to ${toLanguageName(input.requiredLanguage)}, is it ok for you? (wait for the candidate's response)`;
+
+  const question =
+    input.interviewLanguage === "es"
+      ? `Por favor, responde en ${toLanguageNameInBaseLanguage(input.requiredLanguage, "es")} y cuéntame sobre una situación laboral reciente en la que hayas usado ${toLanguageNameInBaseLanguage(input.requiredLanguage, "es")}.`
+      : `Please answer in ${toLanguageName(input.requiredLanguage)} and tell me about a recent work situation where you used ${toLanguageName(input.requiredLanguage)}.`;
+
+  return `${intro} ${question}`;
 }
 
 function buildQuestionRubric(requirement: Job["requirements"][number]) {
@@ -84,6 +155,13 @@ function buildQuestionRubric(requirement: Job["requirements"][number]) {
   return requirement.weight >= 3
     ? "Collect concrete evidence, examples, and depth of experience. A higher confidence score requires specific and relevant examples."
     : "Collect clear evidence of experience and fit. Use the answer to judge relevance, consistency, and strength.";
+}
+
+function buildLanguageQuestionRubric(input: {
+  requirement: Job["requirements"][number];
+  requiredLanguage: SupportedLanguage;
+}) {
+  return `Assess whether the candidate can communicate in ${toLanguageName(input.requiredLanguage)} for ${input.requirement.label.toLowerCase()}. Reward functional communication over perfect grammar when the role only needs basic or intermediate proficiency.`;
 }
 
 function buildConfidenceLevels(
@@ -99,17 +177,116 @@ function buildConfidenceLevels(
   }));
 }
 
-export function generateInterviewQuestions(job: Job): InterviewQuestion[] {
-  return job.requirements.map((requirement) => ({
-    id: `question_${requirement.id}`,
-    requirementId: requirement.id,
-    kind: toQuestionKind(requirement),
-    type: requirement.category === "condition" ? "killer" : "standard",
-    prompt: buildQuestionPrompt(requirement),
-    metadata: null,
-    rubric: buildQuestionRubric(requirement),
-    confidenceLevels: buildConfidenceLevels(requirement),
+function buildLanguageConfidenceLevels(input: {
+  requirement: Job["requirements"][number];
+  requiredLanguage: SupportedLanguage;
+}): QuestionConfidenceLevel[] {
+  return confidenceLevelBaselines.map((baseline) => ({
+    band: baseline.band,
+    level: baseline.level,
+    description: buildLanguageQuestionLevelDescription({
+      ...input,
+      summary: baseline.summary,
+    }),
   }));
+}
+
+function buildLanguageQuestionLevelDescription(input: {
+  summary: string;
+  requirement: Job["requirements"][number];
+  requiredLanguage: SupportedLanguage;
+}) {
+  const proficiencyHint = normalizeText(
+    `${input.requirement.label} ${input.requirement.description}`,
+  );
+
+  let calibrationText = "Reward functional communication, clear meaning, and enough fluency to do the job.";
+
+  if (
+    proficiencyHint.includes("basic") ||
+    proficiencyHint.includes("low") ||
+    proficiencyHint.includes("a1") ||
+    proficiencyHint.includes("a2")
+  ) {
+    calibrationText =
+      "For basic proficiency, reward simple everyday communication and the ability to get the point across despite errors.";
+  } else if (
+    proficiencyHint.includes("intermediate") ||
+    proficiencyHint.includes("medium") ||
+    proficiencyHint.includes("b1") ||
+    proficiencyHint.includes("b2")
+  ) {
+    calibrationText =
+      "For intermediate proficiency, reward practical workplace communication with some errors allowed if the meaning stays clear.";
+  } else if (
+    proficiencyHint.includes("advanced") ||
+    proficiencyHint.includes("fluent") ||
+    proficiencyHint.includes("native") ||
+    proficiencyHint.includes("c1") ||
+    proficiencyHint.includes("c2")
+  ) {
+    calibrationText =
+      "For advanced proficiency, reward nuanced and accurate communication, including role-specific detail and natural flow.";
+  }
+
+  return `${input.summary} ${calibrationText} Evaluate how well the candidate uses ${toLanguageName(input.requiredLanguage)} for "${input.requirement.label}".`;
+}
+
+function buildQuestionMetadata(
+  requirement: Job["requirements"][number],
+) {
+  const languageRequirement = detectLanguageRequirement(requirement);
+
+  if (!languageRequirement) {
+    return null;
+  }
+
+  return JSON.stringify({
+    lang: languageRequirement.lang,
+    ...(languageRequirement.certificate
+      ? { certificate: languageRequirement.certificate }
+      : {}),
+  });
+}
+
+export function generateInterviewQuestions(job: Job): InterviewQuestion[] {
+  return job.requirements.map((requirement) => {
+    const languageRequirement = detectLanguageRequirement(requirement);
+
+    if (languageRequirement) {
+      return {
+        id: `question_${requirement.id}`,
+        requirementId: requirement.id,
+        kind: "language_check",
+        type: "language",
+        prompt: buildLanguageQuestionPrompt({
+          requirement,
+          interviewLanguage: job.interviewLanguage,
+          requiredLanguage: languageRequirement.lang,
+        }),
+        metadata: buildQuestionMetadata(requirement),
+        rubric: buildLanguageQuestionRubric({
+          requirement,
+          requiredLanguage: languageRequirement.lang,
+        }),
+        confidenceLevels: buildLanguageConfidenceLevels({
+          requirement,
+          requiredLanguage: languageRequirement.lang,
+        }),
+      } satisfies InterviewQuestion;
+    }
+
+    return {
+      id: `question_${requirement.id}`,
+      requirementId: requirement.id,
+      kind: toQuestionKind(requirement),
+      type: requirement.category === "condition" ? "killer" : "standard",
+      prompt: buildQuestionPrompt(requirement),
+      metadata: buildQuestionMetadata(requirement),
+      rubric: buildQuestionRubric(requirement),
+      confidenceLevels: buildConfidenceLevels(requirement),
+    } satisfies InterviewQuestion;
+  });
 }
 
 export function createInterviewPreparationPackage(input: {

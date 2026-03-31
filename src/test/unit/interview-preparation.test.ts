@@ -67,7 +67,9 @@ describe("interview preparation", () => {
       type: "standard",
       metadata: null,
     });
-    expect(questions[0].confidenceLevels).toHaveLength(6);
+    expect(questions.every((question) => question.confidenceLevels.length === 6)).toBe(
+      true,
+    );
     expect(questions[0].confidenceLevels[0]).toMatchObject({
       band: "excellent",
       level: "90-100",
@@ -76,6 +78,64 @@ describe("interview preparation", () => {
       band: "inadequate",
       level: "1-29",
     });
+  });
+
+  it("generates a language question with language-specific metadata and prompt guidance", () => {
+    const questions = generateInterviewQuestions({
+      id: "job_2",
+      title: "Retail Shift Lead",
+      summary: "Store leadership role",
+      location: "Barcelona",
+      status: "active",
+      interviewLanguage: "es",
+      createdAt: "2026-03-24T08:00:00.000Z",
+      publishedAt: "2026-03-24T08:00:00.000Z",
+      expiresAt: null,
+      publicApplyPath: "/apply/job_2",
+      pipeline: {
+        applicants: 1,
+        interviewed: 0,
+        shortlisted: 0,
+        hired: 0,
+        rejected: 0,
+      },
+      interviewLimits: {
+        maxInterviews: null,
+        outstandingCap: null,
+        greatCap: null,
+      },
+      requirements: [
+        {
+          id: "req_language",
+          code: null,
+          label: "English proficiency",
+          description: "Basic English communication with customers and team members.",
+          category: "essential",
+          weight: 2,
+          isKnockout: false,
+        },
+      ],
+    });
+
+    expect(questions).toHaveLength(1);
+    expect(questions[0]).toMatchObject({
+      id: "question_req_language",
+      requirementId: "req_language",
+      kind: "language_check",
+      type: "language",
+      metadata: JSON.stringify({ lang: "en" }),
+    });
+    expect(questions[0].prompt).toContain(
+      "Para la siguiente pregunta, vamos a cambiar a inglés",
+    );
+    expect(questions[0].prompt).toContain(
+      "responde en inglés y cuéntame",
+    );
+    expect(questions[0].rubric).toContain("english");
+    expect(questions[0].confidenceLevels).toHaveLength(6);
+    expect(questions[0].confidenceLevels.every((level) => level.description.includes("English"))).toBe(
+      true,
+    );
   });
 
   it("builds a preparation package with the job language and generation timestamp", () => {
