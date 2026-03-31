@@ -13,6 +13,14 @@ type RuntimePipelineTransition = {
   needsHumanReviewAt: ISODateTimeString | null;
 };
 
+function normalizeOutcomeDetail(value: string | null | undefined) {
+  return value?.trim().toLowerCase() ?? "";
+}
+
+function includesAny(value: string, patterns: string[]) {
+  return patterns.some((pattern) => value.includes(pattern));
+}
+
 function isHardDispatchFailureCode(
   code: HappyRobotDispatchFailure["code"],
 ): boolean {
@@ -81,6 +89,7 @@ export function mapDispatchFailureToRuntimeTransition(
 export function mapRuntimeStatusToTransition(
   status: HappyRobotCallStatus,
   happenedAt: string,
+  outcomeDetail?: string | null,
 ): RuntimePipelineTransition {
   if (status === "needs_human") {
     return {
@@ -89,6 +98,63 @@ export function mapRuntimeStatusToTransition(
       applicationStage: "applicant",
       needsHumanReviewAt: happenedAt,
     };
+  }
+
+  if (status === "failed") {
+    const normalizedOutcomeDetail = normalizeOutcomeDetail(outcomeDetail);
+
+    if (
+      includesAny(normalizedOutcomeDetail, [
+        "job condition",
+        "knockout",
+        "requirement failed",
+        "screen-out",
+        "screen out",
+      ])
+    ) {
+      return {
+        interviewRunStatus: "failed_job_condition",
+        pipelineStage: "rejected",
+        applicationStage: "rejected",
+        needsHumanReviewAt: null,
+      };
+    }
+
+    if (
+      includesAny(normalizedOutcomeDetail, [
+        "retry exhausted",
+        "retries exhausted",
+        "no response",
+        "unreachable",
+        "voicemail",
+        "no answer",
+        "no_answer",
+      ])
+    ) {
+      return {
+        interviewRunStatus: "no_response",
+        pipelineStage: "rejected",
+        applicationStage: "rejected",
+        needsHumanReviewAt: null,
+      };
+    }
+
+    if (
+      includesAny(normalizedOutcomeDetail, [
+        "disconnect",
+        "disconnected",
+        "hung up",
+        "hangup",
+        "call dropped",
+      ])
+    ) {
+      return {
+        interviewRunStatus: "disconnected",
+        pipelineStage: "applicant",
+        applicationStage: "applicant",
+        needsHumanReviewAt: null,
+      };
+    }
   }
 
   return {

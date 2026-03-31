@@ -18,6 +18,17 @@ function asNullableTrimmedString(value: unknown) {
   return typeof value === "string" ? value.trim() || null : null;
 }
 
+function coalesceOutcomeDetail(rawPayload: Record<string, unknown>) {
+  return (
+    asNullableTrimmedString(rawPayload.failureReason) ??
+    asNullableTrimmedString(rawPayload.providerOutcomeLabel) ??
+    asNullableTrimmedString(rawPayload.outcomeLabel) ??
+    asNullableTrimmedString(rawPayload.outcomeCode) ??
+    asNullableTrimmedString(rawPayload.outcome) ??
+    asNullableTrimmedString(rawPayload.disconnectReason)
+  );
+}
+
 function isHappyRobotStatus(value: string): value is HappyRobotWebhookEvent["status"] {
   return (
     value === "queued" ||
@@ -75,7 +86,7 @@ export function parseHappyRobotWebhookEvent(
       happenedAt,
       recordingUrl: asNullableTrimmedString(rawPayload.recordingUrl),
       transcriptUrl: asNullableTrimmedString(rawPayload.transcriptUrl),
-      failureReason: asNullableTrimmedString(rawPayload.failureReason),
+      failureReason: coalesceOutcomeDetail(rawPayload),
       rawPayloadRef: asNullableTrimmedString(rawPayload.rawPayloadRef),
     },
   };
@@ -88,6 +99,7 @@ export function applyHappyRobotWebhookEvent(input: {
   const transition = mapRuntimeStatusToTransition(
     input.event.status,
     input.event.happenedAt,
+    input.event.failureReason,
   );
 
   return {
@@ -109,7 +121,7 @@ export function applyHappyRobotWebhookEvent(input: {
         (input.event.status === "failed"
           ? "HappyRobot reported a failed runtime outcome."
           : null),
-      providerOutcomeLabel: input.event.status,
+      providerOutcomeLabel: input.event.failureReason ?? input.event.status,
     },
     trace: {
       ...input.interviewRun.trace,

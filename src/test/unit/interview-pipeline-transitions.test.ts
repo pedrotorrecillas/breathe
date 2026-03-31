@@ -48,11 +48,43 @@ describe("interview pipeline transitions", () => {
 
   it("treats failed runtime callbacks as rejected", () => {
     expect(
-      mapRuntimeStatusToTransition("failed", "2026-03-24T08:25:00.000Z"),
+      mapRuntimeStatusToTransition(
+        "failed",
+        "2026-03-24T08:25:00.000Z",
+        "Retries exhausted after repeated no response",
+      ),
     ).toEqual({
-      interviewRunStatus: "error",
+      interviewRunStatus: "no_response",
       pipelineStage: "rejected",
       applicationStage: "rejected",
+      needsHumanReviewAt: null,
+    });
+  });
+
+  it("distinguishes failed job-condition and disconnected runtime outcomes", () => {
+    expect(
+      mapRuntimeStatusToTransition(
+        "failed",
+        "2026-03-24T08:25:00.000Z",
+        "Candidate failed job condition: no valid work permit",
+      ),
+    ).toEqual({
+      interviewRunStatus: "failed_job_condition",
+      pipelineStage: "rejected",
+      applicationStage: "rejected",
+      needsHumanReviewAt: null,
+    });
+
+    expect(
+      mapRuntimeStatusToTransition(
+        "failed",
+        "2026-03-24T08:25:00.000Z",
+        "Call disconnected before completion",
+      ),
+    ).toEqual({
+      interviewRunStatus: "disconnected",
+      pipelineStage: "applicant",
+      applicationStage: "applicant",
       needsHumanReviewAt: null,
     });
   });

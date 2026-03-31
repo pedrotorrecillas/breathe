@@ -52,6 +52,32 @@ describe("happyrobot webhooks", () => {
     });
   });
 
+  it("preserves provider outcome detail when parsing failed payloads", () => {
+    const parsed = parseHappyRobotWebhookEvent({
+      eventId: "evt_2",
+      interviewRunId: "run_1",
+      providerCallId: "hr_call_run_1",
+      status: "failed",
+      happenedAt: "2026-03-24T08:20:00.000Z",
+      outcomeLabel: "Retries exhausted after repeated no response",
+    });
+
+    expect(parsed).toEqual({
+      success: true,
+      event: {
+        eventId: "evt_2",
+        interviewRunId: "run_1",
+        providerCallId: "hr_call_run_1",
+        status: "failed",
+        happenedAt: "2026-03-24T08:20:00.000Z",
+        recordingUrl: null,
+        transcriptUrl: null,
+        failureReason: "Retries exhausted after repeated no response",
+        rawPayloadRef: null,
+      },
+    });
+  });
+
   it("applies a completed webhook event onto the interview run", () => {
     const interviewRun = applyHappyRobotWebhookEvent({
       interviewRun: {
@@ -310,6 +336,70 @@ describe("happyrobot webhooks", () => {
 
     expect(result.status).toBe("no_response");
     expect(result.pipelineStage).toBe("rejected");
+  });
+
+  it("maps failed job-condition outcomes into a rejected internal status", () => {
+    const result = applyHappyRobotWebhookEvent({
+      interviewRun: {
+        id: "run_1",
+        candidateId: "cand_1",
+        applicationId: "app_1",
+        jobId: "job_1",
+        interviewPreparationId: "prep_1",
+        provider: "happyrobot",
+        status: "queued",
+        pipelineStage: "applicant",
+        dispatch: {
+          dispatchedAt: "2026-03-24T08:10:00.000Z",
+          providerCallId: "hr_call_run_1",
+          providerAgentId: "gala-v1",
+          providerSessionId: "hr_session_run_1",
+          outboundNumber: "+34910000000",
+        },
+        metadata: {
+          selectedLanguage: "es",
+          candidateTimezone: {
+            timezone: "Europe/Madrid",
+            localDateTime: "2026-03-24T09:00:00.000Z",
+            utcDateTime: "2026-03-24T08:00:00.000Z",
+          },
+          disclosedWithAi: true,
+          disclosureText: "AI disclosure text",
+          callbackRequestedAt: null,
+          failureReason: null,
+          providerOutcomeLabel: "queued",
+        },
+        trace: {
+          createdAt: "2026-03-24T08:00:00.000Z",
+          normalizedAt: "2026-03-24T08:05:00.000Z",
+          initiatedAt: "2026-03-24T08:10:00.000Z",
+          completedAt: null,
+          lastEventAt: "2026-03-24T08:10:00.000Z",
+        },
+        artifacts: {
+          recordingUrl: null,
+          transcriptUrl: null,
+          transcriptAssetRef: null,
+          providerPayloadSnapshotRef: null,
+          recordingDurationSeconds: null,
+        },
+      },
+      event: {
+        eventId: "evt_4",
+        interviewRunId: "run_1",
+        providerCallId: "hr_call_run_1",
+        status: "failed",
+        happenedAt: "2026-03-24T08:30:00.000Z",
+        failureReason: "Candidate failed job condition: no valid work permit",
+        rawPayloadRef: "payloads/evt_4.json",
+      },
+    });
+
+    expect(result.status).toBe("failed_job_condition");
+    expect(result.pipelineStage).toBe("rejected");
+    expect(result.metadata.providerOutcomeLabel).toBe(
+      "Candidate failed job condition: no valid work permit",
+    );
   });
 
   it("returns a safe unmatched error when no run can be found", () => {

@@ -18,6 +18,7 @@ export type HappyRobotCallStatus =
   | "connected"
   | "completed"
   | "failed"
+  | "no_response"
   | "needs_human";
 
 export type HappyRobotCallRequest = {
