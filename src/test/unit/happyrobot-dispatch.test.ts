@@ -228,6 +228,72 @@ describe("happyrobot dispatch payload", () => {
     });
   });
 
+  it("marks hard dispatch failures as failed job conditions on the interview run", () => {
+    const interviewRun = applyHappyRobotDispatchResponse({
+      interviewRun: {
+        id: "run_1",
+        candidateId: "cand_1",
+        applicationId: "app_1",
+        jobId: "job_1",
+        interviewPreparationId: "prep_1",
+        provider: "happyrobot",
+        status: "normalized",
+        pipelineStage: "applicant",
+        dispatch: {
+          dispatchedAt: null,
+          providerCallId: null,
+          providerAgentId: null,
+          providerSessionId: null,
+          outboundNumber: null,
+        },
+        metadata: {
+          selectedLanguage: "es",
+          candidateTimezone: {
+            timezone: "Europe/Madrid",
+            localDateTime: "2026-03-24T09:00:00.000Z",
+            utcDateTime: "2026-03-24T08:00:00.000Z",
+          },
+          disclosedWithAi: true,
+          disclosureText: "AI disclosure text",
+          callbackRequestedAt: null,
+          failureReason: null,
+          providerOutcomeLabel: null,
+        },
+        trace: {
+          createdAt: "2026-03-24T08:00:00.000Z",
+          normalizedAt: "2026-03-24T08:01:00.000Z",
+          initiatedAt: null,
+          completedAt: null,
+          lastEventAt: null,
+        },
+        artifacts: {
+          recordingUrl: null,
+          transcriptUrl: null,
+          transcriptAssetRef: null,
+          providerPayloadSnapshotRef: null,
+          recordingDurationSeconds: null,
+        },
+      },
+      response: {
+        success: false,
+        error: {
+          code: "missing_outbound_number",
+          message:
+            "HappyRobot dispatch could not start because no outbound number was selected.",
+          retryable: false,
+          providerStatus: null,
+          happenedAt: "2026-03-24T08:10:00.000Z",
+        },
+      },
+    });
+
+    expect(interviewRun.status).toBe("failed_job_condition");
+    expect(interviewRun.pipelineStage).toBe("rejected");
+    expect(interviewRun.metadata.providerOutcomeLabel).toBe(
+      "failed_job_condition",
+    );
+  });
+
   it("applies a successful dispatch response back onto the interview run", () => {
     const interviewRun = applyHappyRobotDispatchResponse({
       interviewRun: {

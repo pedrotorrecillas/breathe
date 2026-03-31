@@ -48,6 +48,8 @@ describe("public apply submissions", () => {
       result.data.application.id,
     );
     expect(result.data.interviewRun.status).toBe("queued");
+    expect(result.data.interviewRun.pipelineStage).toBe("applicant");
+    expect(result.data.application.stage).toBe("applicant");
     expect(result.data.interviewRun.interviewPreparationId).toBe(
       result.data.interviewPackage.id,
     );
@@ -139,6 +141,8 @@ describe("public apply submissions", () => {
 
     expect(snapshot.webhookRecords).toHaveLength(1);
     expect(snapshot.interviewRuns[0]?.status).toBe("completed");
+    expect(snapshot.interviewRuns[0]?.pipelineStage).toBe("interviewed");
+    expect(snapshot.applications[0]?.stage).toBe("interviewed");
     expect(snapshot.interviewRuns[0]?.artifacts.recordingUrl).toBe(
       "https://example.com/recording.mp3",
     );
@@ -152,6 +156,9 @@ describe("public apply submissions", () => {
       completedAt: "2026-03-25T12:05:00.000Z",
       transcriptUrl: "https://example.com/transcript.txt",
     });
+    expect(getPublicApplySubmissionSnapshot().applications[0]?.stage).toBe(
+      "interviewed",
+    );
 
     expect(getInterviewRunRuntimeSnapshot("run_1")).toMatchObject({
       interviewRun: {

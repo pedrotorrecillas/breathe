@@ -8,6 +8,9 @@ import type {
   HappyRobotNormalizedDispatchPayload,
   HappyRobotRuntimeRequirement,
 } from "@/domain/runtime/happyrobot/types";
+import {
+  mapDispatchFailureToRuntimeTransition,
+} from "@/lib/interview-pipeline-transitions";
 
 function toRuntimeRequirement(
   requirement: Job["requirements"][number],
@@ -126,13 +129,19 @@ export function applyHappyRobotDispatchResponse(input: {
   response: HappyRobotDispatchResponse;
 }): InterviewRun {
   if (!input.response.success) {
+    const transition = mapDispatchFailureToRuntimeTransition(input.response.error);
+
     return {
       ...input.interviewRun,
-      status: "error",
+      status: transition.interviewRunStatus,
+      pipelineStage: transition.pipelineStage,
       metadata: {
         ...input.interviewRun.metadata,
         failureReason: input.response.error.message,
-        providerOutcomeLabel: input.response.error.providerStatus,
+        providerOutcomeLabel:
+          transition.interviewRunStatus === "failed_job_condition"
+            ? "failed_job_condition"
+            : input.response.error.providerStatus,
       },
       trace: {
         ...input.interviewRun.trace,
@@ -144,6 +153,7 @@ export function applyHappyRobotDispatchResponse(input: {
   return {
     ...input.interviewRun,
     status: "queued",
+    pipelineStage: "applicant",
     dispatch: {
       ...input.interviewRun.dispatch,
       dispatchedAt: input.response.result.dispatchedAt,

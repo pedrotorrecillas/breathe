@@ -1,9 +1,10 @@
-import type { InterviewRun, InterviewRunStatus } from "@/domain/interviews/types";
+import type { InterviewRun } from "@/domain/interviews/types";
 import type {
   HappyRobotWebhookEvent,
   HappyRobotWebhookIngestionResponse,
   HappyRobotWebhookRecord,
 } from "@/domain/runtime/happyrobot/types";
+import { mapRuntimeStatusToTransition } from "@/lib/interview-pipeline-transitions";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -26,26 +27,6 @@ function isHappyRobotStatus(value: string): value is HappyRobotWebhookEvent["sta
     value === "failed" ||
     value === "needs_human"
   );
-}
-
-function mapWebhookStatusToInterviewStatus(
-  status: HappyRobotWebhookEvent["status"],
-): InterviewRunStatus {
-  switch (status) {
-    case "queued":
-      return "queued";
-    case "dialing":
-      return "dialing";
-    case "connected":
-      return "in_progress";
-    case "completed":
-      return "completed";
-    case "needs_human":
-      return "human_requested";
-    case "failed":
-    default:
-      return "error";
-  }
 }
 
 export function parseHappyRobotWebhookEvent(
@@ -104,11 +85,15 @@ export function applyHappyRobotWebhookEvent(input: {
   interviewRun: InterviewRun;
   event: HappyRobotWebhookEvent;
 }): InterviewRun {
-  const nextStatus = mapWebhookStatusToInterviewStatus(input.event.status);
+  const transition = mapRuntimeStatusToTransition(
+    input.event.status,
+    input.event.happenedAt,
+  );
 
   return {
     ...input.interviewRun,
-    status: nextStatus,
+    status: transition.interviewRunStatus,
+    pipelineStage: transition.pipelineStage,
     dispatch: {
       ...input.interviewRun.dispatch,
       providerCallId:
@@ -117,9 +102,8 @@ export function applyHappyRobotWebhookEvent(input: {
     metadata: {
       ...input.interviewRun.metadata,
       callbackRequestedAt:
-        input.event.status === "needs_human"
-          ? input.event.happenedAt
-          : input.interviewRun.metadata.callbackRequestedAt,
+        transition.needsHumanReviewAt ??
+        input.interviewRun.metadata.callbackRequestedAt,
       failureReason:
         input.event.failureReason ??
         (input.event.status === "failed"

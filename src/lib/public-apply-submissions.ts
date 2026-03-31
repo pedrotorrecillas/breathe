@@ -17,6 +17,7 @@ import type {
 import { buildEvaluationSummary, type EvaluationSummary } from "@/lib/evaluation-summary";
 import { executeHappyRobotDispatch } from "@/lib/happyrobot-orchestration";
 import { ingestHappyRobotWebhookEvent } from "@/lib/happyrobot-webhooks";
+import { transitionCandidateApplicationForInterviewRun } from "@/lib/interview-pipeline-transitions";
 import type {
   NormalizedCandidateProfileSource,
   PublicApplyLegalAcceptance,
@@ -71,6 +72,23 @@ function normalizeEmail(email: string) {
 
 function nextId(prefix: string, count: number) {
   return `${prefix}_${count + 1}`;
+}
+
+function syncApplicationFromInterviewRun(interviewRun: InterviewRun) {
+  const applicationIndex = applications.findIndex(
+    (application) => application.id === interviewRun.applicationId,
+  );
+
+  if (applicationIndex < 0) {
+    return;
+  }
+
+  applications[applicationIndex] = transitionCandidateApplicationForInterviewRun(
+    applications[applicationIndex],
+    interviewRun.status,
+    interviewRun.pipelineStage,
+    interviewRun.metadata.callbackRequestedAt,
+  );
 }
 
 export function resetPublicApplySubmissionStore() {
@@ -216,6 +234,7 @@ export function receiveHappyRobotWebhook(
   );
 
   interviewRuns[interviewRunIndex] = result.interviewRun;
+  syncApplicationFromInterviewRun(result.interviewRun);
   webhookRecords.push(result.record);
 
   return result;
@@ -376,6 +395,14 @@ export function submitPublicApplication(
     now: new Date(input.legalAcceptance.acceptedAt),
   });
 
+  const stagedApplicationAfterDispatch =
+    transitionCandidateApplicationForInterviewRun(
+      stagedApplication,
+      dispatchExecution.interviewRun.status,
+      dispatchExecution.interviewRun.pipelineStage,
+      dispatchExecution.interviewRun.metadata.callbackRequestedAt,
+    );
+
   if (existingCandidate) {
     const candidateIndex = candidates.findIndex(
       (candidate) => candidate.id === existingCandidate.id,
@@ -385,7 +412,7 @@ export function submitPublicApplication(
     candidates.push(stagedCandidate);
   }
 
-  applications.push(stagedApplication);
+  applications.push(stagedApplicationAfterDispatch);
   interviewRuns.push(dispatchExecution.interviewRun);
   interviewPreparationPackages.push(dispatchExecution.interviewPackage);
   dispatchRequests.push(dispatchExecution.callRequest);
@@ -396,7 +423,7 @@ export function submitPublicApplication(
     success: true,
     data: {
       candidate: stagedCandidate,
-      application: stagedApplication,
+      application: stagedApplicationAfterDispatch,
       interviewRun: dispatchExecution.interviewRun,
       interviewPackage: dispatchExecution.interviewPackage,
       callRequest: dispatchExecution.callRequest,
