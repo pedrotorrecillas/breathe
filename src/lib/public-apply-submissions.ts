@@ -3,6 +3,7 @@ import type {
   CandidateProfile,
   CandidateSource,
 } from "@/domain/candidates/types";
+import type { CandidateEvaluation } from "@/domain/evaluations/types";
 import type { InterviewPreparationPackage } from "@/domain/interview-preparation/types";
 import type { InterviewRun } from "@/domain/interviews/types";
 import type { SupportedLanguage } from "@/domain/shared/types";
@@ -41,6 +42,7 @@ const dispatchRequests: HappyRobotCallRequest[] = [];
 const dispatchPayloads: HappyRobotNormalizedDispatchPayload[] = [];
 const dispatchResponses: HappyRobotDispatchResponse[] = [];
 const webhookRecords: HappyRobotWebhookRecord[] = [];
+const evaluations: CandidateEvaluation[] = [];
 
 function normalizePhone(phone: string) {
   const trimmed = phone.trim();
@@ -67,6 +69,7 @@ export function resetPublicApplySubmissionStore() {
   dispatchPayloads.length = 0;
   dispatchResponses.length = 0;
   webhookRecords.length = 0;
+  evaluations.length = 0;
 }
 
 export function getPublicApplySubmissionSnapshot() {
@@ -79,6 +82,48 @@ export function getPublicApplySubmissionSnapshot() {
     dispatchPayloads: [...dispatchPayloads],
     dispatchResponses: [...dispatchResponses],
     webhookRecords: [...webhookRecords],
+  };
+}
+
+export function getInterviewEvaluation(
+  interviewRunId: string,
+): CandidateEvaluation | null {
+  return (
+    evaluations.find(
+      (evaluation) => evaluation.interviewRunId === interviewRunId,
+    ) ?? null
+  );
+}
+
+export function saveInterviewEvaluation(
+  evaluation: CandidateEvaluation,
+):
+  | { success: true; data: CandidateEvaluation }
+  | { success: false; error: string } {
+  const interviewRun = interviewRuns.find(
+    (run) => run.id === evaluation.interviewRunId,
+  );
+
+  if (!interviewRun) {
+    return {
+      success: false,
+      error: "Evaluation could not be stored because the interview run was not found.",
+    };
+  }
+
+  const existingIndex = evaluations.findIndex(
+    (item) => item.interviewRunId === evaluation.interviewRunId,
+  );
+
+  if (existingIndex >= 0) {
+    evaluations[existingIndex] = evaluation;
+  } else {
+    evaluations.push(evaluation);
+  }
+
+  return {
+    success: true,
+    data: evaluation,
   };
 }
 

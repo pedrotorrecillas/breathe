@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
 
+import type { CandidateEvaluation } from "@/domain/evaluations/types";
 import { publicApplyTermsVersion } from "@/lib/public-apply";
 import {
   getPublicApplySubmissionSnapshot,
+  getInterviewEvaluation,
   receiveHappyRobotWebhook,
   resetPublicApplySubmissionStore,
+  saveInterviewEvaluation,
   submitPublicApplication,
 } from "@/lib/public-apply-submissions";
 
@@ -140,5 +143,100 @@ describe("public apply submissions", () => {
     expect(snapshot.interviewRuns[0]?.trace.completedAt).toBe(
       "2026-03-25T12:05:00.000Z",
     );
+  });
+
+  it("stores and retrieves an evaluation for an existing interview run", () => {
+    submitPublicApplication({
+      jobId: "job_warehouse_madrid",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "en",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    const evaluation: CandidateEvaluation = {
+      id: "eval_1",
+      interviewRunId: "run_1",
+      generatedAt: "2026-03-25T12:15:00.000Z",
+      finalNumericScore: 74,
+      finalScoreState: "Good",
+      blocks: [
+        {
+          category: "essential",
+          label: "Essential requirements",
+          numericScore: 78,
+          scoreState: "Great",
+          requirements: [],
+        },
+        {
+          category: "technical",
+          label: "Technical skills",
+          numericScore: 70,
+          scoreState: "Good",
+          requirements: [],
+        },
+        {
+          category: "interpersonal",
+          label: "Interpersonal skills",
+          numericScore: 68,
+          scoreState: "Good",
+          requirements: [],
+        },
+      ],
+      weightConfigSnapshot: {
+        mandatoryRequirementWeight: 0.8,
+        optionalRequirementWeight: 0.2,
+        essentialBlockWeight: 0.45,
+        technicalBlockWeight: 0.45,
+        interpersonalBlockWeight: 0.1,
+      },
+      fitClassification: "viable_fit",
+    };
+
+    const saveResult = saveInterviewEvaluation(evaluation);
+
+    expect(saveResult).toEqual({
+      success: true,
+      data: evaluation,
+    });
+    expect(getInterviewEvaluation("run_1")).toEqual(evaluation);
+    expect(getPublicApplySubmissionSnapshot().interviewRuns).toHaveLength(1);
+  });
+
+  it("refuses to store an evaluation when the interview run is missing", () => {
+    const evaluation: CandidateEvaluation = {
+      id: "eval_1",
+      interviewRunId: "missing_run",
+      generatedAt: "2026-03-25T12:15:00.000Z",
+      finalNumericScore: 74,
+      finalScoreState: "Good",
+      blocks: [],
+      weightConfigSnapshot: {
+        mandatoryRequirementWeight: 0.8,
+        optionalRequirementWeight: 0.2,
+        essentialBlockWeight: 0.45,
+        technicalBlockWeight: 0.45,
+        interpersonalBlockWeight: 0.1,
+      },
+      fitClassification: null,
+    };
+
+    const saveResult = saveInterviewEvaluation(evaluation);
+
+    expect(saveResult).toEqual({
+      success: false,
+      error: "Evaluation could not be stored because the interview run was not found.",
+    });
+    expect(getInterviewEvaluation("missing_run")).toBeNull();
+    expect(getPublicApplySubmissionSnapshot().interviewRuns).toHaveLength(0);
   });
 });
