@@ -18,6 +18,10 @@ import { buildEvaluationSummary, type EvaluationSummary } from "@/lib/evaluation
 import { executeHappyRobotDispatch } from "@/lib/happyrobot-orchestration";
 import { ingestHappyRobotWebhookEvent } from "@/lib/happyrobot-webhooks";
 import { transitionCandidateApplicationForInterviewRun } from "@/lib/interview-pipeline-transitions";
+import {
+  type RuntimeTraceEvent,
+  type RuntimeTraceSink,
+} from "@/lib/runtime-tracing";
 import type {
   NormalizedCandidateProfileSource,
   PublicApplyLegalAcceptance,
@@ -36,6 +40,8 @@ type PublicApplySubmissionInput = {
 
 type PublicApplyFailureMode = "candidate" | "application" | "interview";
 
+type PublicApplyTraceSink = RuntimeTraceSink;
+
 export type InterviewRunRuntimeSnapshot = {
   interviewRun: InterviewRun;
   candidate: CandidateProfile | null;
@@ -45,6 +51,7 @@ export type InterviewRunRuntimeSnapshot = {
   dispatchPayload: HappyRobotNormalizedDispatchPayload | null;
   dispatchResponse: HappyRobotDispatchResponse | null;
   webhookRecords: HappyRobotWebhookRecord[];
+  runtimeTraceEvents: RuntimeTraceEvent[];
   evaluation: CandidateEvaluation | null;
 };
 
@@ -56,6 +63,7 @@ const dispatchRequests: HappyRobotCallRequest[] = [];
 const dispatchPayloads: HappyRobotNormalizedDispatchPayload[] = [];
 const dispatchResponses: HappyRobotDispatchResponse[] = [];
 const webhookRecords: HappyRobotWebhookRecord[] = [];
+const runtimeTraceEvents: RuntimeTraceEvent[] = [];
 const evaluations: CandidateEvaluation[] = [];
 
 function normalizePhone(phone: string) {
@@ -72,6 +80,14 @@ function normalizeEmail(email: string) {
 
 function nextId(prefix: string, count: number) {
   return `${prefix}_${count + 1}`;
+}
+
+function appendRuntimeTraceEvent(
+  event: RuntimeTraceEvent,
+  sink?: RuntimeTraceSink,
+) {
+  runtimeTraceEvents.push(event);
+  sink?.(event);
 }
 
 function syncApplicationFromInterviewRun(interviewRun: InterviewRun) {
@@ -100,6 +116,7 @@ export function resetPublicApplySubmissionStore() {
   dispatchPayloads.length = 0;
   dispatchResponses.length = 0;
   webhookRecords.length = 0;
+  runtimeTraceEvents.length = 0;
   evaluations.length = 0;
 }
 
@@ -113,6 +130,7 @@ export function getPublicApplySubmissionSnapshot() {
     dispatchPayloads: [...dispatchPayloads],
     dispatchResponses: [...dispatchResponses],
     webhookRecords: [...webhookRecords],
+    runtimeTraceEvents: [...runtimeTraceEvents],
   };
 }
 
@@ -154,6 +172,9 @@ export function getInterviewRunRuntimeSnapshot(
   const webhookRecordsForRun = webhookRecords.filter(
     (record) => record.matchedInterviewRunId === interviewRunId,
   );
+  const traceEventsForRun = runtimeTraceEvents.filter(
+    (event) => event.interviewRunId === interviewRunId,
+  );
   const evaluation = getInterviewEvaluation(interviewRunId);
 
   return {
@@ -165,6 +186,7 @@ export function getInterviewRunRuntimeSnapshot(
     dispatchPayload,
     dispatchResponse,
     webhookRecords: webhookRecordsForRun,
+    runtimeTraceEvents: traceEventsForRun,
     evaluation,
   };
 }
@@ -258,6 +280,7 @@ export function submitPublicApplication(
   input: PublicApplySubmissionInput,
   options?: {
     failureMode?: PublicApplyFailureMode;
+    traceSink?: PublicApplyTraceSink;
   },
 ):
   | {
@@ -407,6 +430,9 @@ export function submitPublicApplication(
     candidate: stagedCandidate,
     job,
     now: new Date(input.legalAcceptance.acceptedAt),
+    traceSink: (event: RuntimeTraceEvent) => {
+      appendRuntimeTraceEvent(event, options?.traceSink);
+    },
   });
 
   const stagedApplicationAfterDispatch =

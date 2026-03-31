@@ -14,6 +14,14 @@ import {
 } from "@/lib/happyrobot-dispatch";
 import { createInterviewPreparationPackage } from "@/lib/interview-preparation";
 import { normalizeInterviewRunForDispatch } from "@/lib/interview-runtime-normalization";
+import {
+  traceDispatchCompleted,
+  traceDispatchFailed,
+  traceDispatchStarted,
+  traceInterviewPreparationCompleted,
+  traceInterviewPreparationStarted,
+  type RuntimeTraceSink,
+} from "@/lib/runtime-tracing";
 
 export type HappyRobotDispatchPreparation = {
   interviewPackage: InterviewPreparationPackage;
@@ -31,7 +39,18 @@ export function prepareHappyRobotDispatch(input: {
   candidate: CandidateProfile;
   job: Job;
   now?: Date;
+  traceSink?: RuntimeTraceSink;
 }): HappyRobotDispatchPreparation {
+  const occurredAt = (input.now ?? new Date()).toISOString();
+
+  traceInterviewPreparationStarted({
+    sink: input.traceSink,
+    occurredAt,
+    interviewRunId: input.interviewRun.id,
+    candidateId: input.candidate.id,
+    jobId: input.job.id,
+  });
+
   const interviewPackage = createInterviewPreparationPackage({
     job: input.job,
     candidateId: input.candidate.id,
@@ -60,6 +79,19 @@ export function prepareHappyRobotDispatch(input: {
     interviewPackage,
   });
 
+  traceInterviewPreparationCompleted({
+    sink: input.traceSink,
+    occurredAt,
+    interviewRunId: interviewRun.id,
+    candidateId: input.candidate.id,
+    jobId: input.job.id,
+    interviewPackageId: interviewPackage.id,
+    language: interviewPackage.language,
+    questionCount: interviewPackage.questions.length,
+    normalizedAt: interviewRun.trace.normalizedAt,
+    outboundNumber: dispatchPayload.outboundNumber,
+  });
+
   return {
     interviewPackage,
     interviewRun,
@@ -74,14 +106,57 @@ export function executeHappyRobotDispatch(input: {
   job: Job;
   now?: Date;
   simulateFailureReason?: string;
+  traceSink?: RuntimeTraceSink;
 }): HappyRobotDispatchExecution {
   const preparation = prepareHappyRobotDispatch(input);
+  const dispatchedAt = (input.now ?? new Date()).toISOString();
+
+  traceDispatchStarted({
+    sink: input.traceSink,
+    occurredAt: dispatchedAt,
+    interviewRunId: preparation.interviewRun.id,
+    candidateId: input.candidate.id,
+    jobId: input.job.id,
+    interviewPackageId: preparation.interviewPackage.id,
+    language: preparation.dispatchPayload.language,
+    outboundNumber: preparation.dispatchPayload.outboundNumber,
+  });
+
   const dispatchResponse = dispatchHappyRobotCall({
     callRequest: preparation.callRequest,
     payload: preparation.dispatchPayload,
     now: input.now,
     simulateFailureReason: input.simulateFailureReason,
   });
+
+  if (dispatchResponse.success) {
+    traceDispatchCompleted({
+      sink: input.traceSink,
+      occurredAt: dispatchResponse.result.dispatchedAt,
+      interviewRunId: preparation.interviewRun.id,
+      candidateId: input.candidate.id,
+      jobId: input.job.id,
+      interviewPackageId: preparation.interviewPackage.id,
+      language: preparation.dispatchPayload.language,
+      outboundNumber: preparation.dispatchPayload.outboundNumber,
+      providerCallId: dispatchResponse.result.providerCallId,
+      providerStatus: dispatchResponse.result.status,
+    });
+  } else {
+    traceDispatchFailed({
+      sink: input.traceSink,
+      occurredAt: dispatchResponse.error.happenedAt,
+      interviewRunId: preparation.interviewRun.id,
+      candidateId: input.candidate.id,
+      jobId: input.job.id,
+      interviewPackageId: preparation.interviewPackage.id,
+      language: preparation.dispatchPayload.language,
+      outboundNumber: preparation.dispatchPayload.outboundNumber,
+      failureCode: dispatchResponse.error.code,
+      failureMessage: dispatchResponse.error.message,
+      providerStatus: dispatchResponse.error.providerStatus,
+    });
+  }
 
   return {
     ...preparation,

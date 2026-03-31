@@ -60,6 +60,78 @@ describe("public apply submissions", () => {
     expect(result.data.interviewRun.dispatch.providerCallId).toBe(
       "hr_call_run_1",
     );
+    expect(getPublicApplySubmissionSnapshot().runtimeTraceEvents).toHaveLength(4);
+    expect(getInterviewRunRuntimeSnapshot("run_1")?.runtimeTraceEvents).toEqual([
+      expect.objectContaining({
+        phase: "interview_preparation.started",
+        interviewRunId: "run_1",
+      }),
+      expect.objectContaining({
+        phase: "interview_preparation.completed",
+        interviewRunId: "run_1",
+      }),
+      expect.objectContaining({
+        phase: "dispatch.started",
+        interviewRunId: "run_1",
+      }),
+      expect.objectContaining({
+        phase: "dispatch.completed",
+        interviewRunId: "run_1",
+        providerCallId: "hr_call_run_1",
+      }),
+    ]);
+  });
+
+  it("forwards runtime trace events to an optional sink without changing persistence", () => {
+    const forwardedEvents: Array<{ phase: string; interviewRunId: string }> = [];
+
+    const result = submitPublicApplication(
+      {
+        jobId: "job_warehouse_madrid",
+        fullName: "Lucia Torres",
+        phone: "+34 600 123 456",
+        email: "lucia@example.com",
+        language: "en",
+        profileSource: {
+          linkedinUrl: "https://linkedin.com/in/lucia-torres",
+          cvAssetRef: null,
+          cvFileName: null,
+        },
+        legalAcceptance: {
+          acceptedAt: "2026-03-25T12:00:00.000Z",
+          termsVersion: publicApplyTermsVersion,
+        },
+      },
+      {
+        traceSink: (event) => {
+          forwardedEvents.push({
+            phase: event.phase,
+            interviewRunId: event.interviewRunId,
+          });
+        },
+      },
+    );
+
+    expect(result.success).toBe(true);
+    expect(forwardedEvents).toEqual([
+      {
+        phase: "interview_preparation.started",
+        interviewRunId: "run_1",
+      },
+      {
+        phase: "interview_preparation.completed",
+        interviewRunId: "run_1",
+      },
+      {
+        phase: "dispatch.started",
+        interviewRunId: "run_1",
+      },
+      {
+        phase: "dispatch.completed",
+        interviewRunId: "run_1",
+      },
+    ]);
+    expect(getPublicApplySubmissionSnapshot().runtimeTraceEvents).toHaveLength(4);
   });
 
   it("does not persist partial state when a staged failure happens", () => {
@@ -98,6 +170,7 @@ describe("public apply submissions", () => {
       dispatchPayloads: [],
       dispatchResponses: [],
       webhookRecords: [],
+      runtimeTraceEvents: [],
     });
   });
 
@@ -196,6 +269,20 @@ describe("public apply submissions", () => {
       webhookRecords: [
         {
           matchedInterviewRunId: "run_1",
+        },
+      ],
+      runtimeTraceEvents: [
+        {
+          phase: "interview_preparation.started",
+        },
+        {
+          phase: "interview_preparation.completed",
+        },
+        {
+          phase: "dispatch.started",
+        },
+        {
+          phase: "dispatch.completed",
         },
       ],
       evaluation: null,
