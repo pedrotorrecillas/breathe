@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import type { CandidateEvaluation } from "@/domain/evaluations/types";
 import { publicApplyTermsVersion } from "@/lib/public-apply";
+import { getInterviewRecordingForCandidate } from "@/lib/candidate-recording";
 import {
   getPublicApplySubmissionSnapshot,
   getInterviewEvaluation,
@@ -143,6 +144,13 @@ describe("public apply submissions", () => {
     expect(snapshot.interviewRuns[0]?.trace.completedAt).toBe(
       "2026-03-25T12:05:00.000Z",
     );
+    expect(getInterviewRecordingForCandidate("Lucia Torres")).toEqual({
+      recordingUrl: "https://example.com/recording.mp3",
+      recordingDurationSeconds: null,
+      providerCallId: "hr_call_run_1",
+      completedAt: "2026-03-25T12:05:00.000Z",
+      transcriptUrl: "https://example.com/transcript.txt",
+    });
   });
 
   it("stores and retrieves an evaluation for an existing interview run", () => {

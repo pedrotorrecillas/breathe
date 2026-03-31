@@ -2,13 +2,19 @@
 
 import { useState } from "react";
 
+import { CandidateEvaluationSummary } from "@/components/candidate-evaluation-summary";
 import { CandidateStageCard } from "@/components/candidate-stage-card";
 import { DataPoint, DetailPanel, SectionCard } from "@/components/section-card";
 import { PlaceholderState } from "@/components/placeholder-state";
 import { EmptyState } from "@/components/shared-states";
+import type {
+  CandidateEvaluation,
+  EvaluationRequirementImportance,
+} from "@/domain/evaluations/types";
 import { StatusBadge, scoreBadgeIntent } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { mapNumericScoreToState } from "@/lib/evaluation-scoring";
+import { getInterviewRecordingForCandidate } from "@/lib/candidate-recording";
 import {
   activePipelineStages,
   applyRecruiterAction,
@@ -262,6 +268,48 @@ function getCandidateReport(candidateId: string): CandidateReport {
   return reportDataByCandidateId[candidateId] ?? defaultReport;
 }
 
+function toRequirementImportance(
+  importance: ReportRequirementImportance,
+): EvaluationRequirementImportance {
+  return importance === "Mandatory" ? "MANDATORY" : "OPTIONAL";
+}
+
+function buildCandidateEvaluation(
+  candidateId: string,
+  report: CandidateReport,
+): CandidateEvaluation {
+  return {
+    id: `eval_${candidateId}`,
+    interviewRunId: `run_${candidateId}`,
+    generatedAt: "2026-03-31T09:00:00.000Z",
+    finalNumericScore: Math.round(report.finalNumericScore),
+    finalScoreState: mapNumericScoreToState(Math.round(report.finalNumericScore)),
+    blocks: report.blocks.map((block) => ({
+      category: block.category,
+      label: block.title,
+      numericScore: Math.round(block.numericScore),
+      scoreState: mapNumericScoreToState(Math.round(block.numericScore)),
+      requirements: block.requirements.map((requirement, index) => ({
+        requirementId: `${candidateId}_${block.category}_${index}`,
+        label: requirement.label,
+        importance: toRequirementImportance(requirement.importance),
+        numericScore: Math.round(requirement.numericScore),
+        scoreState: mapNumericScoreToState(Math.round(requirement.numericScore)),
+        explanation: requirement.explanation,
+        evidence: null,
+      })),
+    })),
+    weightConfigSnapshot: {
+      mandatoryRequirementWeight: 0.8,
+      optionalRequirementWeight: 0.2,
+      essentialBlockWeight: 0.45,
+      technicalBlockWeight: 0.45,
+      interpersonalBlockWeight: 0.1,
+    },
+    fitClassification: null,
+  };
+}
+
 function scoreBadgeIntentFor(score: number | null) {
   const scoreState = mapNumericScoreToState(score);
 
@@ -284,6 +332,16 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
     null;
   const selectedCandidateReport = selectedCandidate
     ? getCandidateReport(selectedCandidate.id)
+    : null;
+  const selectedCandidateEvaluation =
+    selectedCandidate && selectedCandidateReport
+      ? buildCandidateEvaluation(
+          selectedCandidate.id,
+          selectedCandidateReport,
+        )
+      : null;
+  const selectedCandidateRecording = selectedCandidate
+    ? getInterviewRecordingForCandidate(selectedCandidate.fullName)
     : null;
 
   const selectCandidate = (candidateId: string) => {
@@ -382,6 +440,9 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                     detail="Most recent triage signal"
                   />
                 </div>
+                {selectedCandidateEvaluation ? (
+                  <CandidateEvaluationSummary evaluation={selectedCandidateEvaluation} />
+                ) : null}
                 <section className="rounded-[0.72rem] border border-slate-200/85 bg-white/90 px-4 py-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -502,9 +563,31 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                 </section>
                 <section className="rounded-[0.72rem] border border-slate-200/85 bg-white/90 px-4 py-4">
                   <p className="ops-kicker text-slate-500">Audio review</p>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
-                    Reserve this panel space for interview playback, key moments, and future transcript slices.
-                  </p>
+                  {selectedCandidateRecording ? (
+                    <div className="mt-3 rounded-[0.72rem] border border-slate-200/85 bg-slate-50/80 px-3 py-3">
+                      <audio
+                        controls
+                        preload="none"
+                        aria-label={`Interview recording for ${selectedCandidate.fullName}`}
+                        src={selectedCandidateRecording.recordingUrl}
+                        className="w-full"
+                      >
+                        Your browser does not support the audio element.
+                      </audio>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        Runtime recording stored for this candidate.
+                        {selectedCandidateRecording.completedAt
+                          ? ` Captured at ${selectedCandidateRecording.completedAt}.`
+                          : null}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm leading-6 text-slate-600">
+                      No interview recording is available for this candidate yet.
+                      The player will appear after a completed runtime run writes
+                      recording data into the stored artifacts.
+                    </p>
+                  )}
                 </section>
               </div>
             ) : (

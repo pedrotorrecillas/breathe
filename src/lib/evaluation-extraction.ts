@@ -1,6 +1,7 @@
 import type { CandidateEvaluation, EvaluationBlockCategory, EvaluationBlockResult, EvaluationEvidence, EvaluationRequirementResult, EvaluationScoreState, EvaluationWeightConfig } from "@/domain/evaluations/types";
 import type { InterviewRun } from "@/domain/interviews/types";
 import type { Job, JobRequirement, JobRequirementCategory } from "@/domain/jobs/types";
+import { mapNumericScoreToState } from "@/lib/evaluation-scoring";
 
 type TranscriptSegment = {
   text: string;
@@ -92,30 +93,6 @@ function unique<T>(items: T[]) {
 
 function clampScore(score: number) {
   return Math.max(0, Math.min(100, Math.round(score)));
-}
-
-function toScoreState(score: number | null): EvaluationScoreState {
-  if (score === null) {
-    return "Pending";
-  }
-
-  if (score >= 90) {
-    return "Outstanding";
-  }
-  if (score >= 75) {
-    return "Great";
-  }
-  if (score >= 60) {
-    return "Good";
-  }
-  if (score >= 50) {
-    return "Average";
-  }
-  if (score >= 30) {
-    return "Low";
-  }
-
-  return "Poor";
 }
 
 function normalizeWeightConfig(
@@ -263,7 +240,7 @@ function scoreRequirement(
     label: requirement.label,
     importance,
     numericScore,
-    scoreState: toScoreState(numericScore),
+    scoreState: mapNumericScoreToState(numericScore),
     explanation: evidence
       ? `The transcript provides direct evidence for ${requirement.label.toLowerCase()}.`
       : `The transcript provides limited direct evidence for ${requirement.label.toLowerCase()}.`,
@@ -316,7 +293,7 @@ function buildBlock(
     category,
     label: blockLabels[category],
     numericScore,
-    scoreState: toScoreState(numericScore),
+    scoreState: mapNumericScoreToState(numericScore),
     requirements: evaluatedRequirements,
   };
 }
@@ -348,7 +325,7 @@ export function extractEvaluationFromInterview(input: EvaluationExtractionInput)
       interviewRunId: input.interviewRun.id,
       generatedAt,
       finalNumericScore: null,
-      finalScoreState: "Pending",
+      finalScoreState: mapNumericScoreToState(null),
       blocks: buildBlankBlocks(),
       weightConfigSnapshot,
       fitClassification: null,
@@ -385,7 +362,7 @@ export function extractEvaluationFromInterview(input: EvaluationExtractionInput)
     interviewRunId: input.interviewRun.id,
     generatedAt,
     finalNumericScore,
-    finalScoreState: toScoreState(finalNumericScore),
+    finalScoreState: mapNumericScoreToState(finalNumericScore),
     blocks,
     weightConfigSnapshot,
     fitClassification: finalClassification(finalNumericScore),

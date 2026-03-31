@@ -2,10 +2,18 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { JobDetailWorkspace } from "@/components/job-detail-workspace";
+import { publicApplyTermsVersion } from "@/lib/public-apply";
+import { getInterviewRecordingForCandidate } from "@/lib/candidate-recording";
+import {
+  receiveHappyRobotWebhook,
+  resetPublicApplySubmissionStore,
+  submitPublicApplication,
+} from "@/lib/public-apply-submissions";
 
 describe("job detail pipeline", () => {
   afterEach(() => {
     cleanup();
+    resetPublicApplySubmissionStore();
   });
 
   it("renders structured candidate cards with triage information", () => {
@@ -29,17 +37,79 @@ describe("job detail pipeline", () => {
     expect(
       screen.getAllByText(/Consistent order-picking throughput/i).length,
     ).toBeGreaterThan(0);
+    expect(screen.getByText(/Quick triage read/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Essential requirements stand out as the strongest block/i,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Watchouts/i)).toBeInTheDocument();
     expect(screen.getByText(/Candidate report/i)).toBeInTheDocument();
     expect(
       screen.getByText(/Recruiter-facing evaluation summary/i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Essential requirements/i)).toBeInTheDocument();
-    expect(screen.getByText(/Technical skills/i)).toBeInTheDocument();
-    expect(screen.getByText(/Interpersonal skills/i)).toBeInTheDocument();
-    expect(screen.getByText(/Forklift certification/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Essential requirements/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Technical skills/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Interpersonal skills/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Forklift certification/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/AI recommendation/i)).toBeInTheDocument();
     expect(screen.getByText(/84\.3 \/ 100/i)).toBeInTheDocument();
     expect(screen.getByText(/Audio review/i)).toBeInTheDocument();
+  });
+
+  it("renders audio playback when a recording exists in runtime artifacts", () => {
+    submitPublicApplication({
+      jobId: "job_warehouse_madrid",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "en",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    receiveHappyRobotWebhook(
+      {
+        eventId: "evt_1",
+        interviewRunId: "run_1",
+        providerCallId: "hr_call_run_1",
+        status: "completed",
+        happenedAt: "2026-03-25T12:05:00.000Z",
+        recordingUrl: "https://example.com/recording.mp3",
+        transcriptUrl: "https://example.com/transcript.txt",
+        rawPayloadRef: "payloads/evt_1.json",
+      },
+      {
+        receivedAt: new Date("2026-03-25T12:05:01.000Z"),
+      },
+    );
+
+    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Open candidate Lucia Torres/i }),
+    );
+
+    expect(
+      screen.getByLabelText(/Interview recording for Lucia Torres/i),
+    ).toHaveAttribute("src", "https://example.com/recording.mp3");
+    expect(
+      screen.getByText(/Runtime recording stored for this candidate/i),
+    ).toBeInTheDocument();
+    expect(getInterviewRecordingForCandidate("Lucia Torres")).toEqual({
+      recordingUrl: "https://example.com/recording.mp3",
+      recordingDurationSeconds: null,
+      providerCallId: "hr_call_run_1",
+      completedAt: "2026-03-25T12:05:00.000Z",
+      transcriptUrl: "https://example.com/transcript.txt",
+    });
   });
 
   it("shows lightweight operational badges only in Applicants", () => {
@@ -115,5 +185,18 @@ describe("job detail pipeline", () => {
       screen.getByText(/Select a candidate card to inspect detail/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/Separate review context/i)).toBeInTheDocument();
+  });
+
+  it("shows a graceful fallback when no recording exists", () => {
+    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Open candidate Bea Soto/i }));
+
+    expect(
+      screen.getByText(/No interview recording is available for this candidate yet/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(/Interview recording for Bea Soto/i),
+    ).not.toBeInTheDocument();
   });
 });

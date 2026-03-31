@@ -14,6 +14,7 @@ import type {
   HappyRobotWebhookIngestionResponse,
   HappyRobotWebhookRecord,
 } from "@/domain/runtime/happyrobot/types";
+import { buildEvaluationSummary, type EvaluationSummary } from "@/lib/evaluation-summary";
 import { executeHappyRobotDispatch } from "@/lib/happyrobot-orchestration";
 import { ingestHappyRobotWebhookEvent } from "@/lib/happyrobot-webhooks";
 import type {
@@ -93,6 +94,18 @@ export function getInterviewEvaluation(
       (evaluation) => evaluation.interviewRunId === interviewRunId,
     ) ?? null
   );
+}
+
+export function getRecruiterCandidateSummary(
+  interviewRunId: string,
+): EvaluationSummary | null {
+  const evaluation = getInterviewEvaluation(interviewRunId);
+
+  if (!evaluation) {
+    return null;
+  }
+
+  return buildEvaluationSummary(evaluation);
 }
 
 export function saveInterviewEvaluation(
