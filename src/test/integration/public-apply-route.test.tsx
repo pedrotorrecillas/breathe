@@ -1,16 +1,34 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import ApplyPage from "@/app/(public)/apply/[jobId]/page";
 import {
   getPublicApplySubmissionSnapshot,
   resetPublicApplySubmissionStore,
+  submitPublicApplication,
 } from "@/lib/public-apply-submissions";
 
 describe("public apply route", () => {
-  afterEach(() => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_input, init) => {
+        const body = JSON.parse(String(init?.body ?? "{}"));
+        const result = await submitPublicApplication(body);
+
+        return {
+          async json() {
+            return result;
+          },
+        } as Response;
+      }),
+    );
+  });
+
+  afterEach(async () => {
     cleanup();
-    resetPublicApplySubmissionStore();
+    vi.unstubAllGlobals();
+    await resetPublicApplySubmissionStore();
   });
 
   it("renders outside the recruiter shell", async () => {
@@ -64,7 +82,7 @@ describe("public apply route", () => {
     expect(
       screen.queryByRole("button", { name: /Submit and receive call/i }),
     ).not.toBeInTheDocument();
-    expect(getPublicApplySubmissionSnapshot()).toEqual({
+    expect(await getPublicApplySubmissionSnapshot()).toEqual({
       candidates: [],
       applications: [],
       interviewRuns: [],
@@ -92,7 +110,7 @@ describe("public apply route", () => {
     expect(
       screen.queryByRole("button", { name: /Submit and receive call/i }),
     ).not.toBeInTheDocument();
-    expect(getPublicApplySubmissionSnapshot()).toEqual({
+    expect(await getPublicApplySubmissionSnapshot()).toEqual({
       candidates: [],
       applications: [],
       interviewRuns: [],
@@ -152,12 +170,14 @@ describe("public apply route", () => {
       screen.getByRole("button", { name: /Submit and receive call/i }),
     );
 
-    expect(
-      screen.getByText(/Your interview request is in/i),
-    ).toBeInTheDocument();
-    expect(
-      getPublicApplySubmissionSnapshot().candidates[0]?.linkedinUrl,
-    ).toBe("https://linkedin.com/in/lucia-torres");
+    await waitFor(async () => {
+      expect(
+        screen.getByText(/Your interview request is in/i),
+      ).toBeInTheDocument();
+      expect(
+        (await getPublicApplySubmissionSnapshot()).candidates[0]?.linkedinUrl,
+      ).toBe("https://linkedin.com/in/lucia-torres");
+    });
   });
 
   it("surfaces a usable error for unsupported cv uploads", async () => {
@@ -221,28 +241,33 @@ describe("public apply route", () => {
       screen.getByRole("button", { name: /Submit and receive call/i }),
     );
 
-    const snapshot = getPublicApplySubmissionSnapshot();
+    await waitFor(async () => {
+      expect(
+        screen.getByText(
+          /Keep your phone nearby for the first call on \+34 600 123 456/i,
+        ),
+      ).toBeInTheDocument();
 
-    expect(
-      screen.getByText(/Keep your phone nearby for the first call on \+34 600 123 456/i),
-    ).toBeInTheDocument();
-    expect(snapshot.candidates).toHaveLength(1);
-    expect(snapshot.applications).toHaveLength(1);
-    expect(snapshot.interviewRuns).toHaveLength(1);
-    expect(snapshot.interviewPreparationPackages).toHaveLength(1);
-    expect(snapshot.dispatchRequests).toHaveLength(1);
-    expect(snapshot.dispatchPayloads).toHaveLength(1);
-    expect(snapshot.dispatchResponses).toHaveLength(1);
-    expect(snapshot.applications[0]?.candidateId).toBe(snapshot.candidates[0]?.id);
-    expect(snapshot.interviewRuns[0]?.applicationId).toBe(
-      snapshot.applications[0]?.id,
-    );
-    expect(snapshot.interviewRuns[0]?.status).toBe("queued");
-    expect(snapshot.interviewRuns[0]?.interviewPreparationId).toBe(
-      snapshot.interviewPreparationPackages[0]?.id,
-    );
-    expect(snapshot.interviewRuns[0]?.dispatch.providerCallId).toBe(
-      "hr_call_run_1",
-    );
+      const snapshot = await getPublicApplySubmissionSnapshot();
+
+      expect(snapshot.candidates).toHaveLength(1);
+      expect(snapshot.applications).toHaveLength(1);
+      expect(snapshot.interviewRuns).toHaveLength(1);
+      expect(snapshot.interviewPreparationPackages).toHaveLength(1);
+      expect(snapshot.dispatchRequests).toHaveLength(1);
+      expect(snapshot.dispatchPayloads).toHaveLength(1);
+      expect(snapshot.dispatchResponses).toHaveLength(1);
+      expect(snapshot.applications[0]?.candidateId).toBe(snapshot.candidates[0]?.id);
+      expect(snapshot.interviewRuns[0]?.applicationId).toBe(
+        snapshot.applications[0]?.id,
+      );
+      expect(snapshot.interviewRuns[0]?.status).toBe("queued");
+      expect(snapshot.interviewRuns[0]?.interviewPreparationId).toBe(
+        snapshot.interviewPreparationPackages[0]?.id,
+      );
+      expect(snapshot.interviewRuns[0]?.dispatch.providerCallId).toBe(
+        "hr_call_run_1",
+      );
+    });
   });
 });

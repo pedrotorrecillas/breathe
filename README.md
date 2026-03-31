@@ -29,6 +29,8 @@ Useful commands:
 npm run dev
 npm run lint
 npm run test
+npm run db:generate
+npm run db:migrate
 npm run build
 npm run format
 npm run format:write
@@ -36,6 +38,7 @@ npm run format:write
 
 Testing conventions live in [docs/testing.md](./docs/testing.md).
 Module boundaries live in [docs/domain-boundaries.md](./docs/domain-boundaries.md).
+Neon/Postgres setup lives in [docs/neon-postgres.md](./docs/neon-postgres.md).
 
 ## Structure
 

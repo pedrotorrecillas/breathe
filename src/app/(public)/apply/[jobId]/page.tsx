@@ -12,7 +12,7 @@ type ApplyPageProps = {
 
 export default async function ApplyPage({ params }: ApplyPageProps) {
   const { jobId } = await params;
-  const publicJob = findPublicJobBySlug(jobId);
+  const publicJob = await findPublicJobBySlug(jobId);
 
   if (!publicJob) {
     return (

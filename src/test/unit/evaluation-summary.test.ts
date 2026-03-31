@@ -112,8 +112,8 @@ function buildEvaluation(
 }
 
 describe("evaluation summary", () => {
-  afterEach(() => {
-    resetPublicApplySubmissionStore();
+  afterEach(async () => {
+    await resetPublicApplySubmissionStore();
   });
 
   it("builds a concise recruiter-facing summary from scored blocks", () => {
@@ -171,8 +171,8 @@ describe("evaluation summary", () => {
     });
   });
 
-  it("can be retrieved from the stored interview evaluation", () => {
-    submitPublicApplication({
+  it("can be retrieved from the stored interview evaluation", async () => {
+    await submitPublicApplication({
       jobId: "job_warehouse_madrid",
       fullName: "Lucia Torres",
       phone: "+34 600 123 456",
@@ -189,11 +189,11 @@ describe("evaluation summary", () => {
       },
     });
 
-    const saveResult = saveInterviewEvaluation(buildEvaluation());
+    const saveResult = await saveInterviewEvaluation(buildEvaluation());
 
     expect(saveResult.success).toBe(true);
 
-    const summary = getRecruiterCandidateSummary("run_1");
+    const summary = await getRecruiterCandidateSummary("run_1");
 
     expect(summary).toEqual(buildEvaluationSummary(buildEvaluation()));
   });

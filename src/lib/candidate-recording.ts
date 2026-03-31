@@ -12,10 +12,10 @@ function normalizeFullName(value: string) {
   return value.trim().toLowerCase();
 }
 
-export function getInterviewRecordingForCandidate(
+export async function getInterviewRecordingForCandidate(
   candidateFullName: string,
-): CandidateInterviewRecording | null {
-  const snapshot = getPublicApplySubmissionSnapshot();
+): Promise<CandidateInterviewRecording | null> {
+  const snapshot = await getPublicApplySubmissionSnapshot();
   const normalizedName = normalizeFullName(candidateFullName);
   const matchingCandidateIds = snapshot.candidates
     .filter((candidate) => normalizeFullName(candidate.fullName) === normalizedName)

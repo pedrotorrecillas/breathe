@@ -14,12 +14,12 @@ import {
 } from "@/lib/public-apply-submissions";
 
 describe("job pipeline labels", () => {
-  afterEach(() => {
-    resetPublicApplySubmissionStore();
+  afterEach(async () => {
+    await resetPublicApplySubmissionStore();
   });
 
-  it("derives a live recruiter snapshot from runtime state when available", () => {
-    submitPublicApplication({
+  it("derives a live recruiter snapshot from runtime state when available", async () => {
+    await submitPublicApplication({
       jobId: "job_warehouse_madrid",
       fullName: "Lucia Torres",
       phone: "+34 600 123 456",
@@ -36,7 +36,7 @@ describe("job pipeline labels", () => {
       },
     });
 
-    receiveHappyRobotWebhook(
+    await receiveHappyRobotWebhook(
       {
         eventId: "evt_1",
         interviewRunId: "run_1",
@@ -52,7 +52,7 @@ describe("job pipeline labels", () => {
       },
     );
 
-    saveInterviewEvaluation({
+    await saveInterviewEvaluation({
       id: "eval_1",
       interviewRunId: "run_1",
       generatedAt: "2026-03-25T12:15:00.000Z",
@@ -101,7 +101,7 @@ describe("job pipeline labels", () => {
       fitClassification: "viable_fit",
     });
 
-    const snapshot = getJobPipelineSnapshot("warehouse-associate-madrid");
+    const snapshot = await getJobPipelineSnapshot("warehouse-associate-madrid");
 
     expect(snapshot).not.toBeNull();
     expect(snapshot?.candidates[0]).toMatchObject({
@@ -123,8 +123,8 @@ describe("job pipeline labels", () => {
     expect(getOperationalStateLabel("no_response")).toBe("No response yet");
   });
 
-  it("applies shortlist and reject transitions explicitly", () => {
-    const snapshot = getJobPipelineSnapshot("warehouse-associate-madrid");
+  it("applies shortlist and reject transitions explicitly", async () => {
+    const snapshot = await getJobPipelineSnapshot("warehouse-associate-madrid");
 
     expect(snapshot).not.toBeNull();
 
@@ -147,8 +147,8 @@ describe("job pipeline labels", () => {
     ).toBe("Rejected");
   });
 
-  it("supports hire and reversible manual transitions", () => {
-    const snapshot = getJobPipelineSnapshot("warehouse-associate-madrid");
+  it("supports hire and reversible manual transitions", async () => {
+    const snapshot = await getJobPipelineSnapshot("warehouse-associate-madrid");
 
     expect(snapshot).not.toBeNull();
 

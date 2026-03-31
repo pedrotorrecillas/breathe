@@ -14,21 +14,24 @@ import type {
   HappyRobotWebhookIngestionResponse,
   HappyRobotWebhookRecord,
 } from "@/domain/runtime/happyrobot/types";
-import { buildEvaluationSummary, type EvaluationSummary } from "@/lib/evaluation-summary";
+import {
+  loadRuntimeStoreState,
+  resetRuntimeStoreState,
+  saveRuntimeStoreState,
+  type RuntimeStoreState,
+} from "@/lib/db/runtime-store";
+import { buildEvaluationSummary } from "@/lib/evaluation-summary";
 import { extractRequirementEvidenceFromTranscript } from "@/lib/evaluation-requirement-extraction";
 import { scoreEvaluationFromRequirementEvidence } from "@/lib/evaluation-scoring";
 import { executeHappyRobotDispatch } from "@/lib/happyrobot-orchestration";
 import { ingestHappyRobotWebhookEvent } from "@/lib/happyrobot-webhooks";
 import { transitionCandidateApplicationForInterviewRun } from "@/lib/interview-pipeline-transitions";
-import {
-  type RuntimeTraceEvent,
-  type RuntimeTraceSink,
-} from "@/lib/runtime-tracing";
+import { findPublicJobById, type PublicJobRecord } from "@/lib/public-jobs";
 import type {
   NormalizedCandidateProfileSource,
   PublicApplyLegalAcceptance,
 } from "@/lib/public-apply";
-import { findPublicJobById, type PublicJobRecord } from "@/lib/public-jobs";
+import type { RuntimeTraceEvent, RuntimeTraceSink } from "@/lib/runtime-tracing";
 
 type PublicApplySubmissionInput = {
   jobId: string;
@@ -41,7 +44,6 @@ type PublicApplySubmissionInput = {
 };
 
 type PublicApplyFailureMode = "candidate" | "application" | "interview";
-
 type PublicApplyTraceSink = RuntimeTraceSink;
 
 type TranscriptSegment = {
@@ -73,17 +75,6 @@ export type InterviewRunRuntimeSnapshot = {
   evaluation: CandidateEvaluation | null;
 };
 
-const candidates: CandidateProfile[] = [];
-const applications: CandidateApplication[] = [];
-const interviewRuns: InterviewRun[] = [];
-const interviewPreparationPackages: InterviewPreparationPackage[] = [];
-const dispatchRequests: HappyRobotCallRequest[] = [];
-const dispatchPayloads: HappyRobotNormalizedDispatchPayload[] = [];
-const dispatchResponses: HappyRobotDispatchResponse[] = [];
-const webhookRecords: HappyRobotWebhookRecord[] = [];
-const runtimeTraceEvents: RuntimeTraceEvent[] = [];
-const evaluations: CandidateEvaluation[] = [];
-
 function normalizePhone(phone: string) {
   const trimmed = phone.trim();
   const hasPlusPrefix = trimmed.startsWith("+");
@@ -101,15 +92,19 @@ function nextId(prefix: string, count: number) {
 }
 
 function appendRuntimeTraceEvent(
+  state: RuntimeStoreState,
   event: RuntimeTraceEvent,
   sink?: RuntimeTraceSink,
 ) {
-  runtimeTraceEvents.push(event);
+  state.runtimeTraceEvents.push(event);
   sink?.(event);
 }
 
-function syncApplicationFromInterviewRun(interviewRun: InterviewRun) {
-  const applicationIndex = applications.findIndex(
+function syncApplicationFromInterviewRun(
+  state: RuntimeStoreState,
+  interviewRun: InterviewRun,
+) {
+  const applicationIndex = state.applications.findIndex(
     (application) => application.id === interviewRun.applicationId,
   );
 
@@ -117,12 +112,13 @@ function syncApplicationFromInterviewRun(interviewRun: InterviewRun) {
     return;
   }
 
-  applications[applicationIndex] = transitionCandidateApplicationForInterviewRun(
-    applications[applicationIndex],
-    interviewRun.status,
-    interviewRun.pipelineStage,
-    interviewRun.metadata.callbackRequestedAt,
-  );
+  state.applications[applicationIndex] =
+    transitionCandidateApplicationForInterviewRun(
+      state.applications[applicationIndex],
+      interviewRun.status,
+      interviewRun.pipelineStage,
+      interviewRun.metadata.callbackRequestedAt,
+    );
 }
 
 function normalizeTranscriptResolution(
@@ -143,21 +139,76 @@ function normalizeTranscriptResolution(
   return segments.length > 0 ? segments : null;
 }
 
-function maybeGenerateInterviewEvaluation(input: {
+function buildRuntimeSnapshot(
+  state: RuntimeStoreState,
+  interviewRunId: string,
+): InterviewRunRuntimeSnapshot | null {
+  const interviewRun = state.interviewRuns.find((run) => run.id === interviewRunId);
+
+  if (!interviewRun) {
+    return null;
+  }
+
+  const candidate =
+    state.candidates.find((item) => item.id === interviewRun.candidateId) ?? null;
+  const application =
+    state.applications.find((item) => item.id === interviewRun.applicationId) ?? null;
+  const interviewPreparationPackage =
+    state.interviewPreparationPackages.find(
+      (item) => item.id === interviewRun.interviewPreparationId,
+    ) ?? null;
+  const dispatchRequest =
+    state.dispatchRequests.find((item) => item.interviewRunId === interviewRunId) ??
+    null;
+  const dispatchPayload =
+    state.dispatchPayloads.find((item) => item.interviewRunId === interviewRunId) ??
+    null;
+  const dispatchResponse =
+    dispatchRequest
+      ? state.dispatchResponses[state.dispatchRequests.indexOf(dispatchRequest)] ?? null
+      : null;
+  const evaluation =
+    state.evaluations.find((item) => item.interviewRunId === interviewRunId) ?? null;
+
+  return {
+    interviewRun,
+    candidate,
+    application,
+    interviewPreparationPackage,
+    dispatchRequest,
+    dispatchPayload,
+    dispatchResponse,
+    webhookRecords: state.webhookRecords.filter(
+      (record) => record.matchedInterviewRunId === interviewRunId,
+    ),
+    runtimeTraceEvents: state.runtimeTraceEvents.filter(
+      (event) => event.interviewRunId === interviewRunId,
+    ),
+    evaluation,
+  };
+}
+
+async function maybeGenerateInterviewEvaluation(input: {
+  state: RuntimeStoreState;
   interviewRun: InterviewRun;
   transcriptResolver?: TranscriptResolver;
-}): CandidateEvaluation | null {
+}): Promise<CandidateEvaluation | null> {
   if (input.interviewRun.status !== "completed") {
     return null;
   }
 
-  const snapshot = getInterviewRunRuntimeSnapshot(input.interviewRun.id);
+  const snapshot = buildRuntimeSnapshot(input.state, input.interviewRun.id);
   if (!snapshot) {
     return null;
   }
 
-  const job = findPublicJobById(snapshot.interviewRun.jobId);
-  if (!job || !snapshot.interviewPreparationPackage || !snapshot.application || !snapshot.candidate) {
+  const job = await findPublicJobById(snapshot.interviewRun.jobId);
+  if (
+    !job ||
+    !snapshot.interviewPreparationPackage ||
+    !snapshot.application ||
+    !snapshot.candidate
+  ) {
     return null;
   }
 
@@ -228,98 +279,58 @@ function maybeGenerateInterviewEvaluation(input: {
     generatedAt,
   });
 
-  const saveResult = saveInterviewEvaluation(evaluation);
-  return saveResult.success ? saveResult.data : null;
+  const existingIndex = input.state.evaluations.findIndex(
+    (item) => item.interviewRunId === evaluation.interviewRunId,
+  );
+
+  if (existingIndex >= 0) {
+    input.state.evaluations[existingIndex] = evaluation;
+  } else {
+    input.state.evaluations.push(evaluation);
+  }
+
+  return evaluation;
 }
 
-export function resetPublicApplySubmissionStore() {
-  candidates.length = 0;
-  applications.length = 0;
-  interviewRuns.length = 0;
-  interviewPreparationPackages.length = 0;
-  dispatchRequests.length = 0;
-  dispatchPayloads.length = 0;
-  dispatchResponses.length = 0;
-  webhookRecords.length = 0;
-  runtimeTraceEvents.length = 0;
-  evaluations.length = 0;
+export async function resetPublicApplySubmissionStore() {
+  await resetRuntimeStoreState();
 }
 
-export function getPublicApplySubmissionSnapshot() {
+export async function getPublicApplySubmissionSnapshot() {
+  const state = await loadRuntimeStoreState();
+
   return {
-    candidates: [...candidates],
-    applications: [...applications],
-    interviewRuns: [...interviewRuns],
-    interviewPreparationPackages: [...interviewPreparationPackages],
-    dispatchRequests: [...dispatchRequests],
-    dispatchPayloads: [...dispatchPayloads],
-    dispatchResponses: [...dispatchResponses],
-    webhookRecords: [...webhookRecords],
-    runtimeTraceEvents: [...runtimeTraceEvents],
+    candidates: [...state.candidates],
+    applications: [...state.applications],
+    interviewRuns: [...state.interviewRuns],
+    interviewPreparationPackages: [...state.interviewPreparationPackages],
+    dispatchRequests: [...state.dispatchRequests],
+    dispatchPayloads: [...state.dispatchPayloads],
+    dispatchResponses: [...state.dispatchResponses],
+    webhookRecords: [...state.webhookRecords],
+    runtimeTraceEvents: [...state.runtimeTraceEvents],
   };
 }
 
-export function getInterviewEvaluation(
-  interviewRunId: string,
-): CandidateEvaluation | null {
+export async function getInterviewEvaluation(interviewRunId: string) {
+  const state = await loadRuntimeStoreState();
   return (
-    evaluations.find(
+    state.evaluations.find(
       (evaluation) => evaluation.interviewRunId === interviewRunId,
     ) ?? null
   );
 }
 
-export function getInterviewRunRuntimeSnapshot(
-  interviewRunId: string,
-): InterviewRunRuntimeSnapshot | null {
-  const interviewRun = interviewRuns.find((run) => run.id === interviewRunId);
-
-  if (!interviewRun) {
-    return null;
-  }
-
-  const candidate = candidates.find((item) => item.id === interviewRun.candidateId) ?? null;
-  const application =
-    applications.find((item) => item.id === interviewRun.applicationId) ?? null;
-  const interviewPreparationPackage =
-    interviewPreparationPackages.find(
-      (item) => item.id === interviewRun.interviewPreparationId,
-    ) ?? null;
-  const dispatchRequestIndex = dispatchRequests.findIndex(
-    (item) => item.interviewRunId === interviewRunId,
-  );
-  const dispatchRequest =
-    dispatchRequestIndex >= 0 ? dispatchRequests[dispatchRequestIndex] : null;
-  const dispatchPayload =
-    dispatchPayloads.find((item) => item.interviewRunId === interviewRunId) ?? null;
-  const dispatchResponse =
-    dispatchRequestIndex >= 0 ? dispatchResponses[dispatchRequestIndex] ?? null : null;
-  const webhookRecordsForRun = webhookRecords.filter(
-    (record) => record.matchedInterviewRunId === interviewRunId,
-  );
-  const traceEventsForRun = runtimeTraceEvents.filter(
-    (event) => event.interviewRunId === interviewRunId,
-  );
-  const evaluation = getInterviewEvaluation(interviewRunId);
-
-  return {
-    interviewRun,
-    candidate,
-    application,
-    interviewPreparationPackage,
-    dispatchRequest,
-    dispatchPayload,
-    dispatchResponse,
-    webhookRecords: webhookRecordsForRun,
-    runtimeTraceEvents: traceEventsForRun,
-    evaluation,
-  };
+export async function getInterviewRunRuntimeSnapshot(interviewRunId: string) {
+  const state = await loadRuntimeStoreState();
+  return buildRuntimeSnapshot(state, interviewRunId);
 }
 
-export function getInterviewRunRuntimeSnapshotByCandidateId(
+export async function getInterviewRunRuntimeSnapshotByCandidateId(
   candidateId: string,
-): InterviewRunRuntimeSnapshot | null {
-  const interviewRun = [...interviewRuns]
+) {
+  const state = await loadRuntimeStoreState();
+  const interviewRun = [...state.interviewRuns]
     .reverse()
     .find((run) => run.candidateId === candidateId);
 
@@ -327,14 +338,29 @@ export function getInterviewRunRuntimeSnapshotByCandidateId(
     return null;
   }
 
-  return getInterviewRunRuntimeSnapshot(interviewRun.id);
+  return buildRuntimeSnapshot(state, interviewRun.id);
 }
 
-export function getRecruiterCandidateSummary(
-  interviewRunId: string,
-): EvaluationSummary | null {
-  const evaluation = getInterviewEvaluation(interviewRunId);
+export async function listInterviewRunRuntimeSnapshotsByCandidateId(
+  candidateIds: string[],
+) {
+  const state = await loadRuntimeStoreState();
+  const entries = candidateIds.map((candidateId) => {
+    const interviewRun = [...state.interviewRuns]
+      .reverse()
+      .find((run) => run.candidateId === candidateId);
 
+    return [candidateId, interviewRun ? buildRuntimeSnapshot(state, interviewRun.id) : null];
+  });
+
+  return Object.fromEntries(entries) as Record<
+    string,
+    InterviewRunRuntimeSnapshot | null
+  >;
+}
+
+export async function getRecruiterCandidateSummary(interviewRunId: string) {
+  const evaluation = await getInterviewEvaluation(interviewRunId);
   if (!evaluation) {
     return null;
   }
@@ -342,12 +368,14 @@ export function getRecruiterCandidateSummary(
   return buildEvaluationSummary(evaluation);
 }
 
-export function saveInterviewEvaluation(
+export async function saveInterviewEvaluation(
   evaluation: CandidateEvaluation,
-):
+): Promise<
   | { success: true; data: CandidateEvaluation }
-  | { success: false; error: string } {
-  const interviewRun = interviewRuns.find(
+  | { success: false; error: string }
+> {
+  const state = await loadRuntimeStoreState();
+  const interviewRun = state.interviewRuns.find(
     (run) => run.id === evaluation.interviewRunId,
   );
 
@@ -358,15 +386,17 @@ export function saveInterviewEvaluation(
     };
   }
 
-  const existingIndex = evaluations.findIndex(
+  const existingIndex = state.evaluations.findIndex(
     (item) => item.interviewRunId === evaluation.interviewRunId,
   );
 
   if (existingIndex >= 0) {
-    evaluations[existingIndex] = evaluation;
+    state.evaluations[existingIndex] = evaluation;
   } else {
-    evaluations.push(evaluation);
+    state.evaluations.push(evaluation);
   }
+
+  await saveRuntimeStoreState(state);
 
   return {
     success: true,
@@ -374,16 +404,17 @@ export function saveInterviewEvaluation(
   };
 }
 
-export function receiveHappyRobotWebhook(
+export async function receiveHappyRobotWebhook(
   rawPayload: unknown,
   options?: {
     receivedAt?: Date;
     transcriptResolver?: TranscriptResolver;
   },
-): HappyRobotWebhookIngestionResponse {
+): Promise<HappyRobotWebhookIngestionResponse> {
+  const state = await loadRuntimeStoreState();
   const result = ingestHappyRobotWebhookEvent({
     rawPayload,
-    interviewRuns,
+    interviewRuns: state.interviewRuns,
     receivedAt: options?.receivedAt,
   });
 
@@ -391,28 +422,30 @@ export function receiveHappyRobotWebhook(
     return result;
   }
 
-  const interviewRunIndex = interviewRuns.findIndex(
+  const interviewRunIndex = state.interviewRuns.findIndex(
     (interviewRun) => interviewRun.id === result.record.matchedInterviewRunId,
   );
 
-  interviewRuns[interviewRunIndex] = result.interviewRun;
-  syncApplicationFromInterviewRun(result.interviewRun);
-  webhookRecords.push(result.record);
-  maybeGenerateInterviewEvaluation({
+  state.interviewRuns[interviewRunIndex] = result.interviewRun;
+  syncApplicationFromInterviewRun(state, result.interviewRun);
+  state.webhookRecords.push(result.record);
+  await maybeGenerateInterviewEvaluation({
+    state,
     interviewRun: result.interviewRun,
     transcriptResolver: options?.transcriptResolver,
   });
+  await saveRuntimeStoreState(state);
 
   return result;
 }
 
-export function submitPublicApplication(
+export async function submitPublicApplication(
   input: PublicApplySubmissionInput,
   options?: {
     failureMode?: PublicApplyFailureMode;
     traceSink?: PublicApplyTraceSink;
   },
-):
+): Promise<
   | {
       success: true;
       data: {
@@ -428,7 +461,10 @@ export function submitPublicApplication(
   | {
       success: false;
       error: string;
-    } {
+    }
+> {
+  const state = await loadRuntimeStoreState();
+
   if (options?.failureMode === "candidate") {
     return {
       success: false,
@@ -441,9 +477,11 @@ export function submitPublicApplication(
   const source: CandidateSource = "public_apply_link";
 
   const existingCandidate =
-    candidates.find((candidate) => candidate.normalizedPhone === normalizedPhone) ??
+    state.candidates.find(
+      (candidate) => candidate.normalizedPhone === normalizedPhone,
+    ) ??
     (normalizedEmail
-      ? candidates.find(
+      ? state.candidates.find(
           (candidate) => candidate.normalizedEmail === normalizedEmail,
         ) ?? null
       : null);
@@ -463,7 +501,7 @@ export function submitPublicApplication(
         consentAcceptedAt: input.legalAcceptance.acceptedAt,
       }
     : {
-        id: nextId("cand", candidates.length),
+        id: nextId("cand", state.candidates.length),
         fullName: input.fullName.trim(),
         phone: input.phone.trim(),
         normalizedPhone,
@@ -484,7 +522,7 @@ export function submitPublicApplication(
   }
 
   const stagedApplication: CandidateApplication = {
-    id: nextId("app", applications.length),
+    id: nextId("app", state.applications.length),
     candidateId: stagedCandidate.id,
     jobId: input.jobId,
     source,
@@ -501,7 +539,7 @@ export function submitPublicApplication(
     };
   }
 
-  const job = findPublicJobById(input.jobId);
+  const job = await findPublicJobById(input.jobId);
 
   if (!job) {
     return {
@@ -511,7 +549,7 @@ export function submitPublicApplication(
   }
 
   const stagedInterviewRun: InterviewRun = {
-    id: nextId("run", interviewRuns.length),
+    id: nextId("run", state.interviewRuns.length),
     candidateId: stagedCandidate.id,
     applicationId: stagedApplication.id,
     jobId: input.jobId,
@@ -561,7 +599,7 @@ export function submitPublicApplication(
     job,
     now: new Date(input.legalAcceptance.acceptedAt),
     traceSink: (event: RuntimeTraceEvent) => {
-      appendRuntimeTraceEvent(event, options?.traceSink);
+      appendRuntimeTraceEvent(state, event, options?.traceSink);
     },
   });
 
@@ -574,20 +612,22 @@ export function submitPublicApplication(
     );
 
   if (existingCandidate) {
-    const candidateIndex = candidates.findIndex(
+    const candidateIndex = state.candidates.findIndex(
       (candidate) => candidate.id === existingCandidate.id,
     );
-    candidates[candidateIndex] = stagedCandidate;
+    state.candidates[candidateIndex] = stagedCandidate;
   } else {
-    candidates.push(stagedCandidate);
+    state.candidates.push(stagedCandidate);
   }
 
-  applications.push(stagedApplicationAfterDispatch);
-  interviewRuns.push(dispatchExecution.interviewRun);
-  interviewPreparationPackages.push(dispatchExecution.interviewPackage);
-  dispatchRequests.push(dispatchExecution.callRequest);
-  dispatchPayloads.push(dispatchExecution.dispatchPayload);
-  dispatchResponses.push(dispatchExecution.dispatchResponse);
+  state.applications.push(stagedApplicationAfterDispatch);
+  state.interviewRuns.push(dispatchExecution.interviewRun);
+  state.interviewPreparationPackages.push(dispatchExecution.interviewPackage);
+  state.dispatchRequests.push(dispatchExecution.callRequest);
+  state.dispatchPayloads.push(dispatchExecution.dispatchPayload);
+  state.dispatchResponses.push(dispatchExecution.dispatchResponse);
+
+  await saveRuntimeStoreState(state);
 
   return {
     success: true,

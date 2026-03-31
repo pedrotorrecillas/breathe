@@ -3,40 +3,12 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { DataPoint, SectionCard } from "@/components/section-card";
 import { StatusBadge } from "@/components/status-badge";
+import { listRecruiterJobs } from "@/lib/job-pipeline";
 import { cn } from "@/lib/utils";
 
-const jobs = [
-  {
-    id: "warehouse-associate-madrid",
-    title: "Warehouse Associate",
-    status: "Active",
-    location: "Madrid",
-    createdAt: "March 24, 2026",
-    pipeline: {
-      applicants: 42,
-      interviewed: 28,
-      shortlisted: 9,
-      hired: 2,
-      rejected: 11,
-    },
-  },
-  {
-    id: "retail-shift-lead-barcelona",
-    title: "Retail Shift Lead",
-    status: "Draft",
-    location: "Barcelona",
-    createdAt: "March 24, 2026",
-    pipeline: {
-      applicants: 0,
-      interviewed: 0,
-      shortlisted: 0,
-      hired: 0,
-      rejected: 0,
-    },
-  },
-];
+export default async function JobsPage() {
+  const jobs = await listRecruiterJobs();
 
-export default function JobsPage() {
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(246,249,252,0.88))] px-6 py-6 md:px-8">

@@ -8,21 +8,49 @@ import { DataPoint, DetailPanel, SectionCard } from "@/components/section-card";
 import { PlaceholderState } from "@/components/placeholder-state";
 import { EmptyState } from "@/components/shared-states";
 import type { CandidateEvaluation } from "@/domain/evaluations/types";
+import type { CandidateApplication, CandidateProfile } from "@/domain/candidates/types";
+import type { InterviewPreparationPackage } from "@/domain/interview-preparation/types";
+import type { InterviewRun } from "@/domain/interviews/types";
 import { StatusBadge, scoreBadgeIntent } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { mapNumericScoreToState } from "@/lib/evaluation-scoring";
-import { getInterviewRunRuntimeSnapshotByCandidateId } from "@/lib/public-apply-submissions";
 import {
   activePipelineStages,
   applyRecruiterAction,
   getCandidatesForStage,
-  getJobPipelineSnapshot,
   type JobDetailTab,
+  type PipelineCandidate,
   jobDetailTabs,
 } from "@/lib/job-pipeline";
+import type {
+  HappyRobotCallRequest,
+  HappyRobotDispatchResponse,
+  HappyRobotNormalizedDispatchPayload,
+  HappyRobotWebhookRecord,
+} from "@/domain/runtime/happyrobot/types";
+import type { RuntimeTraceEvent } from "@/lib/runtime-tracing";
 
 type JobDetailWorkspaceProps = {
   jobId: string;
+  initialSnapshot: {
+    title: string;
+    candidates: PipelineCandidate[];
+  };
+  runtimeSnapshotsByCandidateId: Record<
+    string,
+    {
+      interviewRun: InterviewRun;
+      candidate: CandidateProfile | null;
+      application: CandidateApplication | null;
+      interviewPreparationPackage: InterviewPreparationPackage | null;
+      dispatchRequest: HappyRobotCallRequest | null;
+      dispatchPayload: HappyRobotNormalizedDispatchPayload | null;
+      dispatchResponse: HappyRobotDispatchResponse | null;
+      webhookRecords: HappyRobotWebhookRecord[];
+      runtimeTraceEvents: RuntimeTraceEvent[];
+      evaluation: CandidateEvaluation | null;
+    } | null
+  >;
 };
 
 type ReportRequirementImportance = "Mandatory" | "Optional";
@@ -291,22 +319,21 @@ function scoreBadgeIntentFor(score: number | null) {
   return scoreState === "Pending" ? "neutral" : scoreBadgeIntent[scoreState];
 }
 
-export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
-  const snapshot = getJobPipelineSnapshot(jobId);
+export function JobDetailWorkspace({
+  jobId,
+  initialSnapshot,
+  runtimeSnapshotsByCandidateId,
+}: JobDetailWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<JobDetailTab>("Applicants");
-  const [candidates, setCandidates] = useState(() => snapshot?.candidates ?? []);
+  const [candidates, setCandidates] = useState(() => initialSnapshot.candidates);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
-
-  if (!snapshot) {
-    return null;
-  }
 
   const selectedCandidate =
     candidates.find((candidate) => candidate.id === selectedCandidateId) ??
     null;
   const selectedCandidateRuntime = selectedCandidate
-    ? getInterviewRunRuntimeSnapshotByCandidateId(selectedCandidate.id)
+    ? runtimeSnapshotsByCandidateId[selectedCandidate.id] ?? null
     : null;
   const selectedCandidateEvaluation =
     selectedCandidateRuntime?.evaluation ?? null;

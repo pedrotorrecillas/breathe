@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 
 import { JobDetailWorkspace } from "@/components/job-detail-workspace";
+import {
+  getJobPipelineSnapshot,
+} from "@/lib/job-pipeline";
+import { listInterviewRunRuntimeSnapshotsByCandidateId } from "@/lib/public-apply-submissions";
 
 type JobDetailPageProps = {
   params: Promise<{
@@ -8,17 +12,24 @@ type JobDetailPageProps = {
   }>;
 };
 
-const knownJobIds = new Set([
-  "warehouse-associate-madrid",
-  "retail-shift-lead-barcelona",
-]);
-
 export default async function JobDetailPage({ params }: JobDetailPageProps) {
   const { jobId } = await params;
+  const snapshot = await getJobPipelineSnapshot(jobId);
 
-  if (!knownJobIds.has(jobId)) {
+  if (!snapshot) {
     notFound();
   }
 
-  return <JobDetailWorkspace jobId={jobId} />;
+  const runtimeSnapshotsByCandidateId =
+    await listInterviewRunRuntimeSnapshotsByCandidateId(
+      snapshot.candidates.map((candidate) => candidate.id),
+    );
+
+  return (
+    <JobDetailWorkspace
+      jobId={jobId}
+      initialSnapshot={snapshot}
+      runtimeSnapshotsByCandidateId={runtimeSnapshotsByCandidateId}
+    />
+  );
 }

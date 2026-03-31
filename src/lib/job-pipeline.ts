@@ -1,8 +1,5 @@
 import { buildEvaluationSummary } from "@/lib/evaluation-summary";
-import {
-  getInterviewRunRuntimeSnapshotByCandidateId,
-  getPublicApplySubmissionSnapshot,
-} from "@/lib/public-apply-submissions";
+import { loadRuntimeStoreState } from "@/lib/db/runtime-store";
 
 export const activePipelineStages = [
   "Applicants",
@@ -244,11 +241,6 @@ const jobPipelineSeeds: Record<string, JobPipelineSeed> = {
   },
 };
 
-const recruiterJobToPublicJobId: Record<string, string> = {
-  "warehouse-associate-madrid": "job_warehouse_madrid",
-  "retail-shift-lead-barcelona": "job_retail_barcelona",
-};
-
 function normalizeStage(stage: string): JobDetailTab {
   switch (stage) {
     case "interviewed":
@@ -324,16 +316,39 @@ function formatRelevantDate(
   };
 }
 
-function buildLivePipelineSnapshot(jobId: string): JobPipelineSeed | null {
-  const publicJobId = recruiterJobToPublicJobId[jobId];
+function deriveRuntimeSnapshotFromState(
+  state: Awaited<ReturnType<typeof loadRuntimeStoreState>>,
+  candidateId: string,
+) {
+  const interviewRun = [...state.interviewRuns]
+    .reverse()
+    .find((run) => run.candidateId === candidateId);
 
-  if (!publicJobId) {
+  if (!interviewRun) {
     return null;
   }
 
-  const snapshot = getPublicApplySubmissionSnapshot();
-  const liveApplications = snapshot.applications.filter(
-    (application) => application.jobId === publicJobId,
+  const evaluation =
+    state.evaluations.find((item) => item.interviewRunId === interviewRun.id) ?? null;
+
+  return {
+    interviewRun,
+    evaluation,
+  };
+}
+
+function buildLivePipelineSnapshot(
+  state: Awaited<ReturnType<typeof loadRuntimeStoreState>>,
+  jobId: string,
+): JobPipelineSeed | null {
+  const job = state.jobs.find((item) => item.recruiterSlug === jobId);
+
+  if (!job) {
+    return null;
+  }
+
+  const liveApplications = state.applications.filter(
+    (application) => application.jobId === job.id,
   );
 
   if (liveApplications.length === 0) {
@@ -342,14 +357,14 @@ function buildLivePipelineSnapshot(jobId: string): JobPipelineSeed | null {
 
   const candidates = liveApplications
     .map((application) => {
-      const candidate = snapshot.candidates.find(
+      const candidate = state.candidates.find(
         (item) => item.id === application.candidateId,
       );
       if (!candidate) {
         return null;
       }
 
-      const interviewRun = getInterviewRunRuntimeSnapshotByCandidateId(candidate.id);
+      const interviewRun = deriveRuntimeSnapshotFromState(state, candidate.id);
       const evaluation = interviewRun?.evaluation ?? null;
       const summary = evaluation ? buildEvaluationSummary(evaluation) : null;
       const stage = normalizeStage(application.stage);
@@ -403,13 +418,14 @@ function buildLivePipelineSnapshot(jobId: string): JobPipelineSeed | null {
     });
 
   return {
-    title: jobPipelineSeeds[jobId]?.title ?? publicJobId,
+    title: job.title,
     candidates,
   };
 }
 
-export function getJobPipelineSnapshot(jobId: string) {
-  const liveSnapshot = buildLivePipelineSnapshot(jobId);
+export async function getJobPipelineSnapshot(jobId: string) {
+  const state = await loadRuntimeStoreState();
+  const liveSnapshot = buildLivePipelineSnapshot(state, jobId);
 
   if (liveSnapshot) {
     return liveSnapshot;
@@ -425,6 +441,53 @@ export function getJobPipelineSnapshot(jobId: string) {
     title: seed.title,
     candidates: seed.candidates.map((candidate) => ({ ...candidate })),
   };
+}
+
+export async function listRecruiterJobs() {
+  const state = await loadRuntimeStoreState();
+
+  return state.jobs.map((job) => {
+    const liveApplications = state.applications.filter(
+      (application) => application.jobId === job.id,
+    );
+    const counts = liveApplications.reduce(
+      (accumulator, application) => {
+        if (application.stage === "applicant") {
+          accumulator.applicants += 1;
+        } else if (application.stage === "interviewed") {
+          accumulator.interviewed += 1;
+        } else if (application.stage === "shortlisted") {
+          accumulator.shortlisted += 1;
+        } else if (application.stage === "hired") {
+          accumulator.hired += 1;
+        } else if (application.stage === "rejected") {
+          accumulator.rejected += 1;
+        }
+
+        return accumulator;
+      },
+      {
+        applicants: 0,
+        interviewed: 0,
+        shortlisted: 0,
+        hired: 0,
+        rejected: 0,
+      },
+    );
+
+    return {
+      id: job.recruiterSlug,
+      title: job.title,
+      status: job.status === "active" ? "Active" : job.status === "draft" ? "Draft" : "Inactive",
+      location: job.location ?? "Unknown",
+      createdAt: new Date(job.createdAt).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      }),
+      pipeline: liveApplications.length > 0 ? counts : job.pipeline,
+    };
+  });
 }
 
 export function getCandidatesForStage(

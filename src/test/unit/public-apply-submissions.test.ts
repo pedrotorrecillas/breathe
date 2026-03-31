@@ -14,12 +14,12 @@ import {
 } from "@/lib/public-apply-submissions";
 
 describe("public apply submissions", () => {
-  afterEach(() => {
-    resetPublicApplySubmissionStore();
+  afterEach(async () => {
+    await resetPublicApplySubmissionStore();
   });
 
-  it("creates linked candidate, application, and interview run records", () => {
-    const result = submitPublicApplication({
+  it("creates linked candidate, application, and interview run records", async () => {
+    const result = await submitPublicApplication({
       jobId: "job_warehouse_madrid",
       fullName: "Lucia Torres",
       phone: "+34 600 123 456",
@@ -60,8 +60,8 @@ describe("public apply submissions", () => {
     expect(result.data.interviewRun.dispatch.providerCallId).toBe(
       "hr_call_run_1",
     );
-    expect(getPublicApplySubmissionSnapshot().runtimeTraceEvents).toHaveLength(4);
-    expect(getInterviewRunRuntimeSnapshot("run_1")?.runtimeTraceEvents).toEqual([
+    expect((await getPublicApplySubmissionSnapshot()).runtimeTraceEvents).toHaveLength(4);
+    expect((await getInterviewRunRuntimeSnapshot("run_1"))?.runtimeTraceEvents).toEqual([
       expect.objectContaining({
         phase: "interview_preparation.started",
         interviewRunId: "run_1",
@@ -82,10 +82,10 @@ describe("public apply submissions", () => {
     ]);
   });
 
-  it("forwards runtime trace events to an optional sink without changing persistence", () => {
+  it("forwards runtime trace events to an optional sink without changing persistence", async () => {
     const forwardedEvents: Array<{ phase: string; interviewRunId: string }> = [];
 
-    const result = submitPublicApplication(
+    const result = await submitPublicApplication(
       {
         jobId: "job_warehouse_madrid",
         fullName: "Lucia Torres",
@@ -131,11 +131,11 @@ describe("public apply submissions", () => {
         interviewRunId: "run_1",
       },
     ]);
-    expect(getPublicApplySubmissionSnapshot().runtimeTraceEvents).toHaveLength(4);
+    expect((await getPublicApplySubmissionSnapshot()).runtimeTraceEvents).toHaveLength(4);
   });
 
-  it("does not persist partial state when a staged failure happens", () => {
-    const result = submitPublicApplication(
+  it("does not persist partial state when a staged failure happens", async () => {
+    const result = await submitPublicApplication(
       {
         jobId: "job_warehouse_madrid",
         fullName: "Lucia Torres",
@@ -161,7 +161,7 @@ describe("public apply submissions", () => {
       success: false,
       error: "Application creation failed before persistence.",
     });
-    expect(getPublicApplySubmissionSnapshot()).toEqual({
+    expect(await getPublicApplySubmissionSnapshot()).toEqual({
       candidates: [],
       applications: [],
       interviewRuns: [],
@@ -174,8 +174,8 @@ describe("public apply submissions", () => {
     });
   });
 
-  it("stores webhook records and updates the linked interview run", () => {
-    submitPublicApplication({
+  it("stores webhook records and updates the linked interview run", async () => {
+    await submitPublicApplication({
       jobId: "job_warehouse_madrid",
       fullName: "Lucia Torres",
       phone: "+34 600 123 456",
@@ -192,7 +192,7 @@ describe("public apply submissions", () => {
       },
     });
 
-    const webhookResult = receiveHappyRobotWebhook(
+    const webhookResult = await receiveHappyRobotWebhook(
       {
         eventId: "evt_1",
         interviewRunId: "run_1",
@@ -210,7 +210,7 @@ describe("public apply submissions", () => {
 
     expect(webhookResult.success).toBe(true);
 
-    const snapshot = getPublicApplySubmissionSnapshot();
+    const snapshot = await getPublicApplySubmissionSnapshot();
 
     expect(snapshot.webhookRecords).toHaveLength(1);
     expect(snapshot.interviewRuns[0]?.status).toBe("completed");
@@ -222,18 +222,18 @@ describe("public apply submissions", () => {
     expect(snapshot.interviewRuns[0]?.trace.completedAt).toBe(
       "2026-03-25T12:05:00.000Z",
     );
-    expect(getInterviewRecordingForCandidate("Lucia Torres")).toEqual({
+    expect(await getInterviewRecordingForCandidate("Lucia Torres")).toEqual({
       recordingUrl: "https://example.com/recording.mp3",
       recordingDurationSeconds: null,
       providerCallId: "hr_call_run_1",
       completedAt: "2026-03-25T12:05:00.000Z",
       transcriptUrl: "https://example.com/transcript.txt",
     });
-    expect(getPublicApplySubmissionSnapshot().applications[0]?.stage).toBe(
+    expect((await getPublicApplySubmissionSnapshot()).applications[0]?.stage).toBe(
       "interviewed",
     );
 
-    expect(getInterviewRunRuntimeSnapshot("run_1")).toMatchObject({
+    expect(await getInterviewRunRuntimeSnapshot("run_1")).toMatchObject({
       interviewRun: {
         id: "run_1",
         dispatch: {
@@ -289,8 +289,8 @@ describe("public apply submissions", () => {
     });
   });
 
-  it("automatically stores an evaluation when a completed transcript is available", () => {
-    submitPublicApplication({
+  it("automatically stores an evaluation when a completed transcript is available", async () => {
+    await submitPublicApplication({
       jobId: "job_warehouse_madrid",
       fullName: "Lucia Torres",
       phone: "+34 600 123 456",
@@ -307,7 +307,7 @@ describe("public apply submissions", () => {
       },
     });
 
-    const webhookResult = receiveHappyRobotWebhook(
+    const webhookResult = await receiveHappyRobotWebhook(
       {
         eventId: "evt_2",
         interviewRunId: "run_1",
@@ -340,18 +340,18 @@ describe("public apply submissions", () => {
 
     expect(webhookResult.success).toBe(true);
 
-    const evaluation = getInterviewEvaluation("run_1");
+    const evaluation = await getInterviewEvaluation("run_1");
     expect(evaluation).not.toBeNull();
     expect(evaluation?.finalNumericScore).not.toBeNull();
     expect(evaluation?.blocks).toHaveLength(3);
     expect(evaluation?.blocks[0]?.requirements).toHaveLength(1);
     expect(evaluation?.blocks[1]?.requirements).toHaveLength(1);
     expect(evaluation?.blocks[2]?.requirements).toHaveLength(1);
-    expect(getInterviewRunRuntimeSnapshot("run_1")?.evaluation).toEqual(evaluation);
+    expect((await getInterviewRunRuntimeSnapshot("run_1"))?.evaluation).toEqual(evaluation);
   });
 
-  it("stores and retrieves an evaluation for an existing interview run", () => {
-    submitPublicApplication({
+  it("stores and retrieves an evaluation for an existing interview run", async () => {
+    await submitPublicApplication({
       jobId: "job_warehouse_madrid",
       fullName: "Lucia Torres",
       phone: "+34 600 123 456",
@@ -407,17 +407,17 @@ describe("public apply submissions", () => {
       fitClassification: "viable_fit",
     };
 
-    const saveResult = saveInterviewEvaluation(evaluation);
+    const saveResult = await saveInterviewEvaluation(evaluation);
 
     expect(saveResult).toEqual({
       success: true,
       data: evaluation,
     });
-    expect(getInterviewEvaluation("run_1")).toEqual(evaluation);
-    expect(getPublicApplySubmissionSnapshot().interviewRuns).toHaveLength(1);
+    expect(await getInterviewEvaluation("run_1")).toEqual(evaluation);
+    expect((await getPublicApplySubmissionSnapshot()).interviewRuns).toHaveLength(1);
   });
 
-  it("refuses to store an evaluation when the interview run is missing", () => {
+  it("refuses to store an evaluation when the interview run is missing", async () => {
     const evaluation: CandidateEvaluation = {
       id: "eval_1",
       interviewRunId: "missing_run",
@@ -435,13 +435,13 @@ describe("public apply submissions", () => {
       fitClassification: null,
     };
 
-    const saveResult = saveInterviewEvaluation(evaluation);
+    const saveResult = await saveInterviewEvaluation(evaluation);
 
     expect(saveResult).toEqual({
       success: false,
       error: "Evaluation could not be stored because the interview run was not found.",
     });
-    expect(getInterviewEvaluation("missing_run")).toBeNull();
-    expect(getPublicApplySubmissionSnapshot().interviewRuns).toHaveLength(0);
+    expect(await getInterviewEvaluation("missing_run")).toBeNull();
+    expect((await getPublicApplySubmissionSnapshot()).interviewRuns).toHaveLength(0);
   });
 });

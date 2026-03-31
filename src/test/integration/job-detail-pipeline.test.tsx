@@ -3,23 +3,46 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { JobDetailWorkspace } from "@/components/job-detail-workspace";
 import type { CandidateEvaluation } from "@/domain/evaluations/types";
-import { publicApplyTermsVersion } from "@/lib/public-apply";
 import { getInterviewRecordingForCandidate } from "@/lib/candidate-recording";
+import { getJobPipelineSnapshot } from "@/lib/job-pipeline";
+import { publicApplyTermsVersion } from "@/lib/public-apply";
 import {
+  listInterviewRunRuntimeSnapshotsByCandidateId,
   receiveHappyRobotWebhook,
   resetPublicApplySubmissionStore,
   saveInterviewEvaluation,
   submitPublicApplication,
 } from "@/lib/public-apply-submissions";
 
+async function renderJobDetail(jobId = "warehouse-associate-madrid") {
+  const initialSnapshot = await getJobPipelineSnapshot(jobId);
+
+  if (!initialSnapshot) {
+    throw new Error(`Missing job pipeline snapshot for ${jobId}`);
+  }
+
+  const runtimeSnapshotsByCandidateId =
+    await listInterviewRunRuntimeSnapshotsByCandidateId(
+      initialSnapshot.candidates.map((candidate) => candidate.id),
+    );
+
+  render(
+    <JobDetailWorkspace
+      jobId={jobId}
+      initialSnapshot={initialSnapshot}
+      runtimeSnapshotsByCandidateId={runtimeSnapshotsByCandidateId}
+    />,
+  );
+}
+
 describe("job detail pipeline", () => {
-  afterEach(() => {
+  afterEach(async () => {
     cleanup();
-    resetPublicApplySubmissionStore();
+    await resetPublicApplySubmissionStore();
   });
 
-  it("renders structured candidate cards with triage information", () => {
-    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+  it("renders structured candidate cards with triage information", async () => {
+    await renderJobDetail();
 
     expect(screen.getAllByText(/Lucia Torres/i).length).toBeGreaterThan(0);
     expect(
@@ -29,8 +52,8 @@ describe("job detail pipeline", () => {
     expect(screen.getAllByText(/Applied · Today, 09:12/i).length).toBeGreaterThan(0);
   });
 
-  it("updates the reserved detail surface with a candidate report", () => {
-    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+  it("updates the reserved detail surface with a candidate report", async () => {
+    await renderJobDetail();
 
     fireEvent.click(screen.getAllByRole("button", { name: /Open candidate Bea Soto/i })[0]!);
 
@@ -50,8 +73,8 @@ describe("job detail pipeline", () => {
     expect(screen.getByText(/Audio review/i)).toBeInTheDocument();
   });
 
-  it("renders audio playback when a recording exists in runtime artifacts", () => {
-    submitPublicApplication({
+  it("renders audio playback when a recording exists in runtime artifacts", async () => {
+    await submitPublicApplication({
       jobId: "job_warehouse_madrid",
       fullName: "Lucia Torres",
       phone: "+34 600 123 456",
@@ -68,7 +91,7 @@ describe("job detail pipeline", () => {
       },
     });
 
-    receiveHappyRobotWebhook(
+    await receiveHappyRobotWebhook(
       {
         eventId: "evt_1",
         interviewRunId: "run_1",
@@ -133,9 +156,8 @@ describe("job detail pipeline", () => {
       fitClassification: "viable_fit",
     };
 
-    saveInterviewEvaluation(evaluation);
-
-    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+    await saveInterviewEvaluation(evaluation);
+    await renderJobDetail();
 
     fireEvent.click(
       screen.getByRole("button", { name: /Open candidate Lucia Torres/i }),
@@ -151,7 +173,7 @@ describe("job detail pipeline", () => {
     expect(
       screen.getAllByText(/Essential requirements stand out as the strongest block/i).length,
     ).toBeGreaterThan(0);
-    expect(getInterviewRecordingForCandidate("Lucia Torres")).toEqual({
+    expect(await getInterviewRecordingForCandidate("Lucia Torres")).toEqual({
       recordingUrl: "https://example.com/recording.mp3",
       recordingDurationSeconds: null,
       providerCallId: "hr_call_run_1",
@@ -163,8 +185,8 @@ describe("job detail pipeline", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("shows lightweight operational badges only in Applicants", () => {
-    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+  it("shows lightweight operational badges only in Applicants", async () => {
+    await renderJobDetail();
 
     expect(screen.getAllByText(/Calling now/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Awaiting call/i).length).toBeGreaterThan(0);
@@ -173,8 +195,8 @@ describe("job detail pipeline", () => {
     expect(screen.queryByText(/human_requested/i)).not.toBeInTheDocument();
   });
 
-  it("keeps rejected candidates in a separate tab with visible reasons", () => {
-    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+  it("keeps rejected candidates in a separate tab with visible reasons", async () => {
+    await renderJobDetail();
 
     fireEvent.click(screen.getAllByRole("button", { name: /Rejected/i })[0]!);
 
@@ -186,8 +208,8 @@ describe("job detail pipeline", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("supports explicit shortlist and reject actions", () => {
-    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+  it("supports explicit shortlist and reject actions", async () => {
+    await renderJobDetail();
 
     fireEvent.click(screen.getAllByRole("button", { name: /^Shortlist$/i })[0]!);
 
@@ -199,8 +221,8 @@ describe("job detail pipeline", () => {
     expect(screen.getByText(/Rejected from applicants/i)).toBeInTheDocument();
   });
 
-  it("supports hire and move-back actions for recruiter-controlled stages", () => {
-    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+  it("supports hire and move-back actions for recruiter-controlled stages", async () => {
+    await renderJobDetail();
 
     fireEvent.click(screen.getAllByRole("button", { name: /^Hire$/i })[0]!);
 
@@ -216,8 +238,8 @@ describe("job detail pipeline", () => {
     expect(screen.getAllByRole("button", { name: /^Hire$/i })).toHaveLength(2);
   });
 
-  it("opens and closes candidate detail without losing pipeline context", () => {
-    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+  it("opens and closes candidate detail without losing pipeline context", async () => {
+    await renderJobDetail();
 
     fireEvent.click(screen.getAllByRole("button", { name: /Rejected/i })[0]!);
     fireEvent.click(
@@ -238,8 +260,8 @@ describe("job detail pipeline", () => {
     expect(screen.getByText(/Rejected review/i)).toBeInTheDocument();
   });
 
-  it("shows a graceful fallback when no recording exists", () => {
-    render(<JobDetailWorkspace jobId="warehouse-associate-madrid" />);
+  it("shows a graceful fallback when no recording exists", async () => {
+    await renderJobDetail();
 
     fireEvent.click(screen.getByRole("button", { name: /Open candidate Bea Soto/i }));
 

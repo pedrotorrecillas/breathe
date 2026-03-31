@@ -14,7 +14,6 @@ import {
   publicApplyTermsVersion,
   validatePublicApplyForm,
 } from "@/lib/public-apply";
-import { submitPublicApplication } from "@/lib/public-apply-submissions";
 
 type PublicApplyFormProps = {
   jobId: string;
@@ -76,7 +75,7 @@ export function PublicApplyForm({
     updateField("cvFileName", file?.name ?? null);
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const nextErrors = validatePublicApplyForm(fields);
@@ -107,15 +106,24 @@ export function PublicApplyForm({
       return;
     }
 
-    const submissionResult = submitPublicApplication({
-      jobId,
-      fullName: fields.fullName,
-      phone: fields.phone,
-      email: fields.email,
-      language: fields.language,
-      profileSource: normalizedProfileResult.data,
-      legalAcceptance: legalAcceptanceResult.data,
+    const response = await fetch("/api/public-apply", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        jobId,
+        fullName: fields.fullName,
+        phone: fields.phone,
+        email: fields.email,
+        language: fields.language,
+        profileSource: normalizedProfileResult.data,
+        legalAcceptance: legalAcceptanceResult.data,
+      }),
     });
+    const submissionResult = (await response.json()) as
+      | { success: true }
+      | { success: false; error: string };
 
     if (!submissionResult.success) {
       setSubmissionState("idle");
