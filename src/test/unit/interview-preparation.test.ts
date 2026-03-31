@@ -175,6 +175,7 @@ describe("interview preparation", () => {
       candidateId: "cand_1",
       language: "es",
       createdAt: "2026-03-24T08:10:00.000Z",
+      requirements: [],
       questions: [],
     });
   });

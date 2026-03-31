@@ -302,6 +302,9 @@ export function createInterviewPreparationPackage(input: {
     candidateId: input.candidateId,
     language: input.job.interviewLanguage,
     createdAt,
+    requirements: input.job.requirements.map((requirement) => ({
+      ...requirement,
+    })),
     questions: generateInterviewQuestions(input.job),
   };
 }

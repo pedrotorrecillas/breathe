@@ -53,5 +53,6 @@ export type InterviewPreparationPackage = {
   candidateId: EntityId | null;
   language: SupportedLanguage;
   createdAt: ISODateTimeString;
+  requirements: JobRequirement[];
   questions: InterviewQuestion[];
 };

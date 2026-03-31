@@ -6,6 +6,7 @@ import type {
 import type { CandidateEvaluation } from "@/domain/evaluations/types";
 import type { InterviewPreparationPackage } from "@/domain/interview-preparation/types";
 import type { InterviewRun } from "@/domain/interviews/types";
+import type { Job } from "@/domain/jobs/types";
 import type { SupportedLanguage } from "@/domain/shared/types";
 import type {
   HappyRobotCallRequest,
@@ -15,6 +16,7 @@ import type {
   HappyRobotWebhookRecord,
 } from "@/domain/runtime/happyrobot/types";
 import { buildEvaluationSummary, type EvaluationSummary } from "@/lib/evaluation-summary";
+import { extractEvaluationFromInterview } from "@/lib/evaluation-extraction";
 import { executeHappyRobotDispatch } from "@/lib/happyrobot-orchestration";
 import { ingestHappyRobotWebhookEvent } from "@/lib/happyrobot-webhooks";
 import { transitionCandidateApplicationForInterviewRun } from "@/lib/interview-pipeline-transitions";
@@ -26,7 +28,7 @@ import type {
   NormalizedCandidateProfileSource,
   PublicApplyLegalAcceptance,
 } from "@/lib/public-apply";
-import { findPublicJobById } from "@/lib/public-jobs";
+import { findPublicJobById, type PublicJobRecord } from "@/lib/public-jobs";
 
 type PublicApplySubmissionInput = {
   jobId: string;
@@ -41,6 +43,22 @@ type PublicApplySubmissionInput = {
 type PublicApplyFailureMode = "candidate" | "application" | "interview";
 
 type PublicApplyTraceSink = RuntimeTraceSink;
+
+type TranscriptSegment = {
+  text: string;
+  startMs?: number | null;
+  endMs?: number | null;
+};
+
+type TranscriptResolver = (input: {
+  interviewRun: InterviewRun;
+  interviewPreparationPackage: InterviewPreparationPackage;
+  candidate: CandidateProfile;
+  application: CandidateApplication;
+  job: PublicJobRecord;
+  transcriptUrl: string;
+  webhookRecord: HappyRobotWebhookRecord;
+}) => string | TranscriptSegment[] | null;
 
 export type InterviewRunRuntimeSnapshot = {
   interviewRun: InterviewRun;
@@ -105,6 +123,120 @@ function syncApplicationFromInterviewRun(interviewRun: InterviewRun) {
     interviewRun.pipelineStage,
     interviewRun.metadata.callbackRequestedAt,
   );
+}
+
+function buildEvaluationJob(input: {
+  job: PublicJobRecord;
+  interviewPreparationPackage: InterviewPreparationPackage;
+}): Job {
+  return {
+    ...input.job,
+    requirements: input.interviewPreparationPackage.requirements.map(
+      (requirement) => ({
+        ...requirement,
+      }),
+    ),
+  };
+}
+
+function normalizeTranscriptResolution(
+  transcript: string | TranscriptSegment[],
+): string | TranscriptSegment[] | null {
+  if (typeof transcript === "string") {
+    return transcript.trim() ? transcript : null;
+  }
+
+  const segments = transcript
+    .map((segment) => ({
+      text: segment.text.trim(),
+      startMs: segment.startMs ?? null,
+      endMs: segment.endMs ?? null,
+    }))
+    .filter((segment) => segment.text.length > 0);
+
+  return segments.length > 0 ? segments : null;
+}
+
+function maybeGenerateInterviewEvaluation(input: {
+  interviewRun: InterviewRun;
+  transcriptResolver?: TranscriptResolver;
+}): CandidateEvaluation | null {
+  if (input.interviewRun.status !== "completed") {
+    return null;
+  }
+
+  const snapshot = getInterviewRunRuntimeSnapshot(input.interviewRun.id);
+  if (!snapshot) {
+    return null;
+  }
+
+  const job = findPublicJobById(snapshot.interviewRun.jobId);
+  if (!job || !snapshot.interviewPreparationPackage || !snapshot.application || !snapshot.candidate) {
+    return null;
+  }
+
+  const transcriptUrl = snapshot.interviewRun.artifacts.transcriptUrl;
+  if (!transcriptUrl || !input.transcriptResolver) {
+    return null;
+  }
+
+  const transcript = normalizeTranscriptResolution(
+    input.transcriptResolver({
+      interviewRun: snapshot.interviewRun,
+      interviewPreparationPackage: snapshot.interviewPreparationPackage,
+      candidate: snapshot.candidate,
+      application: snapshot.application,
+      job,
+      transcriptUrl,
+      webhookRecord:
+        snapshot.webhookRecords[snapshot.webhookRecords.length - 1] ?? {
+          event: {
+            eventId: `evt_${snapshot.interviewRun.id}`,
+            interviewRunId: snapshot.interviewRun.id,
+            providerCallId: snapshot.interviewRun.dispatch.providerCallId ?? "",
+            status: "completed",
+            happenedAt:
+              snapshot.interviewRun.trace.completedAt ??
+              snapshot.interviewRun.trace.lastEventAt ??
+              snapshot.interviewRun.trace.createdAt,
+            recordingUrl: snapshot.interviewRun.artifacts.recordingUrl,
+            transcriptUrl,
+            failureReason: snapshot.interviewRun.metadata.failureReason,
+            rawPayloadRef: snapshot.interviewRun.artifacts.providerPayloadSnapshotRef,
+          },
+          matchedInterviewRunId: snapshot.interviewRun.id,
+          receivedAt:
+            snapshot.interviewRun.trace.completedAt ??
+            snapshot.interviewRun.trace.lastEventAt ??
+            snapshot.interviewRun.trace.createdAt,
+          rawPayload: {},
+        },
+    }),
+  );
+
+  if (!transcript) {
+    return null;
+  }
+
+  const evaluation = extractEvaluationFromInterview({
+    interviewRun: snapshot.interviewRun,
+    job: buildEvaluationJob({
+      job,
+      interviewPreparationPackage: snapshot.interviewPreparationPackage,
+    }),
+    transcript,
+    classification: "success",
+    generateOutput: true,
+    eligible: true,
+    generatedAt: new Date(
+      snapshot.interviewRun.trace.completedAt ??
+        snapshot.interviewRun.trace.lastEventAt ??
+        snapshot.interviewRun.trace.createdAt,
+    ),
+  });
+
+  const saveResult = saveInterviewEvaluation(evaluation);
+  return saveResult.success ? saveResult.data : null;
 }
 
 export function resetPublicApplySubmissionStore() {
@@ -253,6 +385,7 @@ export function receiveHappyRobotWebhook(
   rawPayload: unknown,
   options?: {
     receivedAt?: Date;
+    transcriptResolver?: TranscriptResolver;
   },
 ): HappyRobotWebhookIngestionResponse {
   const result = ingestHappyRobotWebhookEvent({
@@ -272,6 +405,10 @@ export function receiveHappyRobotWebhook(
   interviewRuns[interviewRunIndex] = result.interviewRun;
   syncApplicationFromInterviewRun(result.interviewRun);
   webhookRecords.push(result.record);
+  maybeGenerateInterviewEvaluation({
+    interviewRun: result.interviewRun,
+    transcriptResolver: options?.transcriptResolver,
+  });
 
   return result;
 }

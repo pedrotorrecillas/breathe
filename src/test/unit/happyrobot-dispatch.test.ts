@@ -116,6 +116,7 @@ describe("happyrobot dispatch payload", () => {
         candidateId: "cand_1",
         language: "es",
         createdAt: "2026-03-24T08:01:00.000Z",
+        requirements: [],
         questions: [],
       },
     });

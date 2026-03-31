@@ -289,6 +289,67 @@ describe("public apply submissions", () => {
     });
   });
 
+  it("automatically stores an evaluation when a completed transcript is available", () => {
+    submitPublicApplication({
+      jobId: "job_warehouse_madrid",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "en",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    const webhookResult = receiveHappyRobotWebhook(
+      {
+        eventId: "evt_2",
+        interviewRunId: "run_1",
+        providerCallId: "hr_call_run_1",
+        status: "completed",
+        happenedAt: "2026-03-25T12:05:00.000Z",
+        recordingUrl: "https://example.com/recording.mp3",
+        transcriptUrl: "https://example.com/transcript.txt",
+        rawPayloadRef: "payloads/evt_2.json",
+      },
+      {
+        receivedAt: new Date("2026-03-25T12:05:01.000Z"),
+        transcriptResolver: ({ transcriptUrl }) =>
+          transcriptUrl
+            ? [
+                {
+                  startMs: 10000,
+                  endMs: 18000,
+                  text: "I worked in a warehouse for four years and used handheld scanners daily.",
+                },
+                {
+                  startMs: 18000,
+                  endMs: 26000,
+                  text: "I communicate clearly with shift leads and can work nights.",
+                },
+              ]
+            : null,
+      },
+    );
+
+    expect(webhookResult.success).toBe(true);
+
+    const evaluation = getInterviewEvaluation("run_1");
+    expect(evaluation).not.toBeNull();
+    expect(evaluation?.finalNumericScore).not.toBeNull();
+    expect(evaluation?.blocks).toHaveLength(3);
+    expect(evaluation?.blocks[0]?.requirements).toHaveLength(1);
+    expect(evaluation?.blocks[1]?.requirements).toHaveLength(1);
+    expect(evaluation?.blocks[2]?.requirements).toHaveLength(1);
+    expect(getInterviewRunRuntimeSnapshot("run_1")?.evaluation).toEqual(evaluation);
+  });
+
   it("stores and retrieves an evaluation for an existing interview run", () => {
     submitPublicApplication({
       jobId: "job_warehouse_madrid",

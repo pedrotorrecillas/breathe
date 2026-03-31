@@ -75,6 +75,7 @@ describe("domain boundaries", () => {
       candidateId: candidate.id,
       language: "es",
       createdAt: "2026-03-24T00:00:00.000Z",
+      requirements: [],
       questions: [],
     };
 
