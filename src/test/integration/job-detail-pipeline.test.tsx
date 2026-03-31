@@ -40,9 +40,7 @@ describe("job detail pipeline", () => {
       screen.getAllByText(/Consistent order-picking throughput/i).length,
     ).toBeGreaterThan(0);
     expect(screen.getByText(/Candidate report/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Recruiter-facing evaluation summary/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Recruiter-facing evaluation/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Essential requirements/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Technical skills/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Interpersonal skills/i).length).toBeGreaterThan(0);
@@ -180,7 +178,7 @@ describe("job detail pipeline", () => {
 
     fireEvent.click(screen.getAllByRole("button", { name: /Rejected/i })[0]!);
 
-    expect(screen.getByText(/Separate review context/i)).toBeInTheDocument();
+    expect(screen.getByText(/Rejected review/i)).toBeInTheDocument();
     expect(screen.getByText(/Schedule mismatch/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Commute risk/i).length).toBeGreaterThan(0);
     expect(
@@ -197,7 +195,7 @@ describe("job detail pipeline", () => {
 
     fireEvent.click(screen.getAllByRole("button", { name: /^Reject$/i })[0]!);
 
-    expect(screen.getByText(/Separate review context/i)).toBeInTheDocument();
+    expect(screen.getByText(/Rejected review/i)).toBeInTheDocument();
     expect(screen.getByText(/Rejected from applicants/i)).toBeInTheDocument();
   });
 
@@ -235,9 +233,9 @@ describe("job detail pipeline", () => {
     fireEvent.click(screen.getByRole("button", { name: /Close panel/i }));
 
     expect(
-      screen.getByText(/Select a candidate card to inspect detail/i),
+      screen.getByText(/Select a candidate card to review their report/i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Separate review context/i)).toBeInTheDocument();
+    expect(screen.getByText(/Rejected review/i)).toBeInTheDocument();
   });
 
   it("shows a graceful fallback when no recording exists", () => {

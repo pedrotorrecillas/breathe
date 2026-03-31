@@ -58,13 +58,15 @@ export function PublicApplyForm({
     key: K,
     value: PublicApplyFormInput[K],
   ) {
-    const nextFields = {
-      ...fields,
-      [key]: value,
-    };
+    setFields((currentFields) => {
+      const nextFields = {
+        ...currentFields,
+        [key]: value,
+      };
 
-    setFields(nextFields);
-    setErrors(validatePublicApplyForm(nextFields));
+      setErrors(validatePublicApplyForm(nextFields));
+      return nextFields;
+    });
   }
 
   function handleCvFileChange(file: File | null) {
@@ -132,21 +134,16 @@ export function PublicApplyForm({
         <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
           <p className="ops-kicker text-emerald-800">Application received</p>
           <h3 className="mt-2 text-lg font-semibold text-emerald-950">
-            Clara will call you shortly.
+            Your interview request is in.
           </h3>
           <p className="mt-3 leading-7">
-            We have your application for {fields.fullName}. The first interview
-            call will use {fields.phone}, and it may take a couple of minutes to
-            start.
-          </p>
-          <p className="mt-3 leading-7">
-            If the call does not begin immediately, keep your phone nearby and
-            avoid resubmitting the form.
+            We have your application for {fields.fullName}. Keep your phone
+            nearby for the first call on {fields.phone}.
           </p>
           {fields.email.trim() ? (
             <p className="mt-3 leading-7">
-              We will also keep {fields.email.trim()} available for recruiter
-              follow-up if needed.
+              We will also keep {fields.email.trim()} available for follow-up
+              if needed.
             </p>
           ) : null}
         </div>

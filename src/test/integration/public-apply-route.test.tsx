@@ -32,7 +32,7 @@ describe("public apply route", () => {
         name: /Recruiter primary navigation/i,
       }),
     ).not.toBeInTheDocument();
-    expect(screen.getByText(/Night shift warehouse intake/i)).toBeInTheDocument();
+    expect(screen.getByText(/Application form/i)).toBeInTheDocument();
   });
 
   it("renders a usable unavailable state for an invalid public job id", async () => {
@@ -45,7 +45,7 @@ describe("public apply route", () => {
     render(page);
 
     expect(
-      screen.getByText(/This job link is no longer available/i),
+      screen.getByText(/This role link is no longer available/i),
     ).toBeInTheDocument();
   });
 
@@ -153,7 +153,7 @@ describe("public apply route", () => {
     );
 
     expect(
-      screen.getByText(/Clara will call you shortly/i),
+      screen.getByText(/Your interview request is in/i),
     ).toBeInTheDocument();
     expect(
       getPublicApplySubmissionSnapshot().candidates[0]?.linkedinUrl,
@@ -224,7 +224,7 @@ describe("public apply route", () => {
     const snapshot = getPublicApplySubmissionSnapshot();
 
     expect(
-      screen.getByText(/The first interview call will use \+34 600 123 456/i),
+      screen.getByText(/Keep your phone nearby for the first call on \+34 600 123 456/i),
     ).toBeInTheDocument();
     expect(snapshot.candidates).toHaveLength(1);
     expect(snapshot.applications).toHaveLength(1);

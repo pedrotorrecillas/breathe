@@ -207,13 +207,13 @@ const defaultReport: CandidateReport = {
           explanation:
             "This mock report uses the same block structure as the candidate-specific examples.",
         },
-        {
-          label: "Support requirement",
-          importance: "Optional",
-          numericScore: 61,
-          explanation:
-            "Deterministic fallback content keeps the report surface stable for any selected candidate.",
-        },
+          {
+            label: "Support requirement",
+            importance: "Optional",
+            numericScore: 61,
+            explanation:
+              "Sample content keeps the report surface stable for any selected candidate.",
+          },
       ],
     },
     {
@@ -221,20 +221,20 @@ const defaultReport: CandidateReport = {
       title: reportBlockTitles.technical,
       numericScore: 60.4,
       requirements: [
-        {
-          label: "Workflow execution",
-          importance: "Mandatory",
-          numericScore: 64,
-          explanation:
-            "The fallback report keeps a balanced technical block with visible scoring metadata.",
-        },
-        {
-          label: "Tool familiarity",
-          importance: "Optional",
-          numericScore: 57,
-          explanation:
-            "This row is intentionally conservative so the layout remains readable in the sidebar.",
-        },
+          {
+            label: "Workflow execution",
+            importance: "Mandatory",
+            numericScore: 64,
+            explanation:
+              "The sample report keeps a balanced technical block with visible scoring metadata.",
+          },
+          {
+            label: "Tool familiarity",
+            importance: "Optional",
+            numericScore: 57,
+            explanation:
+              "This row stays conservative so the layout remains readable in the sidebar.",
+          },
       ],
     },
     {
@@ -242,20 +242,20 @@ const defaultReport: CandidateReport = {
       title: reportBlockTitles.interpersonal,
       numericScore: 60.6,
       requirements: [
-        {
-          label: "Communication quality",
-          importance: "Mandatory",
-          numericScore: 62,
-          explanation:
-            "The report surface still shows one explanation per row, even when using fallback data.",
-        },
-        {
-          label: "Collaboration signal",
-          importance: "Optional",
-          numericScore: 59,
-          explanation:
-            "Fallback data keeps the panel deterministic without introducing transcript or CV tabs.",
-        },
+          {
+            label: "Communication quality",
+            importance: "Mandatory",
+            numericScore: 62,
+            explanation:
+              "The report surface still shows one explanation per row, even when using example data.",
+          },
+          {
+            label: "Collaboration signal",
+            importance: "Optional",
+            numericScore: 59,
+            explanation:
+              "Example data keeps the panel stable without introducing transcript or CV tabs.",
+          },
       ],
     },
   ],
@@ -331,20 +331,20 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
     <div className="flex flex-1 flex-col gap-6 px-6 py-6 md:px-8">
       <PlaceholderState
         eyebrow="Job detail"
-        title="Job detail is the main recruiter workspace for pipeline review and manual decisions."
-        description="This surface holds job context, pipeline phases, candidate triage, and the future lateral detail inspection flow without breaking recruiter context."
+        title="Job detail keeps pipeline review and candidate decisions in one place."
+        description="Review the job context, pipeline stages, and candidate evidence without leaving the page."
       >
         <div className="grid gap-4 lg:grid-cols-[1.18fr_0.82fr]">
           <SectionCard
             title="Job context"
             kicker={jobId}
-            description="The shell anchors lifecycle, intake status, and the operational summary recruiters need before inspecting candidates."
+            description="Keep the current job status, intake summary, and key actions visible before inspecting candidates."
             tone="strong"
             actions={<StatusBadge intent="success">Active</StatusBadge>}
           >
             <div className="grid gap-3 sm:grid-cols-3">
               <DataPoint
-                label="Public intake"
+                label="Candidate intake"
                 value="Live"
                 detail="Candidate link accepting applications"
               />
@@ -360,16 +360,15 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
               />
             </div>
             <p className="mt-4 text-sm leading-7 text-slate-600">
-              Use this header to keep job-level context visible while the main
-              workspace below shifts between active pipeline phases and rejected
-              review.
+              Keep the job-level context visible while the workspace below
+              shifts between active stages and rejected candidates.
             </p>
           </SectionCard>
 
           <DetailPanel
             title="Candidate detail panel"
-            kicker="Lateral panel"
-            description="The side surface stays anchored here so candidate inspection can open without navigating away from the job pipeline."
+            kicker="Candidate review"
+            description="Open a candidate without leaving the pipeline."
           >
             {panelOpen && selectedCandidate ? (
               <div className="space-y-3">
@@ -426,7 +425,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                     <div>
                       <p className="ops-kicker text-slate-500">Candidate report</p>
                       <p className="mt-2 text-base font-semibold text-slate-950">
-                        Recruiter-facing evaluation summary
+                        Recruiter-facing evaluation
                       </p>
                     </div>
                     <div className="text-right">
@@ -447,8 +446,8 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                   </div>
                   <p className="mt-3 text-sm leading-6 text-slate-600">
                     This report combines essential, technical, and interpersonal
-                    blocks using deterministic mock evaluation data for the
-                    current candidate.
+                    blocks for the current candidate. Example data appears
+                    until a live evaluation is available.
                   </p>
 
                   {selectedCandidateReport ? (
@@ -561,9 +560,9 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                     </div>
                   ) : (
                     <p className="mt-3 text-sm leading-6 text-slate-600">
-                      No interview recording is available for this candidate yet.
-                      The player will appear after a completed runtime run writes
-                      recording data into the stored artifacts.
+                      No interview recording is available for this candidate
+                      yet. The player appears after a completed runtime run
+                      writes recording data into the stored artifacts.
                     </p>
                   )}
                 </section>
@@ -571,8 +570,8 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
             ) : (
               <EmptyState
                 eyebrow="No selection"
-                title="Select a candidate card to inspect detail."
-                description="The lateral surface stays in this route and updates from the active pipeline."
+                title="Select a candidate card to review their report."
+                description="The detail panel stays in this route and updates from the active pipeline."
               />
             )}
           </DetailPanel>
@@ -581,7 +580,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
         <SectionCard
           title="Pipeline workspace"
           kicker="Recruiter decisions"
-          description="The main body is structured around active stages plus a dedicated rejected context inside the same job detail route."
+          description="Move through the active stages and keep rejected candidates in the same job detail route."
           tone="strong"
         >
           <div className="flex flex-wrap gap-2 border-b border-slate-200/80 pb-4">
@@ -607,7 +606,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                 <div>
                   <p className="ops-kicker text-slate-500">Rejected</p>
                   <p className="mt-2 text-base font-semibold text-slate-950">
-                    Separate review context
+                    Rejected review
                   </p>
                 </div>
                 <StatusBadge intent="danger" density="compact">
@@ -688,7 +687,7 @@ export function JobDetailWorkspace({ jobId }: JobDetailWorkspaceProps) {
                         : stage === "Interviewed"
                           ? "Completed interview runs ready for recruiter triage."
                           : stage === "Shortlisted"
-                            ? "Candidates explicitly promoted for recruiter follow-up."
+                            ? "Candidates explicitly promoted for next-step review."
                             : "Final recruiter-confirmed outcomes for this job."}
                     </p>
                     {stageCandidates.length > 0 ? (

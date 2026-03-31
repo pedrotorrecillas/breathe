@@ -47,9 +47,8 @@ export default function JobsPage() {
               Jobs
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
-              Operational cards prioritize state, flow, and throughput instead
-              of dashboard chrome. Each job surface is designed to hold routing,
-              signal, and lifecycle control in one frame.
+              Review open roles, candidate volume, and the next action from one
+              list.
             </p>
           </div>
           <Link
@@ -70,7 +69,7 @@ export default function JobsPage() {
             key={job.id}
             title={job.title}
             kicker={`${job.location} / ${job.createdAt}`}
-            description="Route volume into a controlled pipeline with recruiter-readable state and signal."
+            description="Open the role, inspect pipeline counts, and continue the review from there."
             tone={job.status === "Active" ? "strong" : "default"}
             actions={
               <StatusBadge
@@ -83,20 +82,18 @@ export default function JobsPage() {
             <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
               <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[22rem]">
                 <div className="rounded-[1rem] border border-slate-200/80 bg-slate-950 px-4 py-4 text-white shadow-[0_14px_30px_rgba(15,23,42,0.14)]">
-                  <p className="ops-kicker text-cyan-200">Public intake</p>
-                  <p className="mt-2 text-lg font-semibold">Apply route live</p>
+                  <p className="ops-kicker text-cyan-200">Public apply</p>
+                  <p className="mt-2 text-lg font-semibold">Candidate intake live</p>
                   <p className="mt-2 text-sm leading-6 text-slate-300">
-                    Candidate volume lands here before voice dispatch and
+                    New candidates arrive here before the call and recruiter
                     review.
                   </p>
                 </div>
                 <div className="rounded-[1rem] border border-slate-200/80 bg-white/86 px-4 py-4">
-                  <p className="ops-kicker text-slate-500">Recruiter action</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">
-                    Review queue and lifecycle
-                  </p>
+                  <p className="ops-kicker text-slate-500">Recruiter review</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">Move candidates forward</p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Counts, state, and next actions stay in the same card.
+                    Keep shortlist, reject, and hire actions next to the counts.
                   </p>
                 </div>
               </div>
@@ -109,13 +106,13 @@ export default function JobsPage() {
                     value={value}
                     detail={
                       key === "applicants"
-                        ? "Intake volume"
+                        ? "Applied"
                         : key === "interviewed"
-                          ? "Voice completed"
+                          ? "Interviewed"
                           : key === "shortlisted"
-                            ? "Human-ready"
+                            ? "Shortlisted"
                             : key === "hired"
-                              ? "Closed won"
+                              ? "Hired"
                               : "Filtered out"
                     }
                   />

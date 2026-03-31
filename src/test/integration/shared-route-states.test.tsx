@@ -14,9 +14,7 @@ describe("shared route states", () => {
     render(<NewJobPage />);
 
     expect(
-      screen.getByText(
-        /Extraction is preparing the first configuration draft/i,
-      ),
+      screen.getByText(/The first job draft is being prepared/i),
     ).toBeInTheDocument();
   });
 
@@ -30,7 +28,7 @@ describe("shared route states", () => {
     render(page);
 
     expect(
-      screen.getByText(/Job detail is the main recruiter workspace/i),
+      screen.getByText(/Job detail keeps pipeline review and candidate decisions/i),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/Pipeline workspace/i),
@@ -50,7 +48,7 @@ describe("shared route states", () => {
     render(page);
 
     expect(
-      screen.getByText(/This job link is no longer available/i),
+      screen.getByText(/This role link is no longer available/i),
     ).toBeInTheDocument();
   });
 });

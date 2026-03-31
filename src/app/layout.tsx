@@ -3,9 +3,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Clara MVP Scaffold",
-  description:
-    "Foundational recruiter and candidate application scaffold for the Clara MVP.",
+  title: "Clara MVP",
+  description: "Recruiter and candidate surfaces for the Clara hiring flow.",
 };
 
 const locale = "en";

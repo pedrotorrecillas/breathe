@@ -126,29 +126,8 @@
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(circle at top, rgba(64, 186, 214, 0.14), transparent 24%),
-      linear-gradient(
-        90deg,
-        transparent 0,
-        transparent calc(50% - 1px),
-        rgba(94, 119, 149, 0.035) 50%,
-        transparent calc(50% + 1px)
-      ),
-      linear-gradient(
-        90deg,
-        transparent 0,
-        transparent calc(25% - 1px),
-        rgba(94, 119, 149, 0.025) 25%,
-        transparent calc(25% + 1px),
-        transparent calc(75% - 1px),
-        rgba(94, 119, 149, 0.025) 75%,
-        transparent calc(75% + 1px)
-      ),
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.72),
-        rgba(240, 243, 247, 0.94)
-      );
+      radial-gradient(circle at top, rgba(64, 186, 214, 0.08), transparent 24%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(243, 246, 249, 0.96));
   }
   html {
     @apply font-sans;
@@ -161,16 +140,8 @@
 @layer utilities {
   .bg-ops-canvas {
     background:
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.76),
-        rgba(244, 247, 250, 0.92)
-      ),
-      radial-gradient(
-        circle at top left,
-        rgba(83, 198, 223, 0.08),
-        transparent 32%
-      );
+      linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(244, 247, 250, 0.96)),
+      radial-gradient(circle at top left, rgba(83, 198, 223, 0.05), transparent 32%);
   }
 
   .bg-ops-grid {
@@ -182,40 +153,21 @@
 
   .ops-panel {
     background:
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.95),
-        rgba(247, 249, 252, 0.92)
-      ),
-      radial-gradient(
-        circle at top right,
-        rgba(87, 196, 219, 0.08),
-        transparent 28%
-      );
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 249, 252, 0.96));
     border: 1px solid color-mix(in oklab, var(--panel-line) 84%, white 16%);
     box-shadow: var(--shadow-panel);
   }
 
   .ops-panel-strong {
     background:
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.975),
-        rgba(244, 247, 250, 0.94)
-      ),
-      radial-gradient(circle at top, rgba(87, 196, 219, 0.1), transparent 32%);
+      linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(244, 247, 250, 0.96));
     border: 1px solid color-mix(in oklab, var(--panel-strong) 72%, white 28%);
     box-shadow: var(--shadow-panel-strong);
   }
 
   .ops-shell {
     background:
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.94),
-        rgba(244, 247, 250, 0.92)
-      ),
-      linear-gradient(135deg, rgba(89, 199, 221, 0.08), transparent 34%);
+      linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 247, 250, 0.94));
     border: 1px solid rgba(148, 163, 184, 0.34);
     box-shadow: var(--shadow-shell);
   }
@@ -244,18 +196,9 @@
     inset: 0;
     pointer-events: none;
     background:
-      radial-gradient(
-        circle at top right,
-        rgba(87, 196, 219, 0.14),
-        transparent 22%
-      ),
-      linear-gradient(
-        120deg,
-        transparent 0%,
-        rgba(87, 196, 219, 0.04) 48%,
-        transparent 100%
-      );
-    opacity: 0.75;
+      radial-gradient(circle at top right, rgba(87, 196, 219, 0.08), transparent 22%),
+      linear-gradient(120deg, transparent 0%, rgba(87, 196, 219, 0.025) 48%, transparent 100%);
+    opacity: 0.5;
   }
 
   .ops-signal-dot {

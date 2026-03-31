@@ -45,7 +45,7 @@ describe("recruiter shell", () => {
       "page",
     );
     expect(
-      screen.getByText(/Hiring infrastructure control plane/i),
+      screen.getByText(/Jobs, candidate review, and interview runtime/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/Recruiter content/i)).toBeInTheDocument();
   });

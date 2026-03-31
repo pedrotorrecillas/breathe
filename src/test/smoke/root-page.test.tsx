@@ -25,12 +25,12 @@ describe("root smoke", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: /Clara starts with a clean recruiter shell/i,
+        name: /Clara helps recruiters publish jobs, run interviews/i,
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Open recruiter area/i }),
+      screen.getByRole("link", { name: /Open recruiter workspace/i }),
     ).toHaveAttribute("href", "/jobs");
-    expect(screen.getByText(/Navigation Seed/i)).toBeInTheDocument();
+    expect(screen.getByText(/Available areas/i)).toBeInTheDocument();
   });
 });

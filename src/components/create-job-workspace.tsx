@@ -345,14 +345,14 @@ export function CreateJobWorkspace() {
     <div className="flex flex-1 flex-col gap-6 px-6 py-6 md:px-8">
       <PlaceholderState
         eyebrow="Create job"
-        title="New job configuration starts from recruiter inputs, not manual script authoring."
-        description="The create-job route is a long-form workflow: define the role, trigger extraction, then review editable sections below without leaving the page."
+        title="Create a job from recruiter inputs, then review the drafted configuration."
+        description="Define the role, generate a draft, and edit the extracted sections on the same page."
       >
         <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <SectionCard
             title="Recruiter inputs"
-            kicker="Manual entry"
-            description="The first block captures the minimum role context required to extract a usable job configuration draft."
+            kicker="Job brief"
+            description="Capture the role title, interview language, and description before generating the draft."
             tone="strong"
             footer={
               <div className="flex flex-wrap gap-3">
@@ -427,20 +427,19 @@ export function CreateJobWorkspace() {
           </SectionCard>
 
           <SectionCard
-            title="Extraction host area"
-            kicker="Long-form workflow"
-            description="This panel reserves the page structure that will hold extracted conditions, scored sections, limits, and publish state below the initial form."
+            title="Draft preview"
+            kicker="Configuration"
+            description="Review the extracted conditions, requirements, and publish state after generation."
           >
             {draft ? (
               <div className="rounded-[1.4rem] border border-emerald-200/80 bg-emerald-50/70 px-4 py-4 text-sm leading-7 text-emerald-900">
-                Draft ready. Extracted conditions can now be reviewed and edited
-                below.
+                Draft ready. Review and edit the extracted sections below.
               </div>
             ) : (
               <LoadingState
-                eyebrow="Shared loading"
-                title="Extraction is preparing the first configuration draft."
-                description="Use this while job conditions, requirements, and limits are still being assembled from the recruiter input."
+                eyebrow="Preparing draft"
+                title="The first job draft is being prepared."
+                description="Use this while the role brief is being turned into editable sections."
                 rows={2}
               />
             )}
@@ -452,12 +451,12 @@ export function CreateJobWorkspace() {
               />
               <DataPoint
                 label="Desktop flow"
-                value="Long form"
-                detail="Not a step-by-step wizard"
+                value="Single page"
+                detail="Review without leaving the page"
               />
             </div>
             <div className="mt-5 rounded-[1.4rem] border border-dashed border-slate-300/90 bg-white/70 px-4 py-5 text-sm leading-7 text-slate-600">
-              Extracted sections will render here after the recruiter submits a
+              Extracted sections appear here after the recruiter submits a
               valid role brief.
             </div>
             {extractionError ? (
@@ -471,8 +470,8 @@ export function CreateJobWorkspace() {
         {draft ? (
           <SectionCard
             title="Job conditions"
-            kicker="BRE-24"
-            description="Operational conditions are separate from scored requirements and can remain missing or incomplete until the recruiter resolves them."
+            kicker="Operational checks"
+            description="Keep role conditions separate from scored requirements while you review them."
           >
             <div className="grid gap-3">
               {draft.jobConditions.map((condition) => (
@@ -566,8 +565,8 @@ export function CreateJobWorkspace() {
         {draft ? (
           <SectionCard
             title="Essential requirements"
-            kicker="BRE-25"
-            description="Essential requirements are editable scored items and remain clearly separated from operational job conditions."
+            kicker="Scored requirements"
+            description="Essential requirements stay separate from conditions and can be edited directly."
           >
             <div className="grid gap-3">
               {draft.essentialRequirements.map((requirement) => (
@@ -652,8 +651,8 @@ export function CreateJobWorkspace() {
         {draft ? (
           <SectionCard
             title="Technical skills"
-            kicker="BRE-26"
-            description="Technical skills keep task-specific or hard-skill requirements separate from general essentials and soft-skill criteria."
+            kicker="Scored requirements"
+            description="Technical skills stay separate from essentials and interpersonal requirements."
           >
             <div className="grid gap-3">
               {draft.technicalSkills.map((requirement) => (
@@ -753,8 +752,8 @@ export function CreateJobWorkspace() {
         {draft ? (
           <SectionCard
             title="Interpersonal skills"
-            kicker="BRE-27"
-            description="Interpersonal skills are edited independently from technical capabilities so the behavioral block stays distinct."
+            kicker="Scored requirements"
+            description="Interpersonal skills stay distinct from the technical block."
           >
             <div className="grid gap-3">
               {draft.interpersonalSkills.map((requirement) => (
@@ -868,8 +867,8 @@ export function CreateJobWorkspace() {
         {draft ? (
           <SectionCard
             title="Interview limits"
-            kicker="BRE-28"
-            description="Operational limits let recruiters cap total interview volume and optionally stop after enough top-scoring candidates are collected."
+            kicker="Capacity"
+            description="Set a total interview cap and optional top-score caps if needed."
           >
             <div className="grid gap-4 lg:grid-cols-3">
               <FormField
@@ -932,8 +931,8 @@ export function CreateJobWorkspace() {
         {draft ? (
           <SectionCard
             title="Publish job"
-            kicker="BRE-29"
-            description="Publishing validates the current configuration and generates the public apply link recruiters will share."
+            kicker="Publish"
+            description="Publishing validates the current configuration and creates the public apply link."
             tone="strong"
             footer={
               <div className="flex flex-wrap gap-3">
