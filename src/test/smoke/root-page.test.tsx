@@ -25,12 +25,12 @@ describe("root smoke", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: /Breathe helps recruiters publish jobs, run interviews/i,
+        name: /Infrastructure for hiring at scale/i,
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Open recruiter workspace/i }),
+      screen.getAllByRole("link", { name: /Book a demo/i })[0],
     ).toHaveAttribute("href", "/jobs");
-    expect(screen.getByText(/Available areas/i)).toBeInTheDocument();
+    expect(screen.getByText(/How Breathe works/i)).toBeInTheDocument();
   });
 });

@@ -30,6 +30,38 @@ const initialFields: PublicApplyFormInput = {
   acceptedTerms: false,
 };
 
+async function readSubmissionResult(response: Response) {
+  const fallbackError =
+    "Application submission failed. Please try again in a moment.";
+
+  try {
+    const payload = (await response.json()) as
+      | { success: true }
+      | { success: false; error?: string };
+
+    if (payload && typeof payload === "object" && "success" in payload) {
+      return payload;
+    }
+  } catch {
+    return {
+      success: false as const,
+      error: fallbackError,
+    };
+  }
+
+  if (!response.ok) {
+    return {
+      success: false as const,
+      error: fallbackError,
+    };
+  }
+
+  return {
+    success: false as const,
+    error: fallbackError,
+  };
+}
+
 export function PublicApplyForm({
   jobId,
   interviewLanguage,
@@ -121,13 +153,14 @@ export function PublicApplyForm({
         legalAcceptance: legalAcceptanceResult.data,
       }),
     });
-    const submissionResult = (await response.json()) as
-      | { success: true }
-      | { success: false; error: string };
+    const submissionResult = await readSubmissionResult(response);
 
     if (!submissionResult.success) {
       setSubmissionState("idle");
-      setSubmissionError(submissionResult.error);
+      setSubmissionError(
+        submissionResult.error ??
+          "Application submission failed. Please try again in a moment.",
+      );
       return;
     }
 
@@ -142,16 +175,14 @@ export function PublicApplyForm({
         <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
           <p className="ops-kicker text-emerald-800">Application received</p>
           <h3 className="mt-2 text-lg font-semibold text-emerald-950">
-            Your interview request is in.
+            Thanks, {fields.fullName}.
           </h3>
-          <p className="mt-3 leading-7">
-            We have your application for {fields.fullName}. Keep your phone
-            nearby for the first call on {fields.phone}.
+          <p className="mt-3 leading-6">
+            We will contact you at {fields.phone} if the role moves forward.
           </p>
           {fields.email.trim() ? (
-            <p className="mt-3 leading-7">
-              We will also keep {fields.email.trim()} available for follow-up
-              if needed.
+            <p className="mt-2 leading-6">
+              Follow-up may also go to {fields.email.trim()}.
             </p>
           ) : null}
         </div>
@@ -181,7 +212,7 @@ export function PublicApplyForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField
           label="Email"
-          hint="Optional for the first call, useful for follow-up."
+          hint="Optional."
           error={errors.email}
         >
           <Input
@@ -208,7 +239,7 @@ export function PublicApplyForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField
           label="CV upload"
-          hint="Upload a CV or provide LinkedIn below."
+          hint="Upload a CV or use LinkedIn."
         >
           <Input
             aria-label="CV upload"
@@ -218,7 +249,7 @@ export function PublicApplyForm({
         </FormField>
         <FormField
           label="LinkedIn URL"
-          hint="Use this when you prefer not to upload a CV."
+          hint="Use this if you prefer not to upload a CV."
           error={profileSourceError || errors.linkedinUrl || errors.profileSource}
         >
           <Input
@@ -233,14 +264,14 @@ export function PublicApplyForm({
       </div>
 
       <FormField
-        label="Consent and AI disclosure"
+        label="Consent"
         required
         error={errors.acceptedTerms}
         hint={`Terms version ${publicApplyTermsVersion}`}
       >
         <label className="flex items-start gap-3 rounded-[1rem] border border-slate-300/90 bg-white/92 px-4 py-3 text-sm leading-7 text-slate-700">
           <input
-            aria-label="Accept terms and AI disclosure"
+            aria-label="Accept terms"
             checked={fields.acceptedTerms}
             className="mt-1 size-4 rounded border border-slate-400"
             onChange={(event) =>
@@ -249,8 +280,8 @@ export function PublicApplyForm({
             type="checkbox"
           />
           <span>
-            I understand this interview uses AI to support human recruiters and
-            I accept the candidate terms for this application.
+            I agree that AI may support the interview and a human recruiter
+            makes the final decision.
           </span>
         </label>
       </FormField>
@@ -265,7 +296,7 @@ export function PublicApplyForm({
         className="mt-2 rounded-full bg-slate-950 px-6 text-white hover:bg-slate-800"
         type="submit"
       >
-        Submit and receive call
+        Apply now
       </Button>
     </form>
   );

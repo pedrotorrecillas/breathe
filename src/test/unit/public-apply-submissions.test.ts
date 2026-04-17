@@ -56,6 +56,9 @@ describe("public apply submissions", () => {
     expect(result.data.callRequest.interviewPackageId).toBe(
       result.data.interviewPackage.id,
     );
+    expect(result.data.interviewPackage.id).toMatch(
+      /^prep_job_warehouse_madrid_cand_1_\d+$/,
+    );
     expect(result.data.dispatchResponse.success).toBe(true);
     expect(result.data.interviewRun.dispatch.providerCallId).toBe(
       "hr_call_run_1",
@@ -252,7 +255,9 @@ describe("public apply submissions", () => {
       },
       dispatchRequest: {
         interviewRunId: "run_1",
-        interviewPackageId: "prep_job_warehouse_madrid_cand_1",
+        interviewPackageId: expect.stringMatching(
+          /^prep_job_warehouse_madrid_cand_1_\d+$/,
+        ),
       },
       dispatchPayload: {
         interviewRunId: "run_1",

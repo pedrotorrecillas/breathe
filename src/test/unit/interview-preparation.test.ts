@@ -138,6 +138,62 @@ describe("interview preparation", () => {
     );
   });
 
+  it("does not surface recruiter copy or headings in probe prompts", () => {
+    const questions = generateInterviewQuestions({
+      id: "job_3",
+      title: "Product Manager",
+      summary: "Technical product role",
+      location: "Madrid",
+      status: "active",
+      interviewLanguage: "en",
+      createdAt: "2026-03-24T08:00:00.000Z",
+      publishedAt: "2026-03-24T08:00:00.000Z",
+      expiresAt: null,
+      publicApplyPath: "/apply/job_3",
+      pipeline: {
+        applicants: 1,
+        interviewed: 0,
+        shortlisted: 0,
+        hired: 0,
+        rejected: 0,
+      },
+      interviewLimits: {
+        maxInterviews: null,
+        outstandingCap: null,
+        greatCap: null,
+      },
+      requirements: [
+        {
+          id: "req_bad_copy",
+          code: null,
+          label:
+            "We are looking for a Product Manager with strong experience in B2B SaaS, capable of driving complex, technical products from concept to scale",
+          description: "Recruiter copy",
+          category: "essential",
+          weight: 2,
+          isKnockout: false,
+        },
+        {
+          id: "req_good_soft_skill",
+          code: null,
+          label: "Collaborate effectively with cross-functional stakeholders.",
+          description: "Soft skill",
+          category: "interpersonal",
+          weight: 3,
+          isKnockout: false,
+        },
+      ],
+    });
+
+    expect(questions[0].prompt).toBe(
+      "Could you tell me more about your experience in this area?",
+    );
+    expect(questions[1].prompt).toBe(
+      "Could you tell me about a recent example that demonstrates this requirement?",
+    );
+    expect(questions[0].prompt).not.toMatch(/we are looking for/i);
+  });
+
   it("builds a preparation package with the job language and generation timestamp", () => {
     const interviewPackage = createInterviewPreparationPackage({
       candidateId: "cand_1",
@@ -170,7 +226,7 @@ describe("interview preparation", () => {
     });
 
     expect(interviewPackage).toEqual({
-      id: "prep_job_1_cand_1",
+      id: "prep_job_1_cand_1_20260324081000000",
       jobId: "job_1",
       candidateId: "cand_1",
       language: "es",
@@ -178,5 +234,69 @@ describe("interview preparation", () => {
       requirements: [],
       questions: [],
     });
+  });
+
+  it("creates a unique preparation package id per interview timestamp", () => {
+    const first = createInterviewPreparationPackage({
+      candidateId: "cand_1",
+      job: {
+        id: "job_1",
+        title: "Warehouse Associate",
+        summary: "Night shift role",
+        location: "Madrid",
+        status: "active",
+        interviewLanguage: "es",
+        createdAt: "2026-03-24T08:00:00.000Z",
+        publishedAt: "2026-03-24T08:00:00.000Z",
+        expiresAt: null,
+        publicApplyPath: "/apply/job_1",
+        pipeline: {
+          applicants: 1,
+          interviewed: 0,
+          shortlisted: 0,
+          hired: 0,
+          rejected: 0,
+        },
+        interviewLimits: {
+          maxInterviews: null,
+          outstandingCap: null,
+          greatCap: null,
+        },
+        requirements: [],
+      },
+      now: new Date("2026-03-24T08:10:00.000Z"),
+    });
+
+    const second = createInterviewPreparationPackage({
+      candidateId: "cand_1",
+      job: {
+        id: "job_1",
+        title: "Warehouse Associate",
+        summary: "Night shift role",
+        location: "Madrid",
+        status: "active",
+        interviewLanguage: "es",
+        createdAt: "2026-03-24T08:00:00.000Z",
+        publishedAt: "2026-03-24T08:00:00.000Z",
+        expiresAt: null,
+        publicApplyPath: "/apply/job_1",
+        pipeline: {
+          applicants: 1,
+          interviewed: 0,
+          shortlisted: 0,
+          hired: 0,
+          rejected: 0,
+        },
+        interviewLimits: {
+          maxInterviews: null,
+          outstandingCap: null,
+          greatCap: null,
+        },
+        requirements: [],
+      },
+      now: new Date("2026-03-24T08:11:00.000Z"),
+    });
+
+    expect(first.id).not.toBe(second.id);
   });
 });

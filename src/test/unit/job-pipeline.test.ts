@@ -3,9 +3,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { publicApplyTermsVersion } from "@/lib/public-apply";
 import {
   applyRecruiterAction,
-  getJobPipelineSnapshot,
   getOperationalStateLabel,
 } from "@/lib/job-pipeline";
+import { getJobPipelineSnapshot } from "@/lib/job-pipeline-server";
 import {
   receiveHappyRobotWebhook,
   resetPublicApplySubmissionStore,
@@ -121,6 +121,106 @@ describe("job pipeline labels", () => {
     expect(getOperationalStateLabel("completed")).toBe("Interview complete");
     expect(getOperationalStateLabel("human_requested")).toBe("Human requested");
     expect(getOperationalStateLabel("no_response")).toBe("No response yet");
+  });
+
+  it("shows only the latest application per candidate in the live pipeline snapshot", async () => {
+    await submitPublicApplication({
+      jobId: "job_warehouse_madrid",
+      fullName: "Juan Antonio",
+      phone: "+34 652 587 755",
+      email: "juan@example.com",
+      language: "en",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/juan-antonio",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-31T17:40:22.478Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    await submitPublicApplication({
+      jobId: "job_warehouse_madrid",
+      fullName: "Juan Antonio",
+      phone: "+34 652 587 755",
+      email: "juan@example.com",
+      language: "en",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/juan-antonio",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-31T19:20:21.628Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    await receiveHappyRobotWebhook(
+      {
+        interviewRunId: "run_2",
+        providerCallId: "hr_call_run_2",
+        status: "completed",
+        happenedAt: "2026-03-31T19:25:50.726Z",
+        transcript: "Candidate completed the interview successfully.",
+      },
+      {
+        receivedAt: new Date("2026-03-31T19:25:51.000Z"),
+      },
+    );
+
+    await saveInterviewEvaluation({
+      id: "eval_run_2",
+      interviewRunId: "run_2",
+      generatedAt: "2026-03-31T19:26:00.000Z",
+      finalNumericScore: 89,
+      finalScoreState: "Great",
+      blocks: [
+        {
+          category: "essential",
+          label: "Essential requirements",
+          numericScore: 90,
+          scoreState: "Outstanding",
+          requirements: [],
+        },
+        {
+          category: "technical",
+          label: "Technical skills",
+          numericScore: 84,
+          scoreState: "Great",
+          requirements: [],
+        },
+        {
+          category: "interpersonal",
+          label: "Interpersonal skills",
+          numericScore: 82,
+          scoreState: "Great",
+          requirements: [],
+        },
+      ],
+      weightConfigSnapshot: {
+        mandatoryRequirementWeight: 0.8,
+        optionalRequirementWeight: 0.2,
+        essentialBlockWeight: 0.45,
+        technicalBlockWeight: 0.45,
+        interpersonalBlockWeight: 0.1,
+      },
+      fitClassification: "strong_fit",
+    });
+
+    const snapshot = await getJobPipelineSnapshot("warehouse-associate-madrid");
+
+    expect(snapshot).not.toBeNull();
+    expect(snapshot?.candidates).toHaveLength(1);
+    expect(snapshot?.candidates[0]).toMatchObject({
+      id: "cand_1",
+      fullName: "Juan Antonio",
+      stage: "Interviewed",
+      scoreState: "Great",
+      operationalState: "completed",
+    });
   });
 
   it("applies shortlist and reject transitions explicitly", async () => {

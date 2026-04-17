@@ -36,6 +36,11 @@ export type HappyRobotRuntimeRequirement = Pick<
   "id" | "label" | "category" | "weight" | "isKnockout"
 >;
 
+export type HappyRobotRuntimeRequirementContext = HappyRobotRuntimeRequirement & {
+  description: string;
+  value: string | null;
+};
+
 export type HappyRobotTranscriptSegment = {
   text: string;
   startMs?: number | null;
@@ -45,7 +50,9 @@ export type HappyRobotTranscriptSegment = {
 export type HappyRobotNormalizedDispatchPayload = {
   interviewRunId: EntityId;
   jobId: EntityId;
+  jobTitle: string;
   candidateId: EntityId;
+  candidateName: string;
   applicationId: EntityId;
   interviewPackageId: EntityId;
   candidatePhone: string;
@@ -55,8 +62,8 @@ export type HappyRobotNormalizedDispatchPayload = {
   disclosureText: string;
   nowUtc: ISODateTimeString | null;
   nowLocal: ISODateTimeString | null;
-  jobConditions: HappyRobotRuntimeRequirement[];
-  scoredRequirements: HappyRobotRuntimeRequirement[];
+  jobConditions: HappyRobotRuntimeRequirementContext[];
+  scoredRequirements: HappyRobotRuntimeRequirementContext[];
   questions: InterviewQuestion[];
   traceContext: {
     source: "public_apply_link";

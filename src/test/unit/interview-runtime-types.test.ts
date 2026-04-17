@@ -53,7 +53,9 @@ describe("interview runtime model", () => {
     const payload: HappyRobotNormalizedDispatchPayload = {
       interviewRunId: interviewRun.id,
       jobId: interviewRun.jobId,
+      jobTitle: "Warehouse Associate",
       candidateId: interviewRun.candidateId,
+      candidateName: "Ana Torres",
       applicationId: interviewRun.applicationId,
       interviewPackageId: "prep_1",
       language: "es",

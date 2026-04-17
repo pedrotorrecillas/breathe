@@ -23,6 +23,14 @@ describe("job extraction", () => {
               text: JSON.stringify({
                 jobConditions: [
                   {
+                    id: "cond_schedule",
+                    code: "schedule",
+                    label: "Schedule",
+                    value: "Hybrid and occasional in-office work in Madrid",
+                    state: "complete",
+                    details: "",
+                  },
+                  {
                     id: "cond_location",
                     code: "location",
                     label: "Location",
@@ -33,25 +41,36 @@ describe("job extraction", () => {
                 ],
                 essentialRequirements: [
                   {
-                    id: "essential_warehouse_experience",
-                    label:
-                      "Have previous warehouse experience in outbound operations.",
+                    id: "essential_pm_experience",
+                    label: "5+ years of Product Management experience in B2B SaaS environments.",
                     importance: "MANDATORY",
+                  },
+                  {
+                    id: "essential_recruiter_copy",
+                    label:
+                      "We are looking for a Product Manager with strong experience in B2B SaaS, capable of driving complex, technical products from concept to scale, with a deep understanding of IT management workflows and user needs",
+                    importance: "OPTIONAL",
                   },
                 ],
                 technicalSkills: [
                   {
-                    id: "technical_scanner_use",
+                    id: "technical_pm_prioritization",
                     label:
-                      "Use barcode scanners and inventory systems accurately during each shift.",
+                      "Prioritizing and delivering core product capabilities such as device inventory, monitoring, patch visibility, ticket insights, and filtering",
                     importance: "MANDATORY",
                   },
                 ],
                 interpersonalSkills: [
                   {
-                    id: "interpersonal_teamwork",
+                    id: "interpersonal_collaboration",
                     label:
-                      "Coordinate clearly with teammates during handovers and peak-volume periods.",
+                      "Collaboration will be essential",
+                    importance: "OPTIONAL",
+                  },
+                  {
+                    id: "interpersonal_work_closely",
+                    label:
+                      "You’ll work closely with Engineering, Infrastructure, AI, Frontend, and UX teams to design telemetry pipelines, alerting systems, automation policies, and unified product experiences",
                     importance: "MANDATORY",
                   },
                 ],
@@ -78,6 +97,28 @@ describe("job extraction", () => {
     expect(result.data.essentialRequirements.length).toBeGreaterThan(0);
     expect(result.data.technicalSkills.length).toBeGreaterThan(0);
     expect(result.data.interpersonalSkills.length).toBeGreaterThan(0);
+    expect(
+      result.data.essentialRequirements.some((item) =>
+        /we are looking for|relevant experience and expected outcomes/i.test(
+          item.label,
+        ),
+      ),
+    ).toBe(false);
+    expect(
+      result.data.interpersonalSkills.some((item) =>
+        /collaboration will be essential/i.test(item.label),
+      ),
+    ).toBe(false);
+    expect(
+      result.data.interpersonalSkills.some((item) =>
+        /collaborate effectively with/i.test(item.label),
+      ),
+    ).toBe(true);
+    expect(
+      result.data.technicalSkills.some((item) =>
+        /^Prioritize and deliver core product capabilities/i.test(item.label),
+      ),
+    ).toBe(true);
   });
 
   it("returns a usable error for weak input instead of partial invalid state", async () => {

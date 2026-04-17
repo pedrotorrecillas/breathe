@@ -14,12 +14,64 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+const webhookWrapperKeys = [
+  "data",
+  "body",
+  "payload",
+  "event",
+  "result",
+  "callback",
+  "response",
+] as const;
+
+const webhookFieldKeys = [
+  "providerCallId",
+  "provider_call_id",
+  "interviewRunId",
+  "interview_run_id",
+  "status",
+  "happenedAt",
+  "happened_at",
+  "transcript",
+  "transcriptSegments",
+  "transcript_segments",
+  "recordingUrl",
+  "recording_url",
+  "transcriptUrl",
+  "transcript_url",
+] as const;
+
 function asTrimmedString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
 function asNullableTrimmedString(value: unknown) {
   return typeof value === "string" ? value.trim() || null : null;
+}
+
+function parseMaybeJson(value: unknown): unknown {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return value;
+  }
+
+  if (
+    (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+    (trimmed.startsWith("[") && trimmed.endsWith("]"))
+  ) {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return value;
+    }
+  }
+
+  return value;
 }
 
 function asIsoDateTimeString(value: unknown) {
@@ -51,16 +103,68 @@ function asIsoDateTimeString(value: unknown) {
   return "";
 }
 
+function getAliasedValue(
+  rawPayload: Record<string, unknown>,
+  aliases: readonly string[],
+) {
+  for (const alias of aliases) {
+    if (Object.prototype.hasOwnProperty.call(rawPayload, alias)) {
+      return rawPayload[alias];
+    }
+  }
+
+  return undefined;
+}
+
+function hasWebhookShape(rawPayload: Record<string, unknown>) {
+  return webhookFieldKeys.some((key) =>
+    Object.prototype.hasOwnProperty.call(rawPayload, key),
+  );
+}
+
+function unwrapHappyRobotWebhookPayload(
+  rawPayload: unknown,
+  depth = 0,
+): unknown {
+  if (!isRecord(rawPayload) || depth > 4) {
+    return rawPayload;
+  }
+
+  if (hasWebhookShape(rawPayload)) {
+    return rawPayload;
+  }
+
+  for (const key of webhookWrapperKeys) {
+    const nested = parseMaybeJson(rawPayload[key]);
+    if (!isRecord(nested) && !Array.isArray(nested)) {
+      continue;
+    }
+
+    const candidate = unwrapHappyRobotWebhookPayload(nested, depth + 1);
+    if (isRecord(candidate) && hasWebhookShape(candidate)) {
+      return candidate;
+    }
+  }
+
+  return rawPayload;
+}
+
 function isTranscriptSegment(value: unknown): value is HappyRobotTranscriptSegment {
   return (
     isRecord(value) &&
-    typeof value.text === "string" &&
-    (value.startMs === undefined ||
+    (typeof value.text === "string" || typeof value.content === "string") &&
+    ((value.startMs === undefined ||
       value.startMs === null ||
-      typeof value.startMs === "number") &&
-    (value.endMs === undefined ||
+      typeof value.startMs === "number") ||
+      (value.start === undefined ||
+        value.start === null ||
+        typeof value.start === "number")) &&
+    ((value.endMs === undefined ||
       value.endMs === null ||
-      typeof value.endMs === "number")
+      typeof value.endMs === "number") ||
+      (value.end === undefined ||
+        value.end === null ||
+        typeof value.end === "number"))
   );
 }
 
@@ -74,23 +178,88 @@ function normalizeTranscriptSegments(
   const transcriptSegments = value
     .filter(isTranscriptSegment)
     .map((segment) => ({
-      text: segment.text.trim(),
-      startMs: segment.startMs ?? null,
-      endMs: segment.endMs ?? null,
+      text:
+        (typeof (segment as { text?: unknown }).text === "string"
+          ? (segment as { text: string }).text
+          : typeof (segment as { content?: unknown }).content === "string"
+            ? (segment as { content: string }).content
+            : ""
+        ).trim(),
+      startMs:
+        (segment as { startMs?: number | null }).startMs ??
+        (segment as { start?: number | null }).start ??
+        null,
+      endMs:
+        (segment as { endMs?: number | null }).endMs ??
+        (segment as { end?: number | null }).end ??
+        null,
     }))
     .filter((segment) => segment.text.length > 0);
 
   return transcriptSegments.length > 0 ? transcriptSegments : null;
 }
 
+function normalizeTranscriptValue(value: unknown) {
+  if (typeof value === "string") {
+    const transcript = value.trim();
+
+    return {
+      transcript: transcript || null,
+      transcriptSegments: null as HappyRobotTranscriptSegment[] | null,
+    };
+  }
+
+  if (!Array.isArray(value)) {
+    return {
+      transcript: null,
+      transcriptSegments: null as HappyRobotTranscriptSegment[] | null,
+    };
+  }
+
+  const transcriptSegments = normalizeTranscriptSegments(value);
+  if (transcriptSegments) {
+    return {
+      transcript:
+        transcriptSegments.map((segment) => segment.text).join(" ").trim() ||
+        null,
+      transcriptSegments,
+    };
+  }
+
+  const transcript = value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  return {
+    transcript: transcript || null,
+    transcriptSegments: null as HappyRobotTranscriptSegment[] | null,
+  };
+}
+
 function coalesceOutcomeDetail(rawPayload: Record<string, unknown>) {
   return (
-    asNullableTrimmedString(rawPayload.failureReason) ??
-    asNullableTrimmedString(rawPayload.providerOutcomeLabel) ??
-    asNullableTrimmedString(rawPayload.outcomeLabel) ??
-    asNullableTrimmedString(rawPayload.outcomeCode) ??
-    asNullableTrimmedString(rawPayload.outcome) ??
-    asNullableTrimmedString(rawPayload.disconnectReason)
+    asNullableTrimmedString(
+      getAliasedValue(rawPayload, ["failureReason", "failure_reason"]),
+    ) ??
+    asNullableTrimmedString(
+      getAliasedValue(rawPayload, [
+        "providerOutcomeLabel",
+        "provider_outcome_label",
+      ]),
+    ) ??
+    asNullableTrimmedString(
+      getAliasedValue(rawPayload, ["outcomeLabel", "outcome_label"]),
+    ) ??
+    asNullableTrimmedString(
+      getAliasedValue(rawPayload, ["outcomeCode", "outcome_code"]),
+    ) ??
+    asNullableTrimmedString(getAliasedValue(rawPayload, ["outcome"])) ??
+    asNullableTrimmedString(
+      getAliasedValue(rawPayload, ["disconnectReason", "disconnect_reason"]),
+    )
   );
 }
 
@@ -122,7 +291,9 @@ function normalizeHappyRobotStatus(value: unknown) {
 export function parseHappyRobotWebhookEvent(
   rawPayload: unknown,
 ): HappyRobotWebhookIngestionResponse | { success: true; event: HappyRobotWebhookEvent } {
-  if (!isRecord(rawPayload)) {
+  const candidatePayload = unwrapHappyRobotWebhookPayload(rawPayload);
+
+  if (!isRecord(candidatePayload)) {
     return {
       success: false,
       error: {
@@ -132,13 +303,23 @@ export function parseHappyRobotWebhookEvent(
     };
   }
 
-  const providerCallId = asTrimmedString(rawPayload.providerCallId);
-  const happenedAt = asIsoDateTimeString(rawPayload.happenedAt);
-  const status = normalizeHappyRobotStatus(rawPayload.status);
+  const providerCallId = asTrimmedString(
+    getAliasedValue(candidatePayload, ["providerCallId", "provider_call_id"]),
+  );
+  const parsedHappenedAt = asIsoDateTimeString(
+    getAliasedValue(candidatePayload, ["happenedAt", "happened_at"]),
+  );
+  const happenedAt = parsedHappenedAt || new Date().toISOString();
+  const status = normalizeHappyRobotStatus(
+    getAliasedValue(candidatePayload, ["status"]),
+  );
   const eventId =
-    asTrimmedString(rawPayload.eventId) ||
+    asTrimmedString(getAliasedValue(candidatePayload, ["eventId", "event_id"])) ||
     [providerCallId, status, happenedAt].filter(Boolean).join(":");
-  const interviewRunIdValue = rawPayload.interviewRunId;
+  const interviewRunIdValue = getAliasedValue(candidatePayload, [
+    "interviewRunId",
+    "interview_run_id",
+  ]);
   const interviewRunId =
     interviewRunIdValue === null
       ? null
@@ -146,16 +327,33 @@ export function parseHappyRobotWebhookEvent(
         ? interviewRunIdValue.trim()
         : null;
 
-  if (!eventId || !providerCallId || !happenedAt || !isHappyRobotStatus(status)) {
+  if (!eventId || !providerCallId || !isHappyRobotStatus(status)) {
     return {
       success: false,
       error: {
         code: "invalid_payload",
         message:
-          "HappyRobot webhook payload is missing required fields or contains an invalid status.",
+          "HappyRobot webhook payload must include providerCallId, status, and happenedAt, either flat or wrapped inside data/body/payload.",
       },
     };
   }
+
+  const normalizedTranscript = normalizeTranscriptValue(
+    getAliasedValue(candidatePayload, ["transcript", "transcript_text"]),
+  );
+  const transcriptSegments =
+    normalizeTranscriptSegments(
+      getAliasedValue(candidatePayload, [
+        "transcriptSegments",
+        "transcript_segments",
+      ]),
+    ) ?? normalizedTranscript.transcriptSegments;
+  const transcript =
+    normalizedTranscript.transcript ??
+    (transcriptSegments
+      ? transcriptSegments.map((segment) => segment.text).join(" ").trim() ||
+        null
+      : null);
 
   return {
     success: true,
@@ -165,14 +363,18 @@ export function parseHappyRobotWebhookEvent(
       providerCallId,
       status,
       happenedAt,
-      recordingUrl: asNullableTrimmedString(rawPayload.recordingUrl),
-      transcriptUrl: asNullableTrimmedString(rawPayload.transcriptUrl),
-      transcript: asNullableTrimmedString(rawPayload.transcript),
-      transcriptSegments: normalizeTranscriptSegments(
-        rawPayload.transcriptSegments,
+      recordingUrl: asNullableTrimmedString(
+        getAliasedValue(candidatePayload, ["recordingUrl", "recording_url"]),
       ),
-      failureReason: coalesceOutcomeDetail(rawPayload),
-      rawPayloadRef: asNullableTrimmedString(rawPayload.rawPayloadRef),
+      transcriptUrl: asNullableTrimmedString(
+        getAliasedValue(candidatePayload, ["transcriptUrl", "transcript_url"]),
+      ),
+      transcript,
+      transcriptSegments,
+      failureReason: coalesceOutcomeDetail(candidatePayload),
+      rawPayloadRef: asNullableTrimmedString(
+        getAliasedValue(candidatePayload, ["rawPayloadRef", "raw_payload_ref"]),
+      ),
     },
   };
 }

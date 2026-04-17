@@ -38,13 +38,16 @@ describe("happyrobot webhook route", () => {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          eventId: "evt_1",
-          interviewRunId: "run_1",
-          providerCallId: "hr_call_run_1",
-          status: "completed",
-          happenedAt: "2026-03-25T12:05:00.000Z",
-          recordingUrl: "https://example.com/recording.mp3",
-          transcript: "I worked in a warehouse for four years and used handheld scanners daily.",
+          data: {
+            event_id: "evt_1",
+            interview_run_id: "run_1",
+            provider_call_id: "hr_call_run_1",
+            status: "completed",
+            happened_at: "2026-03-25T12:05:00.000Z",
+            recording_url: "https://example.com/recording.mp3",
+            transcript:
+              "I worked in a warehouse for four years and used handheld scanners daily.",
+          },
         }),
       }),
     );

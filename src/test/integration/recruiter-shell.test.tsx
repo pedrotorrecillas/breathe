@@ -44,9 +44,7 @@ describe("recruiter shell", () => {
       "aria-current",
       "page",
     );
-    expect(
-      screen.getByText(/Jobs, candidate review, and interview runtime/i),
-    ).toBeInTheDocument();
+    expect(screen.queryByText(/Hiring in one place/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Recruiter content/i)).toBeInTheDocument();
   });
 
@@ -62,5 +60,6 @@ describe("recruiter shell", () => {
         .getAllByText(/^Performance$/i)[0]
         ?.closest("[aria-disabled='true']"),
     ).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getAllByText(/Coming soon/i).length).toBeGreaterThan(0);
   });
 });

@@ -80,11 +80,14 @@ describe("happyrobot webhooks", () => {
 
   it("normalizes real HappyRobot callback payload quirks", () => {
     const parsed = parseHappyRobotWebhookEvent({
-      interviewRunId: "\nrun_bre41_prod_001\n",
-      providerCallId: "\n8e8a80b0-72fe6214c2b78\n",
-      status: "\nin-progress\n",
-      happenedAt: "1774975802051",
-      transcript: "\nTengo tres anos de experiencia en almacen.\n",
+      data: {
+        interview_run_id: "\nrun_bre41_prod_001\n",
+        provider_call_id: "\n8e8a80b0-72fe6214c2b78\n",
+        status: "\nin-progress\n",
+        happened_at: "1774975802051",
+        transcript: "\nTengo tres anos de experiencia en almacen.\n",
+        failure_reason: "   ",
+      },
     });
 
     expect(parsed).toEqual({
@@ -106,6 +109,74 @@ describe("happyrobot webhooks", () => {
     });
   });
 
+  it("accepts transcript as an empty array from the HappyRobot builder", () => {
+    const parsed = parseHappyRobotWebhookEvent({
+      interviewRunId: "run_1",
+      providerCallId: "8e8a80b0-72f6-4fc7-8dda-1fe6214c2b78",
+      status: "in-progress",
+      happenedAt: 1774980082735,
+      transcript: [],
+    });
+
+    expect(parsed).toEqual({
+      success: true,
+      event: {
+        eventId:
+          "8e8a80b0-72f6-4fc7-8dda-1fe6214c2b78:connected:2026-03-31T18:01:22.735Z",
+        interviewRunId: "run_1",
+        providerCallId: "8e8a80b0-72f6-4fc7-8dda-1fe6214c2b78",
+        status: "connected",
+        happenedAt: "2026-03-31T18:01:22.735Z",
+        recordingUrl: null,
+        transcriptUrl: null,
+        transcript: null,
+        transcriptSegments: null,
+        failureReason: null,
+        rawPayloadRef: null,
+      },
+    });
+  });
+
+  it("falls back to a generated timestamp when HappyRobot omits happenedAt", () => {
+    const before = Date.now();
+    const parsed = parseHappyRobotWebhookEvent({
+      interviewRunId: "run_2",
+      providerCallId: "35605ef9-a15c-41ce-b9e5-64a9a6e82f3d",
+      status: "completed",
+      happenedAt: "",
+      transcript: [
+        {
+          role: "user",
+          content: "Hello?",
+          start: 6450,
+          end: 7550,
+        },
+      ],
+    });
+    const after = Date.now();
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) {
+      return;
+    }
+
+    expect(parsed.event.providerCallId).toBe(
+      "35605ef9-a15c-41ce-b9e5-64a9a6e82f3d",
+    );
+    expect(parsed.event.status).toBe("completed");
+    expect(parsed.event.transcript).toBe("Hello?");
+    expect(parsed.event.transcriptSegments).toEqual([
+      {
+        text: "Hello?",
+        startMs: 6450,
+        endMs: 7550,
+      },
+    ]);
+    expect(parsed.event.happenedAt).not.toBe("");
+    expect(new Date(parsed.event.happenedAt).getTime()).toBeGreaterThanOrEqual(before);
+    expect(new Date(parsed.event.happenedAt).getTime()).toBeLessThanOrEqual(after);
+  });
+
   it("rejects invalid webhook payloads safely", () => {
     const parsed = parseHappyRobotWebhookEvent({
       eventId: "evt_1",
@@ -118,7 +189,7 @@ describe("happyrobot webhooks", () => {
       error: {
         code: "invalid_payload",
         message:
-          "HappyRobot webhook payload is missing required fields or contains an invalid status.",
+          "HappyRobot webhook payload must include providerCallId, status, and happenedAt, either flat or wrapped inside data/body/payload.",
       },
     });
   });

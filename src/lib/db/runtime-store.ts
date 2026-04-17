@@ -60,6 +60,14 @@ function fallbackToMemoryState() {
   return cloneState(memoryState);
 }
 
+function formatDatabaseError(error: unknown) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return "Unknown database error.";
+}
+
 function cloneState(state: RuntimeStoreState): RuntimeStoreState {
   return {
     jobs: [...state.jobs],
@@ -177,8 +185,10 @@ export async function loadRuntimeStoreState(): Promise<RuntimeStoreState> {
         .sort((left, right) => left.position - right.position)
         .map((row) => row.payload as CandidateEvaluation),
     };
-  } catch {
-    return fallbackToMemoryState();
+  } catch (error) {
+    throw new Error(
+      `Failed to load runtime state from Postgres. ${formatDatabaseError(error)}`,
+    );
   }
 }
 
@@ -330,8 +340,10 @@ export async function saveRuntimeStoreState(state: RuntimeStoreState) {
       );
     }
     });
-  } catch {
-    Object.assign(memoryState, cloneState(state));
+  } catch (error) {
+    throw new Error(
+      `Failed to save runtime state to Postgres. ${formatDatabaseError(error)}`,
+    );
   }
 }
 

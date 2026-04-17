@@ -14,7 +14,7 @@ describe("shared route states", () => {
     render(<NewJobPage />);
 
     expect(
-      screen.getByText(/The first job draft is being prepared/i),
+      screen.getByText(/Generate a draft to start editing/i),
     ).toBeInTheDocument();
   });
 
@@ -28,7 +28,7 @@ describe("shared route states", () => {
     render(page);
 
     expect(
-      screen.getByText(/Job detail keeps pipeline review and candidate decisions/i),
+      screen.getByText(/Review applicants, interview outcomes, and hiring decisions/i),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/Pipeline workspace/i),

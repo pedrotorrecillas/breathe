@@ -7,6 +7,7 @@ import type {
 } from "@/domain/interview-preparation/types";
 import type { Job } from "@/domain/jobs/types";
 import type { SupportedLanguage } from "@/domain/shared/types";
+import { sanitizeInterviewPromptLabel } from "@/lib/job-requirement-cleanup";
 
 const confidenceLevelBaselines: Array<{
   band: QuestionConfidenceBand;
@@ -124,7 +125,24 @@ function buildQuestionPrompt(requirement: Job["requirements"][number]) {
     return `Before we continue, could you confirm how ${requirement.label.toLowerCase()} works for you?`;
   }
 
-  return `Could you walk me through your experience with ${requirement.label.toLowerCase()}?`;
+  const safeLabel = sanitizeInterviewPromptLabel(
+    requirement.label,
+    requirement.category,
+  );
+
+  if (!safeLabel) {
+    return "Could you tell me more about your experience in this area?";
+  }
+
+  if (
+    /^(?:Collaborate|Prioritize|Deliver|Manage|Lead|Build|Work|Own|Communicate|Support|Drive|Have|Demonstrate|Use|Operate|Coordinate|Monitor|Design|Analyze|Align)\b/i.test(
+      safeLabel,
+    )
+  ) {
+    return "Could you tell me about a recent example that demonstrates this requirement?";
+  }
+
+  return `Could you walk me through your experience with ${safeLabel.toLowerCase()}?`;
 }
 
 function buildLanguageQuestionPrompt(input: {
@@ -295,9 +313,10 @@ export function createInterviewPreparationPackage(input: {
   now?: Date;
 }): InterviewPreparationPackage {
   const createdAt = (input.now ?? new Date()).toISOString();
+  const createdAtKey = createdAt.replace(/[^0-9]/g, "");
 
   return {
-    id: `prep_${input.job.id}_${input.candidateId}`,
+    id: `prep_${input.job.id}_${input.candidateId}_${createdAtKey}`,
     jobId: input.job.id,
     candidateId: input.candidateId,
     language: input.job.interviewLanguage,

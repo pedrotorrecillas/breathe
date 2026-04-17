@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   applyHappyRobotDispatchResponse,
@@ -7,6 +7,11 @@ import {
 } from "@/lib/happyrobot-dispatch";
 
 describe("happyrobot dispatch payload", () => {
+  afterEach(() => {
+    delete process.env.HAPPYROBOT_WORKFLOW_WEBHOOK_URL;
+    vi.unstubAllGlobals();
+  });
+
   it("builds a normalized payload from runtime, job, candidate, and preparation data", () => {
     const payload = buildHappyRobotDispatchPayload({
       interviewRun: {
@@ -122,9 +127,15 @@ describe("happyrobot dispatch payload", () => {
     });
 
     expect(payload.interviewRunId).toBe("run_1");
+    expect(payload.jobTitle).toBe("Warehouse Associate");
+    expect(payload.candidateName).toBe("Ana Torres");
     expect(payload.language).toBe("es");
     expect(payload.jobConditions).toHaveLength(1);
+    expect(payload.jobConditions[0]?.value).toBe("Night shift required");
     expect(payload.scoredRequirements).toHaveLength(1);
+    expect(payload.scoredRequirements[0]?.value).toBe(
+      "Previous warehouse work",
+    );
     expect(payload.traceContext.generatedAt).toBe("2026-03-24T08:01:00.000Z");
   });
 
@@ -142,7 +153,9 @@ describe("happyrobot dispatch payload", () => {
       payload: {
         interviewRunId: "run_1",
         jobId: "job_1",
+        jobTitle: "Warehouse Associate",
         candidateId: "cand_1",
+        candidateName: "Ana Torres",
         applicationId: "app_1",
         interviewPackageId: "prep_1",
         language: "es",
@@ -178,6 +191,70 @@ describe("happyrobot dispatch payload", () => {
     });
   });
 
+  it("stores the real HappyRobot run id when the workflow webhook returns it", async () => {
+    process.env.HAPPYROBOT_WORKFLOW_WEBHOOK_URL =
+      "https://workflows.platform.happyrobot.ai/hooks/test";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          run_id: "74570c84-e3c6-4e34-a85a-4755ef631f65",
+          status: "workflow started",
+        }),
+      })),
+    );
+
+    const response = await dispatchHappyRobotCall({
+      callRequest: {
+        jobId: "job_1",
+        candidateId: "cand_1",
+        applicationId: "app_1",
+        interviewRunId: "run_2",
+        interviewPackageId: "prep_2",
+        language: "en",
+        disclosureText: "AI disclosure text",
+      },
+      payload: {
+        interviewRunId: "run_2",
+        jobId: "job_1",
+        jobTitle: "Product Manager",
+        candidateId: "cand_2",
+        candidateName: "Pablo Antonio",
+        candidatePhone: "+34600000000",
+        applicationId: "app_2",
+        interviewPackageId: "prep_2",
+        language: "en",
+        candidateTimezone: {
+          timezone: "Europe/Madrid",
+          localDateTime: "2026-03-31T20:00:00.000Z",
+          utcDateTime: "2026-03-31T19:00:00.000Z",
+        },
+        outboundNumber: "+34910000000",
+        disclosureText: "AI disclosure text",
+        nowUtc: "2026-03-31T19:00:00.000Z",
+        nowLocal: "2026-03-31T20:00:00.000Z",
+        jobConditions: [],
+        scoredRequirements: [],
+        questions: [],
+        traceContext: {
+          source: "public_apply_link",
+          generatedAt: "2026-03-31T19:01:00.000Z",
+        },
+      },
+      now: new Date("2026-03-31T19:10:00.000Z"),
+    });
+
+    expect(response).toMatchObject({
+      success: true,
+      result: {
+        providerCallId: "74570c84-e3c6-4e34-a85a-4755ef631f65",
+        status: "queued",
+        dispatchedAt: "2026-03-31T19:10:00.000Z",
+      },
+    });
+  });
+
   it("returns a structured dispatch failure when outbound routing data is missing", async () => {
     const response = await dispatchHappyRobotCall({
       callRequest: {
@@ -192,7 +269,9 @@ describe("happyrobot dispatch payload", () => {
       payload: {
         interviewRunId: "run_1",
         jobId: "job_1",
+        jobTitle: "Warehouse Associate",
         candidateId: "cand_1",
+        candidateName: "Ana Torres",
         applicationId: "app_1",
         interviewPackageId: "prep_1",
         language: "es",

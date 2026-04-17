@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { JobDetailWorkspace } from "@/components/job-detail-workspace";
 import type { CandidateEvaluation } from "@/domain/evaluations/types";
 import { getInterviewRecordingForCandidate } from "@/lib/candidate-recording";
-import { getJobPipelineSnapshot } from "@/lib/job-pipeline";
+import { getJobPipelineSnapshot } from "@/lib/job-pipeline-server";
 import { publicApplyTermsVersion } from "@/lib/public-apply";
 import {
   listInterviewRunRuntimeSnapshotsByCandidateId,
@@ -28,7 +28,6 @@ async function renderJobDetail(jobId = "warehouse-associate-madrid") {
 
   render(
     <JobDetailWorkspace
-      jobId={jobId}
       initialSnapshot={initialSnapshot}
       runtimeSnapshotsByCandidateId={runtimeSnapshotsByCandidateId}
     />,
@@ -49,28 +48,24 @@ describe("job detail pipeline", () => {
       screen.getAllByText(/Forklift-certified warehouse operator/i).length,
     ).toBeGreaterThan(0);
     expect(screen.getAllByText(/Great/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Applied · Today, 09:12/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Today, 09:12/i).length).toBeGreaterThan(0);
   });
 
-  it("updates the reserved detail surface with a candidate report", async () => {
+  it("shows a clear empty evaluation state when no stored evaluation exists", async () => {
     await renderJobDetail();
 
     fireEvent.click(screen.getAllByRole("button", { name: /Open candidate Bea Soto/i })[0]!);
 
-    expect(screen.getAllByText(/Selected candidate/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Bea Soto/i).length).toBeGreaterThan(1);
     expect(
       screen.getAllByText(/Consistent order-picking throughput/i).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByText(/Candidate report/i)).toBeInTheDocument();
-    expect(screen.getByText(/Recruiter-facing evaluation/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/Essential requirements/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Technical skills/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Interpersonal skills/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Forklift certification/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/AI recommendation/i)).toBeInTheDocument();
-    expect(screen.getByText(/84\.3 \/ 100/i)).toBeInTheDocument();
-    expect(screen.getByText(/Audio review/i)).toBeInTheDocument();
+    expect(screen.getByText(/No evaluation available yet/i)).toBeInTheDocument();
+    expect(screen.queryByText(/AI recommendation/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Recruiter summary/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/^Score$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^--$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Audio$/i)).toBeInTheDocument();
   });
 
   it("renders audio playback when a recording exists in runtime artifacts", async () => {
@@ -166,13 +161,6 @@ describe("job detail pipeline", () => {
     expect(
       screen.getByLabelText(/Interview recording for Lucia Torres/i),
     ).toHaveAttribute("src", "https://example.com/recording.mp3");
-    expect(
-      screen.getByText(/Runtime recording stored for this candidate/i),
-    ).toBeInTheDocument();
-    expect(screen.getAllByText(/Quick triage read/i).length).toBeGreaterThan(0);
-    expect(
-      screen.getAllByText(/Essential requirements stand out as the strongest block/i).length,
-    ).toBeGreaterThan(0);
     expect(await getInterviewRecordingForCandidate("Lucia Torres")).toEqual({
       recordingUrl: "https://example.com/recording.mp3",
       recordingDurationSeconds: null,
@@ -180,9 +168,12 @@ describe("job detail pipeline", () => {
       completedAt: "2026-03-25T12:05:00.000Z",
       transcriptUrl: "https://example.com/transcript.txt",
     });
+    expect(screen.getByText(/^Score$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^74$/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Warehouse experience/i).length).toBeGreaterThan(0);
     expect(
-      screen.getAllByText(/Warehouse experience \(Great\)/i).length,
-    ).toBeGreaterThan(0);
+      screen.getByText(/The candidate showed prior warehouse work/i),
+    ).toBeInTheDocument();
   });
 
   it("shows lightweight operational badges only in Applicants", async () => {
@@ -195,17 +186,14 @@ describe("job detail pipeline", () => {
     expect(screen.queryByText(/human_requested/i)).not.toBeInTheDocument();
   });
 
-  it("keeps rejected candidates in a separate tab with visible reasons", async () => {
+  it("keeps rejected candidates behind a secondary control with visible reasons", async () => {
     await renderJobDetail();
 
-    fireEvent.click(screen.getAllByRole("button", { name: /Rejected/i })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: /Rejected/i }));
 
-    expect(screen.getByText(/Rejected review/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/^Rejected$/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Schedule mismatch/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Commute risk/i).length).toBeGreaterThan(0);
-    expect(
-      screen.queryByText(/Completed interview runs ready for recruiter triage/i),
-    ).not.toBeInTheDocument();
   });
 
   it("supports explicit shortlist and reject actions", async () => {
@@ -217,7 +205,7 @@ describe("job detail pipeline", () => {
 
     fireEvent.click(screen.getAllByRole("button", { name: /^Reject$/i })[0]!);
 
-    expect(screen.getByText(/Rejected review/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Rejected \(3\)/i })).toBeInTheDocument();
     expect(screen.getByText(/Rejected from applicants/i)).toBeInTheDocument();
   });
 
@@ -241,23 +229,19 @@ describe("job detail pipeline", () => {
   it("opens and closes candidate detail without losing pipeline context", async () => {
     await renderJobDetail();
 
-    fireEvent.click(screen.getAllByRole("button", { name: /Rejected/i })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: /Rejected/i }));
     fireEvent.click(
       screen.getByRole("button", { name: /Open candidate Marta Gil/i }),
     );
 
-    expect(screen.getByText(/Candidate report/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/^Low$/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/47\.8 \/ 100/i)).toBeInTheDocument();
-    expect(screen.getByText(/AI recommendation/i)).toBeInTheDocument();
-    expect(screen.getByText(/Audio review/i)).toBeInTheDocument();
+    expect(screen.getByText(/No evaluation available yet/i)).toBeInTheDocument();
+    expect(screen.queryByText(/AI recommendation/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/^Audio$/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Close panel/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Close$/i }));
 
-    expect(
-      screen.getByText(/Select a candidate card to review their report/i),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Rejected review/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Close$/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Schedule mismatch/i)).toBeInTheDocument();
   });
 
   it("shows a graceful fallback when no recording exists", async () => {

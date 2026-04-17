@@ -47,7 +47,7 @@ function SharedStateShell({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[1.2rem] border p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)] md:p-5",
+        "relative overflow-hidden rounded-[1rem] border p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)] md:p-5",
         toneStyles[tone].panel,
       )}
     >
@@ -70,10 +70,10 @@ function SharedStateShell({
           <h3 className="font-heading mt-2 text-lg font-semibold text-slate-950">
             {title}
           </h3>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
             {description}
           </p>
-          {children ? <div className="mt-5">{children}</div> : null}
+          {children ? <div className="mt-4">{children}</div> : null}
         </div>
       </div>
     </div>
@@ -124,7 +124,7 @@ type EmptyStateProps = {
 export function EmptyState({
   title,
   description,
-  eyebrow = "Empty state",
+  eyebrow = "Nothing here yet",
   children,
 }: EmptyStateProps) {
   return (
@@ -150,7 +150,7 @@ type ErrorStateProps = {
 export function ErrorState({
   title,
   description,
-  eyebrow = "Error state",
+  eyebrow = "Something went wrong",
   children,
 }: ErrorStateProps) {
   return (

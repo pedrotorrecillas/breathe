@@ -6,6 +6,7 @@ import {
   type RequirementImportance,
 } from "@/domain/jobs/configuration";
 import type { JobConditionCode } from "@/domain/jobs/types";
+import { sanitizeRequirementCandidate } from "@/lib/job-requirement-cleanup";
 
 type ExtractionSuccess = {
   success: true;
@@ -42,7 +43,7 @@ type AnthropicMessageResponse = {
 };
 
 const DEFAULT_ANTHROPIC_MODEL =
-  process.env.ANTHROPIC_MODEL ?? "claude-3-5-haiku-20241022";
+  process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514";
 
 const conditionRules: ConditionRule[] = [
   {
@@ -261,6 +262,66 @@ function removeCrossSectionDuplicates(
   });
 }
 
+function sanitizeDraftRequirements(draft: {
+  jobConditions: JobConditionInput[];
+  essentialRequirements: JobRequirementInput[];
+  technicalSkills: JobRequirementInput[];
+  interpersonalSkills: JobRequirementInput[];
+}) {
+  const buckets = {
+    jobConditions: [...draft.jobConditions],
+    essentialRequirements: [] as JobRequirementInput[],
+    technicalSkills: [] as JobRequirementInput[],
+    interpersonalSkills: [] as JobRequirementInput[],
+  };
+  const seen = new Set<string>();
+
+  const pushUnique = (section: keyof typeof buckets, item: JobRequirementInput) => {
+    const key = `${section}:${item.label.toLowerCase()}`;
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    buckets[section].push(item);
+  };
+
+  const process = (
+    items: JobRequirementInput[],
+    sourceSection: "essential" | "technical" | "interpersonal",
+  ) => {
+    for (const item of items) {
+      const sanitized = sanitizeRequirementCandidate({
+        section: sourceSection,
+        label: item.label,
+      });
+
+      if (!sanitized) {
+        continue;
+      }
+
+      const targetSection = sanitized.section;
+      const bucketKey =
+        targetSection === "essential"
+          ? "essentialRequirements"
+          : targetSection === "technical"
+            ? "technicalSkills"
+            : "interpersonalSkills";
+
+      pushUnique(bucketKey, {
+        id: `${targetSection}_${slugify(sanitized.label)}`,
+        label: sanitized.label,
+        importance: item.importance,
+      });
+    }
+  };
+
+  process(draft.essentialRequirements, "essential");
+  process(draft.technicalSkills, "technical");
+  process(draft.interpersonalSkills, "interpersonal");
+
+  return buckets;
+}
+
 function extractJsonObject(value: string) {
   const fenced = value.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const candidate = fenced?.[1] ?? value;
@@ -300,6 +361,9 @@ DUAL-MODE HANDLING
 - Short input: infer a realistic, complete hiring profile for this role.
 - Long input: extract directly from the text, enhance weak phrasing, and infer missing critical fields from context.
 - If skills are not explicit, infer them from the role.
+- Never return recruiter copy, section headings, or role-responsibility statements as requirements.
+- Any item that is not directly candidate-evaluable should be omitted.
+- Prefer concise, measurable, qualification-style sentences over generic prose.
 
 REQUIREMENTS CLASSIFICATION
 - importance must be exactly "MANDATORY" or "OPTIONAL".
@@ -308,6 +372,7 @@ REQUIREMENTS CLASSIFICATION
 - technicalSkills: hard skills, tools, software, methods, operational knowledge.
 - interpersonalSkills: observable behavioural traits, written as observable actions.
 - Do not duplicate the same concept across sections.
+- Do not include phrases like "we are looking for", "relevant experience and expected outcomes", "this role", or "collaboration will be essential".
 
 JOB CONDITIONS
 - Use jobConditions for salary, location, schedule, right_to_work, driving_license, remote_policy, contract_type, visa_status when relevant.
@@ -411,7 +476,8 @@ function buildHeuristicExtraction(
     interpersonalSkills,
   };
 
-  const parsed = parseJobExtractionDraft(draft);
+  const sanitizedDraft = sanitizeDraftRequirements(draft);
+  const parsed = parseJobExtractionDraft(sanitizedDraft);
 
   if (!parsed.success) {
     return {
@@ -458,7 +524,7 @@ async function extractWithAnthropic(
     body: JSON.stringify({
       model: DEFAULT_ANTHROPIC_MODEL,
       max_tokens: 2200,
-      temperature: 0.2,
+      temperature: 0,
       messages: [
         {
           role: "user",
@@ -534,9 +600,19 @@ async function extractWithAnthropic(
     };
   }
 
+  const sanitizedDraft = sanitizeDraftRequirements(parsedDraft.data);
+  const parsedSanitizedDraft = parseJobExtractionDraft(sanitizedDraft);
+
+  if (!parsedSanitizedDraft.success) {
+    return {
+      success: false,
+      error: parsedSanitizedDraft.errors.join(" "),
+    };
+  }
+
   return {
     success: true,
-    data: parsedDraft.data,
+    data: parsedSanitizedDraft.data,
     warnings: [],
   };
 }

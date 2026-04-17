@@ -42,7 +42,7 @@ describe("public apply route", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: /Apply to Warehouse Associate/i,
+        name: /Apply for Warehouse Associate/i,
       }),
     ).toBeInTheDocument();
     expect(
@@ -50,7 +50,7 @@ describe("public apply route", () => {
         name: /Recruiter primary navigation/i,
       }),
     ).not.toBeInTheDocument();
-    expect(screen.getByText(/Application form/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Apply$/i)).toBeInTheDocument();
   });
 
   it("renders a usable unavailable state for an invalid public job id", async () => {
@@ -80,7 +80,7 @@ describe("public apply route", () => {
       screen.getByText(/This job is no longer accepting applications/i),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /Submit and receive call/i }),
+      screen.queryByRole("button", { name: /Apply now/i }),
     ).not.toBeInTheDocument();
     expect(await getPublicApplySubmissionSnapshot()).toEqual({
       candidates: [],
@@ -108,7 +108,7 @@ describe("public apply route", () => {
       screen.getByText(/This job has reached its interview limit/i),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /Submit and receive call/i }),
+      screen.queryByRole("button", { name: /Apply now/i }),
     ).not.toBeInTheDocument();
     expect(await getPublicApplySubmissionSnapshot()).toEqual({
       candidates: [],
@@ -133,7 +133,7 @@ describe("public apply route", () => {
     render(page);
 
     fireEvent.click(
-      screen.getByRole("button", { name: /Submit and receive call/i }),
+      screen.getByRole("button", { name: /Apply now/i }),
     );
 
     expect(screen.getByText(/Full name is required/i)).toBeInTheDocument();
@@ -164,16 +164,16 @@ describe("public apply route", () => {
     fireEvent.change(screen.getByLabelText(/LinkedIn URL/i), {
       target: { value: "http://linkedin.com/in/Lucia-Torres" },
     });
-    fireEvent.click(screen.getByLabelText(/Accept terms and AI disclosure/i));
+    fireEvent.click(screen.getByLabelText(/Accept terms/i));
 
     fireEvent.click(
-      screen.getByRole("button", { name: /Submit and receive call/i }),
+      screen.getByRole("button", { name: /Apply now/i }),
     );
 
     await waitFor(async () => {
       expect(
-        screen.getByText(/Your interview request is in/i),
-      ).toBeInTheDocument();
+        screen.getAllByText(/Application received/i).length,
+      ).toBeGreaterThan(0);
       expect(
         (await getPublicApplySubmissionSnapshot()).candidates[0]?.linkedinUrl,
       ).toBe("https://linkedin.com/in/lucia-torres");
@@ -204,10 +204,10 @@ describe("public apply route", () => {
         ],
       },
     });
-    fireEvent.click(screen.getByLabelText(/Accept terms and AI disclosure/i));
+    fireEvent.click(screen.getByLabelText(/Accept terms/i));
 
     fireEvent.click(
-      screen.getByRole("button", { name: /Submit and receive call/i }),
+      screen.getByRole("button", { name: /Apply now/i }),
     );
 
     expect(
@@ -236,16 +236,14 @@ describe("public apply route", () => {
     fireEvent.change(screen.getByLabelText(/LinkedIn URL/i), {
       target: { value: "https://linkedin.com/in/lucia-torres" },
     });
-    fireEvent.click(screen.getByLabelText(/Accept terms and AI disclosure/i));
+    fireEvent.click(screen.getByLabelText(/Accept terms/i));
     fireEvent.click(
-      screen.getByRole("button", { name: /Submit and receive call/i }),
+      screen.getByRole("button", { name: /Apply now/i }),
     );
 
     await waitFor(async () => {
       expect(
-        screen.getByText(
-          /Keep your phone nearby for the first call on \+34 600 123 456/i,
-        ),
+        screen.getByText(/We will contact you at \+34 600 123 456/i),
       ).toBeInTheDocument();
 
       const snapshot = await getPublicApplySubmissionSnapshot();

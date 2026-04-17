@@ -138,7 +138,7 @@ describe("create-job route", () => {
 
     await waitFor(() => {
       expect(
-        screen.getAllByRole("heading", { name: /Job conditions/i })[0],
+        screen.getAllByRole("heading", { name: /^Conditions$/i })[0],
       ).toBeInTheDocument();
     });
     expect(screen.getAllByLabelText(/Salary label/i)[0]).toBeInTheDocument();

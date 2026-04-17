@@ -92,7 +92,9 @@ describe("domain boundaries", () => {
     const normalizedPayload: HappyRobotNormalizedDispatchPayload = {
       interviewRunId: "run_1",
       jobId: job.id,
+      jobTitle: job.title,
       candidateId: candidate.id,
+      candidateName: candidate.fullName,
       applicationId: application.id,
       interviewPackageId: prepPackage.id,
       language: "es",

@@ -100,7 +100,9 @@ describe("happyrobot orchestration", () => {
       now: new Date("2026-03-24T08:10:00.000Z"),
     });
 
-    expect(preparation.interviewPackage.id).toBe("prep_job_1_cand_1");
+    expect(preparation.interviewPackage.id).toBe(
+      "prep_job_1_cand_1_20260324081000000",
+    );
     expect(preparation.interviewPackage.questions).toHaveLength(1);
     expect(preparation.interviewRun.status).toBe("normalized");
     expect(preparation.interviewRun.interviewPreparationId).toBe(

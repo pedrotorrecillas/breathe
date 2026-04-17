@@ -6,7 +6,7 @@ import type {
   HappyRobotCallRequest,
   HappyRobotDispatchResponse,
   HappyRobotNormalizedDispatchPayload,
-  HappyRobotRuntimeRequirement,
+  HappyRobotRuntimeRequirementContext,
 } from "@/domain/runtime/happyrobot/types";
 import {
   mapDispatchFailureToRuntimeTransition,
@@ -16,7 +16,9 @@ type HappyRobotWorkflowDispatchPayload = {
   provider: "happyrobot";
   interview_run_id: string;
   job_id: string;
+  job_title: string;
   candidate_id: string;
+  candidate_name: string;
   application_id: string;
   interview_package_id: string;
   target_language: string;
@@ -26,9 +28,9 @@ type HappyRobotWorkflowDispatchPayload = {
   utc_datetime: string | null;
   outbound_number: string | null;
   disclosure_text: string;
-  job_conditions: HappyRobotRuntimeRequirement[];
+  job_conditions: HappyRobotRuntimeRequirementContext[];
   scored_requirements: Array<
-    HappyRobotRuntimeRequirement & {
+    HappyRobotRuntimeRequirementContext & {
       category: string;
     }
   >;
@@ -45,15 +47,37 @@ function workflowWebhookUrl() {
   return process.env.HAPPYROBOT_WORKFLOW_WEBHOOK_URL?.trim() || null;
 }
 
+function readProviderCallIdFromWorkflowResponse(body: unknown) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return null;
+  }
+
+  const record = body as Record<string, unknown>;
+
+  if (typeof record.run_id === "string" && record.run_id.trim()) {
+    return record.run_id.trim();
+  }
+
+  if (typeof record.providerCallId === "string" && record.providerCallId.trim()) {
+    return record.providerCallId.trim();
+  }
+
+  return null;
+}
+
 function toRuntimeRequirement(
   requirement: Job["requirements"][number],
-): HappyRobotRuntimeRequirement {
+): HappyRobotRuntimeRequirementContext {
+  const value = requirement.description.trim();
+
   return {
     id: requirement.id,
     label: requirement.label,
+    description: requirement.description,
     category: requirement.category,
     weight: requirement.weight,
     isKnockout: requirement.isKnockout,
+    value: value.length > 0 ? value : requirement.label,
   };
 }
 
@@ -68,7 +92,9 @@ export function buildHappyRobotDispatchPayload(input: {
   return {
     interviewRunId: interviewRun.id,
     jobId: job.id,
+    jobTitle: job.title,
     candidateId: candidate.id,
+    candidateName: candidate.fullName,
     applicationId: interviewRun.applicationId,
     interviewPackageId: interviewPackage.id,
     candidatePhone: candidate.phone,
@@ -99,7 +125,9 @@ function toWorkflowDispatchPayload(
     provider: "happyrobot",
     interview_run_id: payload.interviewRunId,
     job_id: payload.jobId,
+    job_title: payload.jobTitle,
     candidate_id: payload.candidateId,
+    candidate_name: payload.candidateName,
     application_id: payload.applicationId,
     interview_package_id: payload.interviewPackageId,
     target_language: payload.language,
@@ -185,6 +213,9 @@ export async function dispatchHappyRobotCall(input: {
         },
         body: JSON.stringify(toWorkflowDispatchPayload(input.payload)),
       });
+      const responseBody = await response
+        .json()
+        .catch(() => null);
 
       if (!response.ok) {
         return {
@@ -202,7 +233,9 @@ export async function dispatchHappyRobotCall(input: {
       return {
         success: true,
         result: {
-          providerCallId: input.callRequest.interviewRunId,
+          providerCallId:
+            readProviderCallIdFromWorkflowResponse(responseBody) ??
+            input.callRequest.interviewRunId,
           providerAgentId: "gala-v1",
           providerSessionId: null,
           status: "queued",

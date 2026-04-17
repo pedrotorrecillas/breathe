@@ -27,7 +27,7 @@ export function CandidateStageCard({
   return (
     <article
       className={cn(
-        "rounded-[0.8rem] border border-slate-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(245,248,251,0.94))] shadow-[0_10px_24px_rgba(15,23,42,0.045)]",
+        "rounded-[0.8rem] border border-slate-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(245,248,251,0.94))] shadow-[0_10px_24px_rgba(15,23,42,0.045)] transition-colors",
         isSelected &&
           "border-cyan-300/90 bg-[linear-gradient(180deg,rgba(240,253,255,0.98),rgba(236,250,255,0.94))] shadow-[0_0_0_1px_rgba(34,211,238,0.16)]",
       )}
@@ -35,7 +35,7 @@ export function CandidateStageCard({
       <button
         type="button"
         aria-label={`Open candidate ${candidate.fullName}`}
-        className="flex w-full flex-col gap-3 px-3 py-3 text-left"
+        className="flex w-full flex-col gap-3 px-3 py-3 text-left hover:bg-white/40"
         onClick={() => onSelect?.(candidate.id)}
       >
         <div className="flex items-start justify-between gap-3">
@@ -43,21 +43,25 @@ export function CandidateStageCard({
             <p className="text-sm font-semibold text-slate-950">
               {candidate.fullName}
             </p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              {candidate.relevantDateLabel} · {candidate.relevantDateValue}
-            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {candidate.scoreState ? (
+                <StatusBadge
+                  intent={scoreBadgeIntent[candidate.scoreState]}
+                  density="compact"
+                >
+                  {candidate.scoreState}
+                </StatusBadge>
+              ) : null}
+              <span className="text-xs leading-5 text-slate-500">
+                {candidate.relevantDateValue}
+              </span>
+            </div>
           </div>
-          {candidate.scoreState ? (
-            <StatusBadge
-              intent={scoreBadgeIntent[candidate.scoreState]}
-              density="compact"
-            >
-              {candidate.scoreState}
-            </StatusBadge>
-          ) : null}
         </div>
 
-        <p className="text-sm leading-6 text-slate-600">{candidate.summary}</p>
+        <p className="text-sm leading-6 text-slate-600 line-clamp-4">
+          {candidate.summary}
+        </p>
 
         <div className="flex flex-wrap gap-2">
           {showOperationalState && candidate.operationalState ? (

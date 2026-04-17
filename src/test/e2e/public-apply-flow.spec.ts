@@ -7,15 +7,15 @@ test.describe("public apply flow", () => {
     await page.goto("/apply/demo-warehouse-associate");
 
     await expect(
-      page.getByRole("heading", { name: /Apply to Warehouse Associate/i }),
+      page.getByRole("heading", { name: /Apply for Warehouse Associate/i }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: /Submit and receive call/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Send application/i })).toBeVisible();
 
     await page.goto("/apply/missing-job-link");
 
     await expect(page.getByText(/This role link is no longer available/i)).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /Submit and receive call/i }),
+      page.getByRole("button", { name: /Send application/i }),
     ).toHaveCount(0);
   });
 
@@ -27,12 +27,12 @@ test.describe("public apply flow", () => {
     await expect(
       page.getByText(/This job is no longer accepting applications/i),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: /Submit and receive call/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Send application/i })).toHaveCount(0);
 
     await page.goto("/apply/demo-operations-coordinator");
 
     await expect(page.getByText(/This job has reached its interview limit/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: /Submit and receive call/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Send application/i })).toHaveCount(0);
   });
 
   test("renders the application form shell on the active job page", async ({
@@ -41,7 +41,7 @@ test.describe("public apply flow", () => {
     await page.goto("/apply/demo-warehouse-associate");
 
     await expect(
-      page.getByRole("button", { name: /Submit and receive call/i }),
+      page.getByRole("button", { name: /Send application/i }),
     ).toBeVisible();
     await expect(page.getByLabel("Full name")).toBeVisible();
     await expect(page.getByLabel("Phone")).toBeVisible();
