@@ -215,6 +215,7 @@ export function transitionCandidateApplicationForInterviewRun(
       ...application,
       stage: "applicant",
       needsHumanReviewAt,
+      recruiterOutcomeNote: null,
     };
   }
 
@@ -223,6 +224,7 @@ export function transitionCandidateApplicationForInterviewRun(
       ...application,
       stage: "rejected",
       needsHumanReviewAt: null,
+      recruiterOutcomeNote: null,
     };
   }
 
@@ -231,6 +233,7 @@ export function transitionCandidateApplicationForInterviewRun(
       ...application,
       stage: "interviewed",
       needsHumanReviewAt: null,
+      recruiterOutcomeNote: null,
     };
   }
 

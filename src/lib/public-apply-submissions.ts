@@ -617,6 +617,7 @@ export async function submitPublicApplication(
     submittedAt: input.legalAcceptance.acceptedAt,
     needsHumanReviewAt: null,
     legalAcceptance: input.legalAcceptance,
+    recruiterOutcomeNote: null,
   };
 
   if (options?.failureMode === "interview") {

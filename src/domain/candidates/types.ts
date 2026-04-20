@@ -50,6 +50,7 @@ export type CandidateApplication = {
   submittedAt: ISODateTimeString;
   needsHumanReviewAt: ISODateTimeString | null;
   legalAcceptance: CandidateLegalAcceptance | null;
+  recruiterOutcomeNote?: string | null;
 };
 
 export type CandidateNote = {
