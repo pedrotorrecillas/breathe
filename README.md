@@ -1,94 +1,263 @@
-# Breathe MVP Scaffold
+# Breathe
 
-Foundational Next.js application for the Breathe project and its recruiter workflow MVP.
+Breathe is a Next.js recruiter product for running AI-assisted hiring workflows end to end:
 
-This repository currently covers the first Foundations issue (`BRE-15`) and establishes:
+- recruiters create and publish roles
+- candidates apply through a public link
+- interview runs are dispatched through HappyRobot
+- callbacks, runtime traces, and evaluation outputs are persisted
+- recruiters review pipeline state, candidate notes, recordings, and evaluation summaries
+- recruiter access is protected by app-owned auth with optional Google sign-in
 
-- Next.js App Router with TypeScript
-- Tailwind CSS v4
-- shadcn/ui configuration
-- a recruiter route group centered on `Jobs`
-- a public candidate apply route group
-- initial domain boundaries for jobs, candidates, interview runs, and evaluations
-- documented module boundaries for preparation, runtime, and evaluation layers
+This repository contains the product app, persistence layer, recruiter UI, public apply flow, auth foundation, and the HappyRobot runtime/evaluation pipeline.
 
-## Getting Started
+## Current Product Surface
 
-Install dependencies and start the dev server:
+Today the app includes:
+
+- recruiter workspace with jobs list, job creation, job detail, and settings
+- protected recruiter auth with password login and optional Google sign-in
+- company/team access foundation for recruiter visibility and job access
+- public candidate apply flow under `/apply/[jobId]`
+- interview runtime orchestration, webhook ingestion, and evaluation generation
+- Postgres persistence through Drizzle, with in-memory fallback for tests/local no-DB runs
+
+## Quick Start
+
+Install dependencies:
 
 ```bash
 npm install
-npm run dev
 ```
 
-Open `http://localhost:3000` in your browser.
+Create local env:
 
-Useful commands:
+```bash
+cp .env.example .env.local
+```
+
+Start the app:
 
 ```bash
 npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## Environment
+
+Core local variables live in [.env.example](./.env.example).
+
+Most important ones:
+
+```env
+DATABASE_URL=postgres://USER:PASSWORD@HOST/DBNAME?sslmode=require
+
+AUTH_SEED_EMAIL=recruiter@company.com
+AUTH_SEED_PASSWORD=change-me
+AUTH_SEED_NAME=Recruiter Admin
+AUTH_SEED_COMPANY_NAME=Company Recruiting
+AUTH_SEED_COMPANY_SLUG=company-recruiting
+AUTH_SEED_WORKSPACE_KEY=operations
+
+AUTH_GOOGLE_CLIENT_ID=your-google-oauth-client-id
+AUTH_GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
+AUTH_GOOGLE_HOSTED_DOMAIN=
+
+HAPPYROBOT_WORKFLOW_WEBHOOK_URL=https://workflows.platform.happyrobot.ai/hooks/your-webhook-id
+ANTHROPIC_API_KEY=your-anthropic-api-key
+ANTHROPIC_MODEL=claude-sonnet-4-20250514
+FAL_KEY=your-fal-api-key
+```
+
+Notes:
+
+- `AUTH_SEED_EMAIL` and `AUTH_SEED_PASSWORD` are the minimum auth bootstrap values.
+- Google login is optional.
+- With `DATABASE_URL`, app state persists in Postgres.
+- Without `DATABASE_URL`, the app falls back to the in-memory runtime store used by tests.
+
+## Commands
+
+Core commands:
+
+```bash
+npm run dev
+npm run build
+npm run start
 npm run lint
 npm run test
+npm run test:watch
+npm run test:smoke
+npm run test:e2e
+npm run test:e2e:update
 npm run db:generate
 npm run db:migrate
-npm run build
 npm run format
 npm run format:write
 ```
 
-Testing conventions live in [docs/testing.md](./docs/testing.md).
-Module boundaries live in [docs/domain-boundaries.md](./docs/domain-boundaries.md).
-Neon/Postgres setup lives in [docs/neon-postgres.md](./docs/neon-postgres.md).
-Auth setup lives in [docs/auth.md](./docs/auth.md).
+## Routes
 
-Recruiter authentication supports password login and optional Google sign-in, both backed by the same local recruiter user, company membership, and session foundation.
+Recruiter routes:
 
-## Structure
+- `/jobs`
+  Recruiter jobs index and pipeline summary
+- `/jobs/new`
+  Role drafting, extraction review, limits, and publish flow
+- `/jobs/[jobId]`
+  Candidate pipeline review, recruiter actions, notes, evaluation, and audio
+- `/settings`
+  Recruiter account context, access visibility, and team/job access management
+- `/teams`
+  Redirects to `/settings`
 
-Key directories:
+Auth routes:
 
-- `src/app`
-  App Router entrypoints and route groups
-- `src/app/(recruiter)`
-  Recruiter-facing routes and shared shell
-- `src/app/(public)`
-  Public candidate routes
-- `src/components`
-  Shared UI and product scaffolding components
-- `src/domain`
-  Core domain types split by product area
-- `src/domain/interview-preparation`
-  Generated interview packages and rubrics before a call
-- `src/domain/runtime/happyrobot`
-  HappyRobot request and webhook shapes
-- `src/lib`
-  Shared utilities and app-level config
+- `/auth/login`
+  Recruiter login page
+- `/auth/google`
+  Starts Google OAuth flow
+- `/auth/google/callback`
+  Completes Google OAuth flow
+- `/auth/logout`
+  Clears the recruiter session
 
-Initial routes:
+Public routes:
 
 - `/`
-  Scaffold overview and entry links
-- `/jobs`
-  Recruiter jobs list placeholder
-- `/jobs/new`
-  Job configuration placeholder
-- `/jobs/[jobId]`
-  Job detail placeholder
+  Product home / landing surface
 - `/apply/[jobId]`
-  Public candidate apply placeholder
-- `/auth/login`
-  Recruiter login surface
+  Public candidate application flow
 
-Routing convention:
+API routes:
 
-- Recruiter surfaces live under `src/app/(recruiter)` and inherit the recruiter shell.
-- Public candidate surfaces live under `src/app/(public)` and render without the recruiter shell.
+- `/api/recruiter/jobs`
+  Publish recruiter jobs
+- `/api/recruiter/jobs/extract`
+  Extract structured job draft from recruiter input
+- `/api/recruiter/candidates/[candidateId]/notes`
+  Persist recruiter-only candidate notes
+- `/api/public-apply`
+  Accept public candidate applications
+- `/api/happyrobot/webhook`
+  Receive runtime callbacks from HappyRobot
+
+## Architecture
+
+The repository is split around product boundaries instead of generic layers.
+
+High-level flow:
+
+1. Recruiter drafts and publishes a role.
+2. Candidate applies through the public link.
+3. The app creates candidate, application, interview preparation, and interview run records.
+4. Runtime payloads are normalized and dispatched to HappyRobot.
+5. Webhooks update interview state, artifacts, and traces.
+6. Evaluation is generated from transcript/evidence.
+7. Recruiters review the outcome in the pipeline UI.
+
+Main code areas:
+
+- `src/app`
+  App Router routes, layouts, and server entrypoints
+- `src/components`
+  Product UI components for recruiter, public apply, settings, and shared states
+- `src/domain`
+  Domain types for jobs, candidates, interviews, evaluation, and runtime boundaries
+- `src/lib/auth`
+  Password auth, Google auth, session handling, and recruiter auth server helpers
+- `src/lib/db`
+  Drizzle schema, client, migrations, and runtime store
+- `src/lib/public-apply-submissions.ts`
+  Public apply persistence and runtime snapshot assembly
+- `src/lib/happyrobot-*`
+  Dispatch, webhook normalization, and runtime orchestration
+- `src/lib/job-*`
+  Job extraction, recruiter jobs, and pipeline snapshot building
+- `src/lib/team-access.ts`
+  Company/team access model and recruiter job visibility
+- `src/test`
+  Unit, integration, smoke, and e2e coverage
+
+## Persistence
+
+The app uses Drizzle + Postgres when `DATABASE_URL` is configured.
+
+Currently persisted records include:
+
+- companies
+- users
+- company memberships
+- sessions
+- teams
+- team memberships
+- job access grants
+- jobs
+- candidates
+- applications
+- candidate notes
+- interview runs
+- interview preparation packages
+- dispatch requests
+- dispatch payloads
+- dispatch responses
+- webhook records
+- runtime trace events
+- evaluations
+
+The fallback in-memory runtime store mirrors the same product behavior closely enough for tests and local development without Postgres.
+
+## Authentication And Access
+
+The recruiter product uses an app-owned auth model built around:
+
+- users
+- companies
+- company memberships
+- sessions
+
+Current behavior:
+
+- recruiter routes and recruiter APIs require authentication
+- password login works from seeded local credentials
+- optional Google sign-in creates the same app-owned recruiter session
+- Google login only succeeds for verified emails that already map to a local recruiter user
+- recruiter access is constrained by company and team/job visibility rules
+
+For setup details, see [docs/auth.md](./docs/auth.md).
+
+## Documentation Map
+
+Project docs:
+
+- [docs/auth.md](./docs/auth.md)
+  Recruiter auth setup, seed credentials, Google OAuth, and behavior
+- [docs/neon-postgres.md](./docs/neon-postgres.md)
+  Neon/Postgres environment, persistence behavior, and migrations
+- [docs/testing.md](./docs/testing.md)
+  Test strategy and conventions
+- [docs/domain-boundaries.md](./docs/domain-boundaries.md)
+  Product/domain architecture boundaries
+- [docs/job-extraction-schema.md](./docs/job-extraction-schema.md)
+  Structured job extraction shape
+
+Agent and workflow conventions:
+
+- [AGENTS.md](./AGENTS.md)
+  Repo-specific instructions for coding agents and task hygiene
 
 ## Product References
 
-The initial scaffold was shaped from the local product documents in this repository:
+Local product references used to shape the MVP include:
 
 - `Refs/What is Clara v2.md`
 - `Refs/clara-mvp-functional-spec-v1.md`
 - `Refs/clara-mvp-discovery-notes.md`
 - `Refs/clara-mvp-linear-plan.md`
+
+## Notes
+
+- The repo currently has a mix of active product code and exploratory/reference assets under `Refs/`.
+- If you are changing schema or persistence behavior, run `npm run db:migrate`.
+- If you are touching recruiter auth or protected routes, read [docs/auth.md](./docs/auth.md) first.
