@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   createCandidateNote,
@@ -12,6 +12,7 @@ import {
 
 describe("candidate notes", () => {
   afterEach(async () => {
+    vi.useRealTimers();
     await resetPublicApplySubmissionStore();
   });
 
@@ -33,6 +34,8 @@ describe("candidate notes", () => {
       },
     });
 
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-25T12:00:00.000Z"));
     const firstResult = await createCandidateNote({
       candidateId: "cand_1",
       applicationId: "app_1",
@@ -43,6 +46,7 @@ describe("candidate notes", () => {
         name: "Recruiter Admin",
       },
     });
+    vi.setSystemTime(new Date("2026-03-25T12:00:01.000Z"));
     const secondResult = await createCandidateNote({
       candidateId: "cand_1",
       applicationId: "app_1",

@@ -4,10 +4,10 @@ import { executeHappyRobotDispatch } from "@/lib/happyrobot-orchestration";
 import { createRuntimeTraceCollector } from "@/lib/runtime-tracing";
 
 describe("runtime tracing", () => {
-  it("emits structured preparation and dispatch events when a sink is provided", () => {
+  it("emits structured preparation and dispatch events when a sink is provided", async () => {
     const collector = createRuntimeTraceCollector();
 
-    const result = executeHappyRobotDispatch({
+    const result = await executeHappyRobotDispatch({
       interviewRun: {
         id: "run_1",
         candidateId: "cand_1",
@@ -117,10 +117,12 @@ describe("runtime tracing", () => {
       interviewRunId: "run_1",
       candidateId: "cand_1",
       jobId: "job_1",
-      interviewPackageId: "prep_job_1_cand_1",
       language: "es",
       questionCount: 1,
     });
+    expect(collector.events[1]?.interviewPackageId).toMatch(
+      /^prep_job_1_cand_1_/,
+    );
 
     expect(collector.events[3]).toMatchObject({
       providerCallId: "hr_call_run_1",
@@ -129,10 +131,10 @@ describe("runtime tracing", () => {
     });
   });
 
-  it("emits a failed dispatch trace when the provider call fails", () => {
+  it("emits a failed dispatch trace when the provider call fails", async () => {
     const collector = createRuntimeTraceCollector();
 
-    const result = executeHappyRobotDispatch({
+    const result = await executeHappyRobotDispatch({
       interviewRun: {
         id: "run_1",
         candidateId: "cand_1",
