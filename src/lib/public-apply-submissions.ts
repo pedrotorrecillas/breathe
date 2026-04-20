@@ -26,7 +26,11 @@ import { scoreEvaluationFromRequirementEvidence } from "@/lib/evaluation-scoring
 import { executeHappyRobotDispatch } from "@/lib/happyrobot-orchestration";
 import { ingestHappyRobotWebhookEvent } from "@/lib/happyrobot-webhooks";
 import { transitionCandidateApplicationForInterviewRun } from "@/lib/interview-pipeline-transitions";
-import { findPublicJobById, type PublicJobRecord } from "@/lib/public-jobs";
+import {
+  findPublicJobById,
+  isPublicJobAvailable,
+  type PublicJobRecord,
+} from "@/lib/public-jobs";
 import type {
   NormalizedCandidateProfileSource,
   PublicApplyLegalAcceptance,
@@ -61,6 +65,18 @@ type TranscriptResolver = (input: {
   transcriptUrl: string | null;
   webhookRecord: HappyRobotWebhookRecord;
 }) => string | TranscriptSegment[] | null;
+
+function buildPublicJobAvailabilityError(job: PublicJobRecord) {
+  const availability = isPublicJobAvailable(job);
+
+  if (availability.isAvailable) {
+    return null;
+  }
+
+  return availability.reason === "inactive"
+    ? "Application intake is closed for this job."
+    : "This job has already reached its interview limit.";
+}
 
 export type InterviewRunRuntimeSnapshot = {
   interviewRun: InterviewRun;
@@ -524,6 +540,15 @@ export async function submitPublicApplication(
     return {
       success: false,
       error: "Interview dispatch preparation failed because the job was not found.",
+    };
+  }
+
+  const availabilityError = buildPublicJobAvailabilityError(job);
+
+  if (availabilityError) {
+    return {
+      success: false,
+      error: availabilityError,
     };
   }
 

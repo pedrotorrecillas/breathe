@@ -260,6 +260,54 @@ describe("public apply submissions", () => {
     ]);
   });
 
+  it("rejects submissions for inactive jobs even when called directly", async () => {
+    const result = await submitPublicApplication({
+      jobId: "job_retail_barcelona",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "es",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Application intake is closed for this job.",
+    });
+  });
+
+  it("rejects submissions when the job interview limit is already reached", async () => {
+    const result = await submitPublicApplication({
+      jobId: "job_ops_coordinator_valencia",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "es",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "This job has already reached its interview limit.",
+    });
+  });
+
   it("stores webhook records and updates the linked interview run", async () => {
     await submitPublicApplication({
       jobId: "job_warehouse_madrid",
