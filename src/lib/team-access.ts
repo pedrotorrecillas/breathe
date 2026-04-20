@@ -281,6 +281,28 @@ export async function listRecruiterScopedJobs(recruiter: AuthenticatedRecruiter)
   return filterJobsForRecruiter(state, recruiter);
 }
 
+export async function getRecruiterAccessProfile(
+  recruiter: AuthenticatedRecruiter,
+) {
+  const state = await loadNormalizedRuntimeState();
+  const companyId = recruiter.company.id;
+  const teamIds = state.teamMemberships
+    .filter(
+      (membership) =>
+        membership.companyId === companyId && membership.userId === recruiter.user.id,
+    )
+    .map((membership) => membership.teamId);
+
+  const teams = state.teams.filter(
+    (team) => team.companyId === companyId && teamIds.includes(team.id),
+  );
+
+  return {
+    teams,
+    jobs: filterJobsForRecruiter(state, recruiter),
+  };
+}
+
 export async function findRecruiterScopedJobBySlug(
   recruiter: AuthenticatedRecruiter,
   recruiterSlug: string,

@@ -26,7 +26,7 @@ export default async function JobsPage() {
       <header className="border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(246,249,252,0.88))] px-6 py-5 md:px-8">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div className="space-y-3">
-            <h1 className="font-heading text-3xl font-semibold text-slate-950">
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
               Jobs
             </h1>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -70,7 +70,7 @@ export default async function JobsPage() {
               <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                 <div className="min-w-0 xl:max-w-[26rem]">
                   <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="font-heading text-xl font-semibold text-slate-950">
+                    <h2 className="text-xl font-semibold tracking-tight text-slate-950">
                       {job.title}
                     </h2>
                     <StatusBadge

@@ -35,7 +35,7 @@ export function SectionCard({
           {kicker ? (
             <p className="ops-kicker text-muted-foreground">{kicker}</p>
           ) : null}
-          <h2 className="font-heading text-foreground mt-2 text-xl font-semibold">
+          <h2 className="text-foreground mt-2 text-xl font-semibold tracking-tight">
             {title}
           </h2>
           {description ? (
@@ -95,7 +95,7 @@ export function DetailPanel({
     <aside className="ops-panel-strong border-l-highlight rounded-[0.95rem] border-l-[3px] p-4 md:p-5">
       <div className="border-border/78 border-b pb-4">
         {kicker ? <p className="ops-kicker text-highlight">{kicker}</p> : null}
-        <h2 className="font-heading text-foreground mt-2 text-xl font-semibold">
+        <h2 className="text-foreground mt-2 text-xl font-semibold tracking-tight">
           {title}
         </h2>
         {description ? (

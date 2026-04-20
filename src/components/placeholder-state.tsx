@@ -18,7 +18,7 @@ export function PlaceholderState({
       <p className="ops-kicker text-muted-foreground relative z-10">
         {eyebrow}
       </p>
-      <h2 className="font-heading text-foreground mt-3 max-w-3xl text-2xl font-semibold">
+      <h2 className="text-foreground mt-3 max-w-3xl text-2xl font-semibold tracking-tight">
         {title}
       </h2>
       {description ? (

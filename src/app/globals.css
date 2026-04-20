@@ -152,12 +152,8 @@
   html {
     @apply font-sans;
   }
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
+  .brand-stage h1,
+  .brand-stage h2 {
     @apply font-heading;
     letter-spacing: -0.045em;
   }

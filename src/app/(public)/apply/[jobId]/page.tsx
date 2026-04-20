@@ -58,7 +58,7 @@ export default async function ApplyPage({ params }: ApplyPageProps) {
         <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/94 p-6 shadow-[0_18px_44px_rgba(15,23,42,0.06)] md:p-8">
           <div className="flex flex-col gap-3 border-b border-slate-200/80 pb-5">
             <p className="ops-kicker text-cyan-900">Candidate application</p>
-            <h1 className="font-heading max-w-3xl text-3xl font-semibold text-slate-950">
+            <h1 className="max-w-3xl text-3xl font-semibold tracking-tight text-slate-950">
               Apply for {publicJob.title}
             </h1>
             <p className="max-w-2xl text-sm leading-6 text-slate-600">
@@ -69,7 +69,9 @@ export default async function ApplyPage({ params }: ApplyPageProps) {
           <div className="mt-5 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
             <SectionCard
               title="Apply"
-              kicker={publicJob.publicApplyPath?.replace("/apply/", "") ?? jobId}
+              kicker={
+                publicJob.publicApplyPath?.replace("/apply/", "") ?? jobId
+              }
               description="Submit once and keep your phone nearby."
               tone="strong"
             >

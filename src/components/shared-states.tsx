@@ -67,7 +67,7 @@ function SharedStateShell({
           >
             {eyebrow}
           </p>
-          <h3 className="font-heading text-foreground mt-2 text-lg font-semibold">
+          <h3 className="text-foreground mt-2 text-lg font-semibold tracking-tight">
             {title}
           </h3>
           <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">

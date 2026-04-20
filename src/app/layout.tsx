@@ -36,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang={locale} className="h-full scroll-smooth">
       <body
-        className={`${headingFont.variable} ${bodyFont.variable} ${monoFont.variable} bg-background text-foreground flex min-h-full flex-col antialiased`}
+        className={`${headingFont.variable} ${bodyFont.variable} ${monoFont.variable} bg-background text-foreground flex min-h-full flex-col`}
       >
         {children}
       </body>
