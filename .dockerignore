@@ -1,6 +1,7 @@
 .git
 .gitignore
 .next
+build
 node_modules
 test-results
 Refs
