@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { CandidateStageCard } from "@/components/candidate-stage-card";
+import { JobCandidateRow } from "@/components/job-candidate-row";
 import { PlaceholderState } from "@/components/placeholder-state";
 import { EmptyState } from "@/components/shared-states";
 import { StatusBadge, scoreBadgeIntent } from "@/components/status-badge";
@@ -212,13 +212,12 @@ export function JobDetailWorkspace({
     setStageActionError(null);
   };
 
-  const applySuccessfulRecruiterAction = (action: RecruiterAction) => {
-    if (!selectedCandidateId) {
-      return;
-    }
-
+  const applySuccessfulRecruiterAction = (
+    candidateId: string,
+    action: RecruiterAction,
+  ) => {
     setCandidates((currentCandidates) =>
-      applyRecruiterAction(currentCandidates, selectedCandidateId, action),
+      applyRecruiterAction(currentCandidates, candidateId, action),
     );
 
     if (action === "reject") {
@@ -230,14 +229,17 @@ export function JobDetailWorkspace({
     }
   };
 
-  const handleRecruiterAction = async (action: RecruiterAction) => {
-    if (!selectedCandidateId || !selectedCandidate) {
+  const handleRecruiterActionForCandidate = async (
+    candidate: PipelineCandidate,
+    action: RecruiterAction,
+  ) => {
+    if (!candidate) {
       return;
     }
 
-    if (!selectedCandidate.jobId) {
+    if (!candidate.jobId) {
       setStageActionError(null);
-      applySuccessfulRecruiterAction(action);
+      applySuccessfulRecruiterAction(candidate.id, action);
       return;
     }
 
@@ -246,7 +248,7 @@ export function JobDetailWorkspace({
 
     try {
       const response = await fetch(
-        `/api/recruiter/candidates/${selectedCandidate.id}/stage`,
+        `/api/recruiter/candidates/${candidate.id}/stage`,
         {
           method: "POST",
           headers: {
@@ -254,7 +256,7 @@ export function JobDetailWorkspace({
           },
           body: JSON.stringify({
             action,
-            jobId: selectedCandidate.jobId,
+            jobId: candidate.jobId,
           }),
         },
       );
@@ -272,12 +274,20 @@ export function JobDetailWorkspace({
         return;
       }
 
-      applySuccessfulRecruiterAction(action);
+      applySuccessfulRecruiterAction(candidate.id, action);
     } catch {
       setStageActionError("Candidate stage could not be updated right now.");
     } finally {
       setIsUpdatingStage(false);
     }
+  };
+
+  const handleRecruiterAction = async (action: RecruiterAction) => {
+    if (!selectedCandidate) {
+      return;
+    }
+
+    await handleRecruiterActionForCandidate(selectedCandidate, action);
   };
 
   const submitCandidateNote = async () => {
@@ -441,6 +451,57 @@ export function JobDetailWorkspace({
     </>
   ) : null;
 
+  const renderCandidateRowActions = (candidate: PipelineCandidate) => {
+    const baseClass =
+      "rounded-full border px-3 py-1.5 text-[11px] font-medium tracking-[0.14em] uppercase transition-colors";
+    const primaryClass =
+      "border-slate-950 bg-slate-950 text-white hover:bg-slate-800";
+    const secondaryClass =
+      "border-slate-300/90 bg-white/82 text-slate-600 hover:border-slate-400 hover:text-slate-950";
+
+    const buildAction = (
+      label: string,
+      action: RecruiterAction,
+      tone: "primary" | "secondary" = "secondary",
+    ) => (
+      <button
+        key={`${candidate.id}-${action}`}
+        type="button"
+        aria-label={`${label} ${candidate.fullName}`}
+        className={`${baseClass} ${
+          tone === "primary" ? primaryClass : secondaryClass
+        }`}
+        disabled={isUpdatingStage}
+        onClick={() => void handleRecruiterActionForCandidate(candidate, action)}
+      >
+        {label}
+      </button>
+    );
+
+    switch (candidate.stage) {
+      case "Applicants":
+        return buildAction("Reject", "reject");
+      case "Interviewed":
+        return (
+          <>
+            {buildAction("Shortlist", "shortlist", "primary")}
+            {buildAction("Reject", "reject")}
+          </>
+        );
+      case "Shortlisted":
+        return (
+          <>
+            {buildAction("Hire", "hire", "primary")}
+            {buildAction("Back to interviewed", "move_to_interviewed")}
+          </>
+        );
+      case "Hired":
+        return buildAction("Back to shortlisted", "move_to_shortlisted");
+      case "Rejected":
+        return buildAction("Restore", "restore_to_interviewed");
+    }
+  };
+
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6 md:px-8">
       <PlaceholderState
@@ -508,13 +569,7 @@ export function JobDetailWorkspace({
 
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.28fr)_minmax(24rem,0.92fr)]">
             <section className="space-y-4">
-              <div
-                className={
-                  showRejected
-                    ? "grid gap-4"
-                    : "grid gap-4 md:grid-cols-2 2xl:grid-cols-4"
-                }
-              >
+              <div className="grid gap-4">
                 {visiblePipelineStages.map((stage) => {
                   const stageCandidates = getCandidatesForStage(
                     candidates,
@@ -536,25 +591,20 @@ export function JobDetailWorkspace({
                       </div>
 
                       {stageCandidates.length > 0 ? (
-                        <div className="mt-4 grid gap-2">
+                        <div className="mt-4 grid gap-3">
                           {stageCandidates.map((candidate) => (
-                            <CandidateStageCard
+                            <JobCandidateRow
                               key={candidate.id}
                               candidate={candidate}
+                              density="comfortable"
                               isSelected={candidate.id === selectedCandidateId}
                               onSelect={selectCandidate}
                               showOperationalState={stage === "Applicants"}
-                              extraBadges={
-                                stage === "Rejected" &&
-                                candidate.rejectedReason ? (
-                                  <StatusBadge
-                                    intent="warning"
-                                    density="compact"
-                                  >
-                                    {candidate.rejectedReason}
-                                  </StatusBadge>
-                                ) : null
+                              showScore={
+                                stage !== "Applicants" && stage !== "Rejected"
                               }
+                              visualVariant="ops"
+                              actions={renderCandidateRowActions(candidate)}
                             />
                           ))}
                         </div>

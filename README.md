@@ -85,6 +85,9 @@ Core commands:
 npm run dev
 npm run build
 npm run start
+npm run ladle
+npm run ladle:build
+npm run ladle:preview
 npm run lint
 npm run test
 npm run test:watch
@@ -96,6 +99,39 @@ npm run db:migrate
 npm run format
 npm run format:write
 ```
+
+## UI Prototyping With Ladle
+
+Ladle is the local component workbench used in this repo to preview UI work, prototype recruiter views in code, and iterate on visual design without wiring everything through full app routes first.
+
+Start it from the repository root:
+
+```bash
+cd /Users/pedrotorrecillas/personal/breathe
+npm run ladle
+```
+
+Useful commands:
+
+```bash
+npm run ladle
+npm run ladle:build
+npm run ladle:preview
+```
+
+Current setup:
+
+- stories live under `src/stories`
+- Ladle global config lives in `.ladle`
+- the preview uses the real app theme from `src/app/globals.css`
+- basic `next/link` and `next/image` compatibility for stories is handled in `vite.config.ts` and `.ladle/*`
+
+Recommended workflow for UI work:
+
+1. Build or refine a reusable component in `src/components`.
+2. Add or update a story in `src/stories`.
+3. Iterate on layout, spacing, states, and copy inside Ladle.
+4. Move the approved variant into the actual product route.
 
 ## Routes
 
@@ -195,6 +231,8 @@ Main code areas:
   App Router routes, layouts, and server entrypoints
 - `src/components`
   Product UI components for recruiter, public apply, settings, and shared states
+- `src/stories`
+  Ladle stories used to prototype and preview UI components and recruiter workflows
 - `src/domain`
   Domain types for jobs, candidates, interviews, evaluation, and runtime boundaries
 - `src/lib/auth`

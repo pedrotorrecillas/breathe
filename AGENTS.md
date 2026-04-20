@@ -21,9 +21,10 @@ Repository-level instructions for coding agents working in `breathe`.
 - Preserve existing product language and design direction unless the task is explicitly a rewrite.
 - Keep auth, recruiter UI, runtime, and evaluation changes scoped; avoid mixing unrelated areas in one commit when possible.
 - Add or update tests when behavior changes.
+- For UI and visual design work, prefer using Ladle to preview and iterate on components or view fragments before or alongside route integration.
+- Keep visual prototyping stories in `src/stories` aligned with the current theme and component behavior.
 
 ## Safety
 
 - Never use destructive git commands like `git reset --hard` or `git checkout --` unless explicitly requested.
 - Be careful in dirty worktrees: stage only the files that belong to the task at hand.
-
