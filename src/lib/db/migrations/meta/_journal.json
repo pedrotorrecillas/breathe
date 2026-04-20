@@ -8,6 +8,27 @@
       "when": 1774972847036,
       "tag": "0000_ambiguous_morbius",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776539697750,
+      "tag": "0001_dizzy_risque",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776628508298,
+      "tag": "0002_lumpy_winter_soldier",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776690339045,
+      "tag": "0003_young_ben_grimm",
+      "breakpoints": true
     }
   ]
 }

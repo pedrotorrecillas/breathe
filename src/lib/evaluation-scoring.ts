@@ -302,6 +302,7 @@ export function scoreEvaluationFromRequirementEvidence(
   if (!hasRichOutputGate(input)) {
     return {
       id: `eval_${input.interviewRun.id}`,
+      companyId: input.interviewRun.companyId,
       interviewRunId: input.interviewRun.id,
       generatedAt,
       finalNumericScore: null,
@@ -346,6 +347,7 @@ export function scoreEvaluationFromRequirementEvidence(
 
   return {
     id: `eval_${input.interviewRun.id}`,
+    companyId: input.interviewRun.companyId,
     interviewRunId: input.interviewRun.id,
     generatedAt,
     finalNumericScore,
@@ -355,4 +357,3 @@ export function scoreEvaluationFromRequirementEvidence(
     fitClassification: finalClassification(finalNumericScore),
   };
 }
-

@@ -30,7 +30,7 @@ type HappyRobotWorkflowDispatchPayload = {
   disclosure_text: string;
   job_conditions: HappyRobotRuntimeRequirementContext[];
   scored_requirements: Array<
-    HappyRobotRuntimeRequirementContext & {
+    Omit<HappyRobotRuntimeRequirementContext, "category"> & {
       category: string;
     }
   >;
@@ -138,11 +138,14 @@ function toWorkflowDispatchPayload(
     outbound_number: payload.outboundNumber,
     disclosure_text: payload.disclosureText,
     job_conditions: payload.jobConditions,
-    scored_requirements: payload.scoredRequirements.map((requirement) => ({
-      ...requirement,
-      category:
-        requirement.category === "essential" ? "must_have" : requirement.category,
-    })),
+    scored_requirements: payload.scoredRequirements.map((requirement) => {
+      const { category, ...rest } = requirement;
+
+      return {
+        ...rest,
+        category: category === "essential" ? "must_have" : category,
+      };
+    }),
     questions: payload.questions.map((question) => ({
       id: question.id,
       kind: question.kind,

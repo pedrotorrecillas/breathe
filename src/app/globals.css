@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-manrope);
+  --font-sans: var(--font-ibm-plex-sans);
   --font-mono: var(--font-ibm-plex-mono);
-  --font-heading: var(--font-manrope);
+  --font-heading: var(--font-archivo-black);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -34,7 +34,9 @@
   --color-panel-strong: var(--panel-strong);
   --color-panel-glow: var(--panel-glow);
   --color-grid-line: var(--grid-line);
+  --color-structure-secondary: var(--structure-secondary);
   --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
   --color-highlight-soft: var(--highlight-soft);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
@@ -62,57 +64,62 @@
 }
 
 :root {
-  --font-manrope:
-    "Avenir Next", Avenir, "Segoe UI", "Helvetica Neue", Helvetica, Arial,
+  --font-archivo-black:
+    "Archivo Black", "Arial Black", "Helvetica Neue", Helvetica, Arial,
     sans-serif;
+  --font-ibm-plex-sans:
+    "IBM Plex Sans", "Avenir Next", Avenir, "Segoe UI", "Helvetica Neue",
+    Helvetica, Arial, sans-serif;
   --font-ibm-plex-mono:
-    "SFMono-Regular", "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono",
-    monospace;
-  --background: oklch(0.97 0.005 95.7);
-  --foreground: oklch(0.24 0.018 246.8);
-  --card: oklch(0.99 0.004 95.2);
-  --card-foreground: oklch(0.24 0.018 246.8);
-  --popover: oklch(0.994 0.004 95.1);
-  --popover-foreground: oklch(0.24 0.018 246.8);
-  --primary: oklch(0.28 0.047 243.8);
-  --primary-foreground: oklch(0.985 0.003 95.1);
-  --secondary: oklch(0.94 0.008 208.4);
-  --secondary-foreground: oklch(0.28 0.025 242.8);
-  --muted: oklch(0.952 0.004 219.7);
-  --muted-foreground: oklch(0.51 0.018 242.2);
-  --accent: oklch(0.91 0.021 195.8);
-  --accent-foreground: oklch(0.23 0.022 243.1);
-  --destructive: oklch(0.62 0.185 28.6);
-  --border: oklch(0.87 0.009 228.6);
-  --input: oklch(0.85 0.009 228.6);
-  --ring: oklch(0.61 0.078 210.6);
-  --chart-1: oklch(0.59 0.113 219.8);
-  --chart-2: oklch(0.74 0.125 170.2);
-  --chart-3: oklch(0.73 0.143 83.7);
-  --chart-4: oklch(0.63 0.177 33.1);
-  --chart-5: oklch(0.48 0.05 251.8);
-  --surface-0: oklch(0.984 0.003 97.1);
-  --surface-1: oklch(0.974 0.005 95.4);
-  --surface-2: oklch(0.957 0.007 226.2);
-  --surface-inverse: oklch(0.205 0.02 247.9);
-  --panel-line: oklch(0.82 0.014 224.8);
-  --panel-strong: oklch(0.74 0.021 223.4);
-  --panel-glow: oklch(0.79 0.049 201.5 / 0.2);
-  --grid-line: oklch(0.73 0.012 220.6 / 0.16);
-  --highlight: oklch(0.71 0.083 197.6);
-  --highlight-soft: oklch(0.91 0.029 194.5);
-  --radius: 0.72rem;
-  --shadow-panel: 0 10px 24px rgba(17, 24, 39, 0.042);
-  --shadow-panel-strong: 0 14px 34px rgba(17, 24, 39, 0.07);
-  --shadow-shell: 0 18px 44px rgba(17, 24, 39, 0.07);
-  --sidebar: oklch(0.205 0.02 247.9);
-  --sidebar-foreground: oklch(0.96 0.005 95.5);
-  --sidebar-primary: oklch(0.75 0.073 198.3);
-  --sidebar-primary-foreground: oklch(0.18 0.018 247.2);
-  --sidebar-accent: oklch(0.28 0.023 244.4);
-  --sidebar-accent-foreground: oklch(0.96 0.005 95.5);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.75 0.073 198.3);
+    "IBM Plex Mono", "SFMono-Regular", "SF Mono", Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+  --background: #f2ede3;
+  --foreground: #171717;
+  --card: #f7f1e7;
+  --card-foreground: #171717;
+  --popover: #fbf6ee;
+  --popover-foreground: #171717;
+  --primary: #171717;
+  --primary-foreground: #f2ede3;
+  --secondary: #e6ded0;
+  --secondary-foreground: #171717;
+  --muted: #ebe3d7;
+  --muted-foreground: #5d564d;
+  --accent: #d7def6;
+  --accent-foreground: #171717;
+  --destructive: #b24747;
+  --border: #c8bfaf;
+  --input: #d4cbbd;
+  --ring: #5e7eff;
+  --chart-1: #5e7eff;
+  --chart-2: #7f93e9;
+  --chart-3: #171717;
+  --chart-4: #8b7e6c;
+  --chart-5: #aab8e8;
+  --surface-0: #f8f3eb;
+  --surface-1: #eee6d9;
+  --surface-2: #e6ded0;
+  --surface-inverse: #171717;
+  --panel-line: #d2c8ba;
+  --panel-strong: #bbb09f;
+  --panel-glow: rgba(94, 126, 255, 0.14);
+  --grid-line: rgba(108, 98, 86, 0.12);
+  --structure-secondary: #323232;
+  --highlight: #5e7eff;
+  --highlight-foreground: #f6f8ff;
+  --highlight-soft: #aab8e8;
+  --radius: 0.65rem;
+  --shadow-panel: 0 18px 42px rgba(23, 23, 23, 0.06);
+  --shadow-panel-strong: 0 22px 54px rgba(23, 23, 23, 0.1);
+  --shadow-shell: 0 28px 72px rgba(23, 23, 23, 0.1);
+  --sidebar: #171717;
+  --sidebar-foreground: #f2ede3;
+  --sidebar-primary: #5e7eff;
+  --sidebar-primary-foreground: #f6f8ff;
+  --sidebar-accent: #323232;
+  --sidebar-accent-foreground: #f2ede3;
+  --sidebar-border: rgba(242, 237, 227, 0.1);
+  --sidebar-ring: #5e7eff;
 }
 
 @layer base {
@@ -126,11 +133,33 @@
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(circle at top, rgba(64, 186, 214, 0.08), transparent 24%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(243, 246, 249, 0.96));
+      radial-gradient(
+        circle at top left,
+        rgba(94, 126, 255, 0.08),
+        transparent 28%
+      ),
+      radial-gradient(
+        circle at bottom right,
+        rgba(170, 184, 232, 0.14),
+        transparent 36%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(252, 248, 241, 0.94),
+        rgba(242, 237, 227, 0.98)
+      );
   }
   html {
     @apply font-sans;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading;
+    letter-spacing: -0.045em;
   }
   a {
     @apply transition-colors;
@@ -140,35 +169,58 @@
 @layer utilities {
   .bg-ops-canvas {
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(244, 247, 250, 0.96)),
-      radial-gradient(circle at top left, rgba(83, 198, 223, 0.05), transparent 32%);
+      linear-gradient(
+        180deg,
+        rgba(250, 245, 237, 0.96),
+        rgba(238, 231, 220, 0.94)
+      ),
+      radial-gradient(
+        circle at top left,
+        rgba(170, 184, 232, 0.16),
+        transparent 28%
+      ),
+      linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.38),
+        transparent 42%,
+        rgba(94, 126, 255, 0.04)
+      );
   }
 
   .bg-ops-grid {
     background-image:
       linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
       linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
-    background-size: 28px 28px;
+    background-size: 30px 30px;
   }
 
   .ops-panel {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 249, 252, 0.96));
-    border: 1px solid color-mix(in oklab, var(--panel-line) 84%, white 16%);
+    background: linear-gradient(
+      180deg,
+      rgba(251, 247, 239, 0.98),
+      rgba(244, 238, 228, 0.96)
+    );
+    border: 1px solid color-mix(in srgb, var(--panel-line) 84%, white 16%);
     box-shadow: var(--shadow-panel);
   }
 
   .ops-panel-strong {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(244, 247, 250, 0.96));
-    border: 1px solid color-mix(in oklab, var(--panel-strong) 72%, white 28%);
+    background: linear-gradient(
+      180deg,
+      rgba(251, 247, 239, 0.98),
+      rgba(236, 227, 214, 0.96)
+    );
+    border: 1px solid color-mix(in srgb, var(--panel-strong) 74%, white 26%);
     box-shadow: var(--shadow-panel-strong);
   }
 
   .ops-shell {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 247, 250, 0.94));
-    border: 1px solid rgba(148, 163, 184, 0.34);
+    background: linear-gradient(
+      180deg,
+      rgba(250, 244, 235, 0.94),
+      rgba(239, 232, 221, 0.92)
+    );
+    border: 1px solid rgba(200, 191, 175, 0.72);
     box-shadow: var(--shadow-shell);
   }
 
@@ -180,7 +232,7 @@
     background-image: linear-gradient(
       90deg,
       transparent,
-      rgba(77, 116, 151, 0.2),
+      rgba(94, 126, 255, 0.24),
       transparent
     );
   }
@@ -196,12 +248,82 @@
     inset: 0;
     pointer-events: none;
     background:
-      radial-gradient(circle at top right, rgba(87, 196, 219, 0.08), transparent 22%),
-      linear-gradient(120deg, transparent 0%, rgba(87, 196, 219, 0.025) 48%, transparent 100%);
-    opacity: 0.5;
+      radial-gradient(
+        circle at top right,
+        rgba(94, 126, 255, 0.12),
+        transparent 24%
+      ),
+      linear-gradient(
+        120deg,
+        transparent 0%,
+        rgba(170, 184, 232, 0.08) 48%,
+        transparent 100%
+      );
+    opacity: 0.72;
   }
 
   .ops-signal-dot {
-    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1);
+    box-shadow: 0 0 0 4px rgba(94, 126, 255, 0.16);
+  }
+
+  .brand-stage {
+    background:
+      radial-gradient(
+        circle at top left,
+        rgba(94, 126, 255, 0.12),
+        transparent 26%
+      ),
+      radial-gradient(
+        circle at bottom right,
+        rgba(170, 184, 232, 0.16),
+        transparent 30%
+      ),
+      linear-gradient(180deg, rgba(250, 246, 238, 0.98), rgba(242, 237, 227, 1));
+  }
+
+  .brand-hero {
+    background:
+      radial-gradient(
+        circle at top left,
+        rgba(94, 126, 255, 0.16),
+        transparent 28%
+      ),
+      linear-gradient(180deg, rgba(23, 23, 23, 0.985), rgba(34, 34, 34, 0.96));
+    border: 1px solid rgba(242, 237, 227, 0.08);
+    box-shadow: 0 30px 90px rgba(23, 23, 23, 0.18);
+  }
+
+  .brand-chip {
+    border: 1px solid rgba(200, 191, 175, 0.9);
+    background: rgba(251, 247, 239, 0.72);
+    color: rgba(23, 23, 23, 0.74);
+  }
+
+  .brand-chip-inverse {
+    border: 1px solid rgba(242, 237, 227, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(242, 237, 227, 0.74);
+  }
+
+  .brand-surface {
+    background: linear-gradient(
+      180deg,
+      rgba(251, 247, 239, 0.96),
+      rgba(239, 232, 221, 0.92)
+    );
+    border: 1px solid rgba(200, 191, 175, 0.82);
+    box-shadow: var(--shadow-panel);
+  }
+
+  .brand-surface-strong {
+    background:
+      radial-gradient(
+        circle at top right,
+        rgba(94, 126, 255, 0.1),
+        transparent 24%
+      ),
+      linear-gradient(180deg, rgba(23, 23, 23, 0.985), rgba(39, 39, 39, 0.96));
+    border: 1px solid rgba(242, 237, 227, 0.08);
+    box-shadow: var(--shadow-panel-strong);
   }
 }

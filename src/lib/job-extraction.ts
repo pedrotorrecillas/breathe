@@ -268,15 +268,23 @@ function sanitizeDraftRequirements(draft: {
   technicalSkills: JobRequirementInput[];
   interpersonalSkills: JobRequirementInput[];
 }) {
-  const buckets = {
+  const buckets: {
+    jobConditions: JobConditionInput[];
+    essentialRequirements: JobRequirementInput[];
+    technicalSkills: JobRequirementInput[];
+    interpersonalSkills: JobRequirementInput[];
+  } = {
     jobConditions: [...draft.jobConditions],
-    essentialRequirements: [] as JobRequirementInput[],
-    technicalSkills: [] as JobRequirementInput[],
-    interpersonalSkills: [] as JobRequirementInput[],
+    essentialRequirements: [],
+    technicalSkills: [],
+    interpersonalSkills: [],
   };
   const seen = new Set<string>();
 
-  const pushUnique = (section: keyof typeof buckets, item: JobRequirementInput) => {
+  const pushUnique = (
+    section: "essentialRequirements" | "technicalSkills" | "interpersonalSkills",
+    item: JobRequirementInput,
+  ) => {
     const key = `${section}:${item.label.toLowerCase()}`;
     if (seen.has(key)) {
       return;

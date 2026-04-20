@@ -241,8 +241,7 @@ async function maybeGenerateInterviewEvaluation(input: {
     return null;
   }
 
-  const transcript = normalizeTranscriptResolution(
-    input.transcriptResolver({
+  const resolvedTranscript = input.transcriptResolver({
       interviewRun: snapshot.interviewRun,
       interviewPreparationPackage: snapshot.interviewPreparationPackage,
       candidate: snapshot.candidate,
@@ -272,8 +271,13 @@ async function maybeGenerateInterviewEvaluation(input: {
             snapshot.interviewRun.trace.createdAt,
           rawPayload: {},
         },
-    }),
-  );
+    });
+
+  if (!resolvedTranscript) {
+    return null;
+  }
+
+  const transcript = normalizeTranscriptResolution(resolvedTranscript);
 
   if (!transcript) {
     return null;
@@ -549,8 +553,18 @@ export async function submitPublicApplication(
     };
   }
 
+  const job = await findPublicJobById(input.jobId);
+
+  if (!job) {
+    return {
+      success: false,
+      error: "Interview dispatch preparation failed because the job was not found.",
+    };
+  }
+
   const stagedApplication: CandidateApplication = {
     id: nextId("app", state.applications.length),
+    companyId: job.companyId,
     candidateId: stagedCandidate.id,
     jobId: input.jobId,
     source,
@@ -567,17 +581,9 @@ export async function submitPublicApplication(
     };
   }
 
-  const job = await findPublicJobById(input.jobId);
-
-  if (!job) {
-    return {
-      success: false,
-      error: "Interview dispatch preparation failed because the job was not found.",
-    };
-  }
-
   const stagedInterviewRun: InterviewRun = {
     id: nextId("run", state.interviewRuns.length),
+    companyId: job.companyId,
     candidateId: stagedCandidate.id,
     applicationId: stagedApplication.id,
     jobId: input.jobId,

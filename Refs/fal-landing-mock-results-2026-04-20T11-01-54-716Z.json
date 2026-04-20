@@ -1,0 +1,38 @@
+[
+  {
+    "model": "fal-ai/flux-pro/v1.1-ultra",
+    "prompt": "Create a photorealistic hero image for the Breathe landing page. Breathe is an AI hiring engine for high-volume teams. Ownable territory: candidate operations. Show a real frontline hiring environment: warehouse aisle, loading zone, staging area, or dense operations floor. Repeated structures, visible depth, labels, motion, and operational pressure. Humans secondary, natural, never posed, never office-lifestyle. Premium editorial technology photography, highly realistic, with natural light, fine film grain, lens realism, and slight motion blur. Mood: calm, expensive, precise, operational. Visual direction: Sierra composure, Palantir seriousness, Luminous throughput, without military or surveillance vibes. Warm bone and stone palette. Avoid devices, dashboards, holograms, fake floating UI, and command-center aesthetics. Landscape image for a desktop landing hero, cinematic crop, tightly composed, high realism.",
+    "requestId": "019daa8d-d57e-7861-9b11-9a29458e80eb",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a9700c4/YyKPW_U-5WJfNk8NSaZUX_da243144f402426f9cab8480e0f656fe.jpg",
+          "width": 2752,
+          "height": 1536,
+          "content_type": "image/jpeg"
+        }
+      ],
+      "timings": {},
+      "seed": 273725753,
+      "has_nsfw_concepts": [
+        false
+      ],
+      "prompt": "Create a photorealistic hero image for the Breathe landing page. Breathe is an AI hiring engine for high-volume teams. Ownable territory: candidate operations. Show a real frontline hiring environment: warehouse aisle, loading zone, staging area, or dense operations floor. Repeated structures, visible depth, labels, motion, and operational pressure. Humans secondary, natural, never posed, never office-lifestyle. Premium editorial technology photography, highly realistic, with natural light, fine film grain, lens realism, and slight motion blur. Mood: calm, expensive, precise, operational. Visual direction: Sierra composure, Palantir seriousness, Luminous throughput, without military or surveillance vibes. Warm bone and stone palette. Avoid devices, dashboards, holograms, fake floating UI, and command-center aesthetics. Landscape image for a desktop landing hero, cinematic crop, tightly composed, high realism."
+    }
+  },
+  {
+    "model": "fal-ai/recraft-v3",
+    "prompt": "Create a photorealistic hero image for the Breathe landing page. Breathe is an AI hiring engine for high-volume teams. Ownable territory: candidate operations. Show a real frontline hiring environment: warehouse aisle, loading zone, staging area, or dense operations floor. Repeated structures, visible depth, labels, motion, and operational pressure. Humans secondary, natural, never posed, never office-lifestyle. Premium editorial technology photography, highly realistic, with natural light, fine film grain, lens realism, and slight motion blur. Mood: calm, expensive, precise, operational. Visual direction: Sierra composure, Palantir seriousness, Luminous throughput, without military or surveillance vibes. Warm bone and stone palette. Avoid devices, dashboards, holograms, fake floating UI, and command-center aesthetics. Landscape image for a desktop landing hero, cinematic crop, tightly composed, high realism.",
+    "requestId": "019daa8e-08a8-7230-a593-7e0c0f34043c",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a9700c7/KpZ7yHz7rB1xFWP0qFn-g_image.webp",
+          "content_type": "image/webp",
+          "file_name": "image.webp",
+          "file_size": 1350596
+        }
+      ]
+    }
+  }
+]

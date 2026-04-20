@@ -23,7 +23,7 @@ export function AppShell({ children, viewer }: AppShellProps) {
   return (
     <div className="bg-ops-grid min-h-screen bg-transparent px-4 py-4 lg:px-6">
       <div className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-[96rem] flex-col gap-4">
-        <header className="rounded-[1rem] border border-slate-200/80 bg-white/88 px-4 py-3 shadow-[0_10px_26px_rgba(15,23,42,0.045)] backdrop-blur">
+        <header className="brand-surface rounded-[1rem] px-4 py-3 backdrop-blur">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <nav
               aria-label="Recruiter primary navigation"
@@ -48,8 +48,8 @@ export function AppShell({ children, viewer }: AppShellProps) {
                         }),
                         "rounded-[0.55rem] px-3.5",
                         isActive
-                          ? "border-slate-950 bg-slate-950 text-white shadow-[0_14px_28px_rgba(15,23,42,0.16)] hover:bg-slate-800"
-                          : "border-slate-300/90 bg-white/80 text-slate-700 hover:border-slate-400 hover:bg-white",
+                          ? "border-primary bg-primary text-primary-foreground hover:border-structure-secondary hover:bg-structure-secondary shadow-[0_14px_28px_rgba(23,23,23,0.16)]"
+                          : "border-border bg-card/84 text-muted-foreground hover:border-foreground/24 hover:bg-card hover:text-foreground",
                       )}
                     >
                       {item.label}
@@ -63,12 +63,12 @@ export function AppShell({ children, viewer }: AppShellProps) {
                     aria-disabled="true"
                     className={cn(
                       buttonVariants({ variant: "outline", size: "sm" }),
-                      "cursor-not-allowed rounded-[0.55rem] border-dashed border-slate-300 bg-slate-100/70 px-3.5 text-slate-400",
+                      "border-border bg-muted/72 text-muted-foreground cursor-not-allowed rounded-[0.55rem] border-dashed px-3.5",
                     )}
                   >
                     <span className="flex items-center gap-2">
                       <span>{item.label}</span>
-                      <span className="text-[10px] uppercase tracking-[0.14em] text-slate-400">
+                      <span className="text-muted-foreground text-[10px] tracking-[0.14em] uppercase">
                         Coming soon
                       </span>
                     </span>
@@ -79,12 +79,14 @@ export function AppShell({ children, viewer }: AppShellProps) {
 
             <div className="flex flex-wrap items-center justify-between gap-3 lg:justify-end">
               <div className="min-w-0">
-                <p className="text-[11px] font-medium tracking-[0.16em] text-slate-500 uppercase">
+                <p className="text-muted-foreground text-[11px] font-medium tracking-[0.16em] uppercase">
                   {viewer.companyName}
                 </p>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600">
-                  <span className="font-medium text-slate-950">{viewer.name}</span>
-                  <span className="hidden text-slate-300 sm:inline">/</span>
+                <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                  <span className="text-foreground font-medium">
+                    {viewer.name}
+                  </span>
+                  <span className="text-border hidden sm:inline">/</span>
                   <span className="truncate">{viewer.email}</span>
                 </div>
               </div>
@@ -94,7 +96,7 @@ export function AppShell({ children, viewer }: AppShellProps) {
                   type="submit"
                   className={cn(
                     buttonVariants({ variant: "outline", size: "sm" }),
-                    "rounded-[0.55rem] border-slate-300/90 bg-white/80 px-3.5 text-slate-700 hover:border-slate-400 hover:bg-white",
+                    "border-border bg-card/84 text-muted-foreground hover:border-foreground/24 hover:bg-card hover:text-foreground rounded-[0.55rem] px-3.5",
                   )}
                 >
                   Log out
@@ -106,7 +108,7 @@ export function AppShell({ children, viewer }: AppShellProps) {
 
         <main className="ops-shell bg-ops-canvas flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1rem]">
           <div className="relative min-h-0 flex-1">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(93,123,156,0.24),transparent)]" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(94,126,255,0.24),transparent)]" />
             {children}
           </div>
         </main>

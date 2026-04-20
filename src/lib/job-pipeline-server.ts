@@ -1,14 +1,16 @@
 import { buildEvaluationSummary } from "@/lib/evaluation-summary";
+import type { AuthenticatedRecruiter } from "@/lib/auth/types";
 import { loadRuntimeStoreState, type RuntimeStoreState } from "@/lib/db/runtime-store";
 import {
   type JobDetailTab,
   type PipelineCandidate,
   activePipelineStages,
 } from "@/lib/job-pipeline";
+import { filterJobsForRecruiter, loadNormalizedRuntimeState } from "@/lib/team-access";
 
 type JobPipelineSeed = {
   title: string;
-  publicApplyPath?: string;
+  publicApplyPath: string | null;
   candidates: PipelineCandidate[];
 };
 
@@ -334,12 +336,12 @@ function buildLivePipelineSnapshot(
   }
 
   const candidates = latestApplications
-    .map((application) => {
+    .flatMap((application) => {
       const candidate = state.candidates.find(
         (item) => item.id === application.candidateId,
       );
       if (!candidate) {
-        return null;
+        return [];
       }
 
       const interviewRun = deriveRuntimeSnapshotFromState(state, candidate.id);
@@ -353,32 +355,35 @@ function buildLivePipelineSnapshot(
         interviewRun?.interviewRun.trace.lastEventAt ?? null,
       );
 
-      return {
-        id: candidate.id,
-        fullName: candidate.fullName,
-        stage,
-        summary:
-          summary?.summary ??
-          (stage === "Interviewed"
-            ? "Completed interview and ready for recruiter review."
-            : stage === "Rejected"
-              ? "Interview outcome routed to rejected review."
-              : interviewRun?.interviewRun.status === "human_requested"
-                ? "Candidate asked for a human callback during the interview."
-                : "Public apply candidate awaiting runtime progression."),
-        relevantDateLabel: relevant.label,
-        relevantDateValue: relevant.value,
-        scoreState: pipelineScoreStateFromFinal(summary?.finalScoreState ?? null),
-        operationalState: operationalStateFromRuntimeStatus(
-          interviewRun?.interviewRun.status ?? null,
-        ),
-        rejectedReason:
-          stage === "Rejected"
-            ? interviewRun?.interviewRun.metadata.failureReason ?? "Rejected"
-            : undefined,
-      } satisfies PipelineCandidate;
+      return [
+        {
+          id: candidate.id,
+          applicationId: application.id,
+          jobId: application.jobId,
+          fullName: candidate.fullName,
+          stage,
+          summary:
+            summary?.summary ??
+            (stage === "Interviewed"
+              ? "Completed interview and ready for recruiter review."
+              : stage === "Rejected"
+                ? "Interview outcome routed to rejected review."
+                : interviewRun?.interviewRun.status === "human_requested"
+                  ? "Candidate asked for a human callback during the interview."
+                  : "Public apply candidate awaiting runtime progression."),
+          relevantDateLabel: relevant.label,
+          relevantDateValue: relevant.value,
+          scoreState: pipelineScoreStateFromFinal(summary?.finalScoreState ?? null),
+          operationalState: operationalStateFromRuntimeStatus(
+            interviewRun?.interviewRun.status ?? null,
+          ),
+          rejectedReason:
+            stage === "Rejected"
+              ? interviewRun?.interviewRun.metadata.failureReason ?? "Rejected"
+              : undefined,
+        } satisfies PipelineCandidate,
+      ];
     })
-    .filter((candidate): candidate is PipelineCandidate => candidate !== null)
     .sort((left, right) => {
       const order: Record<JobDetailTab, number> = {
         Applicants: 0,
@@ -397,7 +402,7 @@ function buildLivePipelineSnapshot(
 
   return {
     title: job.title,
-    publicApplyPath: job.publicApplyPath,
+    publicApplyPath: job.publicApplyPath ?? null,
     candidates,
   };
 }
@@ -423,10 +428,45 @@ export async function getJobPipelineSnapshot(jobId: string) {
   };
 }
 
-export async function listRecruiterJobs() {
-  const state = await loadRuntimeStoreState();
+export async function getJobPipelineSnapshotForRecruiter(
+  recruiter: AuthenticatedRecruiter,
+  jobId: string,
+) {
+  const state = await loadNormalizedRuntimeState();
+  const accessibleJobs = filterJobsForRecruiter(state, recruiter);
+  const liveSnapshot = buildLivePipelineSnapshot(state, jobId);
 
-  return state.jobs.map((job) => {
+  if (liveSnapshot) {
+    const liveJob = accessibleJobs.find((job) => job.recruiterSlug === jobId);
+    return liveJob ? liveSnapshot : null;
+  }
+
+  const seededJob = accessibleJobs.find((job) => job.recruiterSlug === jobId);
+
+  if (!seededJob) {
+    return null;
+  }
+
+  const seed = jobPipelineSeeds[jobId];
+
+  if (!seed) {
+    return null;
+  }
+
+  return {
+    title: seed.title,
+    publicApplyPath: seed.publicApplyPath ?? null,
+    candidates: seed.candidates.map((candidate) => ({ ...candidate })),
+  };
+}
+
+export async function listRecruiterJobs(recruiter?: AuthenticatedRecruiter) {
+  const state = recruiter
+    ? await loadNormalizedRuntimeState()
+    : await loadRuntimeStoreState();
+  const jobs = recruiter ? filterJobsForRecruiter(state, recruiter) : state.jobs;
+
+  return jobs.map((job) => {
     const liveApplications = state.applications.filter(
       (application) => application.jobId === job.id,
     );

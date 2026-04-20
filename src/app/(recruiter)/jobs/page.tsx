@@ -3,11 +3,13 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { DataPoint } from "@/components/section-card";
 import { StatusBadge } from "@/components/status-badge";
+import { getCurrentRecruiter } from "@/lib/auth/server";
 import { listRecruiterJobs } from "@/lib/job-pipeline-server";
 import { cn } from "@/lib/utils";
 
 export default async function JobsPage() {
-  const jobs = await listRecruiterJobs();
+  const recruiter = await getCurrentRecruiter().catch(() => null);
+  const jobs = await listRecruiterJobs(recruiter ?? undefined);
   const activeJobs = jobs.filter((job) => job.status === "Active").length;
   const totalPipelineCandidates = jobs.reduce(
     (sum, job) =>

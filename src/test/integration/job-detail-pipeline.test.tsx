@@ -111,6 +111,7 @@ describe("job detail pipeline", () => {
 
     const evaluation: CandidateEvaluation = {
       id: "eval_1",
+      companyId: "company_seed_demo",
       interviewRunId: "run_1",
       generatedAt: "2026-03-25T12:15:00.000Z",
       finalNumericScore: 74,

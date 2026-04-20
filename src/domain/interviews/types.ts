@@ -74,6 +74,7 @@ export type InterviewRuntimeMetadata = {
 
 export type InterviewRun = {
   id: EntityId;
+  companyId: EntityId;
   candidateId: EntityId;
   applicationId: EntityId;
   jobId: EntityId;

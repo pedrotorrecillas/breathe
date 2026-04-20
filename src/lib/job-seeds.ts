@@ -10,6 +10,7 @@ export type SeededPublicJobRecord = Job & {
 export const seededPublicJobs: SeededPublicJobRecord[] = [
   {
     id: "job_warehouse_madrid",
+    companyId: "company_seed_demo",
     recruiterSlug: "warehouse-associate-madrid",
     title: "Warehouse Associate",
     summary: "Night shift warehouse intake with immediate phone interview.",
@@ -78,6 +79,7 @@ export const seededPublicJobs: SeededPublicJobRecord[] = [
   },
   {
     id: "job_retail_barcelona",
+    companyId: "company_seed_demo",
     recruiterSlug: "retail-shift-lead-barcelona",
     title: "Retail Shift Lead",
     summary: "Public link retained for reference, but intake is currently paused.",
@@ -108,6 +110,7 @@ export const seededPublicJobs: SeededPublicJobRecord[] = [
   },
   {
     id: "job_ops_coordinator_valencia",
+    companyId: "company_seed_demo",
     recruiterSlug: "operations-coordinator-valencia",
     title: "Operations Coordinator",
     summary: "Public intake is paused because the interview queue is full.",

@@ -38,6 +38,18 @@ type JobDetailWorkspaceProps = {
     publicApplyPath: string | null;
     candidates: PipelineCandidate[];
   };
+  accessSummary: {
+    jobId: string;
+    teams: {
+      id: string;
+      name: string;
+      members: {
+        id: string;
+        email: string;
+        displayName: string;
+      }[];
+    }[];
+  } | null;
   candidateNotesByCandidateId: Record<
     string,
     {
@@ -135,6 +147,7 @@ function formatNoteTimestamp(value: string) {
 
 export function JobDetailWorkspace({
   initialSnapshot,
+  accessSummary,
   candidateNotesByCandidateId: initialCandidateNotesByCandidateId,
   runtimeSnapshotsByCandidateId,
 }: JobDetailWorkspaceProps) {
@@ -416,6 +429,43 @@ export function JobDetailWorkspace({
               </button>
             </div>
           </div>
+
+          {accessSummary ? (
+            <section className="rounded-[0.85rem] border border-slate-200/85 bg-white/88 px-4 py-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="ops-kicker text-slate-500">Opportunity access</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Teams below can currently view and work this opportunity.
+                  </p>
+                </div>
+                <StatusBadge intent="neutral" density="compact">
+                  {accessSummary.teams.length} teams
+                </StatusBadge>
+              </div>
+
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                {accessSummary.teams.map((team) => (
+                  <article
+                    key={team.id}
+                    className="rounded-[0.75rem] border border-slate-200/80 bg-slate-50/80 px-3 py-3"
+                  >
+                    <p className="text-sm font-semibold text-slate-950">{team.name}</p>
+                    <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-500">
+                      Members
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {team.members.map((member) => (
+                        <StatusBadge key={member.id} intent="info" density="compact">
+                          {member.displayName || member.email}
+                        </StatusBadge>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.28fr)_minmax(24rem,0.92fr)]">
             <section className="space-y-4">

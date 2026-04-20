@@ -1,20 +1,20 @@
 import { cva } from "class-variance-authority";
 
 export const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-[0.75rem] border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 active:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-[0.75rem] border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 active:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
         default:
-          "border-slate-950 bg-slate-950 text-primary-foreground shadow-[0_12px_24px_rgba(15,23,42,0.12)] hover:bg-slate-800",
+          "border-primary bg-primary text-primary-foreground shadow-[0_14px_34px_rgba(23,23,23,0.16)] hover:border-structure-secondary hover:bg-structure-secondary",
         outline:
-          "border-slate-300/90 bg-white/92 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.86)] hover:border-slate-400 hover:bg-white hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
+          "border-border bg-card/88 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.74)] hover:border-foreground/30 hover:bg-card hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
         secondary:
-          "border border-cyan-200/90 bg-cyan-50/86 text-cyan-950 hover:border-cyan-300 hover:bg-cyan-100 aria-expanded:bg-cyan-100 aria-expanded:text-cyan-950",
+          "border-highlight-soft/55 bg-highlight-soft/18 text-foreground hover:border-highlight/40 hover:bg-highlight-soft/28 aria-expanded:bg-highlight-soft/28 aria-expanded:text-foreground",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
         destructive:
-          "border border-rose-300 bg-rose-50 text-destructive hover:bg-rose-100 focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
+          "border border-destructive/28 bg-destructive/8 text-destructive hover:bg-destructive/12 focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

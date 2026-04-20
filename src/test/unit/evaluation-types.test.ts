@@ -6,6 +6,7 @@ describe("evaluation model", () => {
   it("supports numeric scoring, score labels, and weight snapshots across blocks", () => {
     const evaluation: CandidateEvaluation = {
       id: "eval_1",
+      companyId: "company_seed_demo",
       interviewRunId: "run_1",
       generatedAt: "2026-03-24T08:30:00.000Z",
       finalNumericScore: 78,

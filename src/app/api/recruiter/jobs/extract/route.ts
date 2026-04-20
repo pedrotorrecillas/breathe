@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 
+import { requireAuthenticatedApiRequest } from "@/lib/auth/server";
 import { extractJobConfiguration } from "@/lib/job-extraction";
 
 export async function POST(request: Request) {
+  const recruiter = await requireAuthenticatedApiRequest();
+
+  if (recruiter instanceof NextResponse) {
+    return recruiter;
+  }
+
   const body = await request.json();
 
   if (

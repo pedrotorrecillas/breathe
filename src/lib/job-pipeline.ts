@@ -27,6 +27,8 @@ export type PipelineOperationalState =
 
 export type PipelineCandidate = {
   id: string;
+  applicationId?: string;
+  jobId?: string;
   fullName: string;
   stage: JobDetailTab;
   summary: string;

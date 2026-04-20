@@ -70,6 +70,7 @@ export type EvaluationRequirementEvidenceSet = {
 
 export type CandidateEvaluation = {
   id: EntityId;
+  companyId: EntityId;
   interviewRunId: EntityId;
   generatedAt: ISODateTimeString;
   finalNumericScore: number | null;

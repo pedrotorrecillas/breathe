@@ -28,26 +28,26 @@ function SharedStateShell({
 }: SharedStateShellProps) {
   const toneStyles = {
     loading: {
-      panel: "border-sky-200/70 bg-sky-50/70",
-      icon: "bg-sky-100 text-sky-900",
-      eyebrow: "text-sky-900",
+      panel: "border-highlight-soft/55 bg-highlight-soft/14",
+      icon: "bg-highlight-soft/28 text-highlight",
+      eyebrow: "text-highlight",
     },
     empty: {
-      panel: "border-slate-200 bg-slate-50/90",
-      icon: "bg-slate-200/70 text-slate-700",
-      eyebrow: "text-slate-700",
+      panel: "border-border bg-card/90",
+      icon: "bg-secondary text-foreground",
+      eyebrow: "text-muted-foreground",
     },
     error: {
-      panel: "border-rose-200/70 bg-rose-50/80",
-      icon: "bg-rose-100 text-rose-700",
-      eyebrow: "text-rose-700",
+      panel: "border-destructive/24 bg-destructive/6",
+      icon: "bg-destructive/12 text-destructive",
+      eyebrow: "text-destructive",
     },
   } as const;
 
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[1rem] border p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)] md:p-5",
+        "relative overflow-hidden rounded-[1rem] border p-4 shadow-[0_12px_28px_rgba(23,23,23,0.05)] md:p-5",
         toneStyles[tone].panel,
       )}
     >
@@ -67,10 +67,10 @@ function SharedStateShell({
           >
             {eyebrow}
           </p>
-          <h3 className="font-heading mt-2 text-lg font-semibold text-slate-950">
+          <h3 className="font-heading text-foreground mt-2 text-lg font-semibold">
             {title}
           </h3>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+          <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
             {description}
           </p>
           {children ? <div className="mt-4">{children}</div> : null}
@@ -105,7 +105,7 @@ export function LoadingState({
         {Array.from({ length: rows }).map((_, index) => (
           <div
             key={index}
-            className="h-4 animate-pulse rounded-sm bg-sky-200/75"
+            className="bg-highlight-soft/50 h-4 animate-pulse rounded-sm"
             style={{ width: `${85 - index * 12}%` }}
           />
         ))}

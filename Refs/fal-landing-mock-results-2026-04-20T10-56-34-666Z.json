@@ -1,0 +1,71 @@
+[
+  {
+    "id": "hero-warehouse-throughput",
+    "label": "Hero Warehouse Throughput",
+    "model": "fal-ai/flux-pro/v1.1-ultra",
+    "prompt": "Create a premium editorial hero image for the Breathe landing page. Breathe is an AI hiring engine for high-volume teams and its ownable territory is candidate operations. The image must feel like candidate operations from application to ready-to-start, not generic enterprise software and not a chatbot. Visual direction: Palantir seriousness, Sierra composure, Luminous throughput, operational realism. Use a warm bone and stone palette with soot black structure and restrained oxide-blue system accents. The result should feel technological, operational, calm, expensive, and precise. Avoid anything military, surveillance-like, command-center heavy, sci-fi, or defense-tech. Avoid smiling office teams, generic HR stock photography, laptops, browser windows, dashboards floating in space, and mockup devices. Scene: warehouse aisle with repeated shelving, carts, pallets, and visible depth, showing real throughput and operational density. Overlay language: subtle workflow overlays, queue labels, routing lines, stage markers, and restrained system annotations integrated into the scene. Humans should be secondary to the system and the environment. Show movement, repetition, pressure, progression, and systemized work. Overlays must feel functional, not futuristic. No holograms, no purple gradients, no bright lime accents, no glossy 3D effects. Cinematic but restrained, tightly cropped, high-end editorial technology brand image. Landscape image for a desktop landing hero.",
+    "requestId": "019daa88-f3a3-7d73-8125-5bf1514b8c1e",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a9700a4/oO9MAKVTLYNqJMNub0bpa_3df67ed8970c47e59c00b04d039c379b.jpg",
+          "width": 2752,
+          "height": 1536,
+          "content_type": "image/jpeg"
+        }
+      ],
+      "timings": {},
+      "seed": 2608063895,
+      "has_nsfw_concepts": [
+        false
+      ],
+      "prompt": "Create a premium editorial hero image for the Breathe landing page. Breathe is an AI hiring engine for high-volume teams and its ownable territory is candidate operations. The image must feel like candidate operations from application to ready-to-start, not generic enterprise software and not a chatbot. Visual direction: Palantir seriousness, Sierra composure, Luminous throughput, operational realism. Use a warm bone and stone palette with soot black structure and restrained oxide-blue system accents. The result should feel technological, operational, calm, expensive, and precise. Avoid anything military, surveillance-like, command-center heavy, sci-fi, or defense-tech. Avoid smiling office teams, generic HR stock photography, laptops, browser windows, dashboards floating in space, and mockup devices. Scene: warehouse aisle with repeated shelving, carts, pallets, and visible depth, showing real throughput and operational density. Overlay language: subtle workflow overlays, queue labels, routing lines, stage markers, and restrained system annotations integrated into the scene. Humans should be secondary to the system and the environment. Show movement, repetition, pressure, progression, and systemized work. Overlays must feel functional, not futuristic. No holograms, no purple gradients, no bright lime accents, no glossy 3D effects. Cinematic but restrained, tightly cropped, high-end editorial technology brand image. Landscape image for a desktop landing hero."
+    }
+  },
+  {
+    "id": "hero-loading-handoff",
+    "label": "Hero Loading Handoff",
+    "model": "fal-ai/flux-pro/v1.1-ultra",
+    "prompt": "Create a premium editorial hero image for the Breathe landing page. Breathe is an AI hiring engine for high-volume teams and its ownable territory is candidate operations. The image must feel like candidate operations from application to ready-to-start, not generic enterprise software and not a chatbot. Visual direction: Palantir seriousness, Sierra composure, Luminous throughput, operational realism. Use a warm bone and stone palette with soot black structure and restrained oxide-blue system accents. The result should feel technological, operational, calm, expensive, and precise. Avoid anything military, surveillance-like, command-center heavy, sci-fi, or defense-tech. Avoid smiling office teams, generic HR stock photography, laptops, browser windows, dashboards floating in space, and mockup devices. Scene: loading and staging area with repeated containers, handoff points, clipboards, labels, and visible movement between zones. Overlay language: minimal operational overlays showing progress states, docs pending markers, ATS sync labels, and next-step cues. Humans should be secondary to the system and the environment. Show movement, repetition, pressure, progression, and systemized work. Overlays must feel functional, not futuristic. No holograms, no purple gradients, no bright lime accents, no glossy 3D effects. Cinematic but restrained, tightly cropped, high-end editorial technology brand image. Landscape image for a desktop landing hero.",
+    "requestId": "019daa89-2a09-7153-9445-d60de05429cc",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a9700a5/GDSbfWnnZ5X4jhhVcxdhv_c3189f042d3948268da745ac82bf0fca.jpg",
+          "width": 2752,
+          "height": 1536,
+          "content_type": "image/jpeg"
+        }
+      ],
+      "timings": {},
+      "seed": 171237103,
+      "has_nsfw_concepts": [
+        false
+      ],
+      "prompt": "Create a premium editorial hero image for the Breathe landing page. Breathe is an AI hiring engine for high-volume teams and its ownable territory is candidate operations. The image must feel like candidate operations from application to ready-to-start, not generic enterprise software and not a chatbot. Visual direction: Palantir seriousness, Sierra composure, Luminous throughput, operational realism. Use a warm bone and stone palette with soot black structure and restrained oxide-blue system accents. The result should feel technological, operational, calm, expensive, and precise. Avoid anything military, surveillance-like, command-center heavy, sci-fi, or defense-tech. Avoid smiling office teams, generic HR stock photography, laptops, browser windows, dashboards floating in space, and mockup devices. Scene: loading and staging area with repeated containers, handoff points, clipboards, labels, and visible movement between zones. Overlay language: minimal operational overlays showing progress states, docs pending markers, ATS sync labels, and next-step cues. Humans should be secondary to the system and the environment. Show movement, repetition, pressure, progression, and systemized work. Overlays must feel functional, not futuristic. No holograms, no purple gradients, no bright lime accents, no glossy 3D effects. Cinematic but restrained, tightly cropped, high-end editorial technology brand image. Landscape image for a desktop landing hero."
+    }
+  },
+  {
+    "id": "hero-contact-center-density",
+    "label": "Hero Contact Center Density",
+    "model": "fal-ai/flux-pro/v1.1-ultra",
+    "prompt": "Create a premium editorial hero image for the Breathe landing page. Breathe is an AI hiring engine for high-volume teams and its ownable territory is candidate operations. The image must feel like candidate operations from application to ready-to-start, not generic enterprise software and not a chatbot. Visual direction: Palantir seriousness, Sierra composure, Luminous throughput, operational realism. Use a warm bone and stone palette with soot black structure and restrained oxide-blue system accents. The result should feel technological, operational, calm, expensive, and precise. Avoid anything military, surveillance-like, command-center heavy, sci-fi, or defense-tech. Avoid smiling office teams, generic HR stock photography, laptops, browser windows, dashboards floating in space, and mockup devices. Scene: high-density operational contact center or recruiting operations floor with repeated desks, headset stations, and visible workflow intensity, humans secondary. Overlay language: structured candidate-stage overlays, review states, routing markers, and calm computational cues embedded into the environment. Humans should be secondary to the system and the environment. Show movement, repetition, pressure, progression, and systemized work. Overlays must feel functional, not futuristic. No holograms, no purple gradients, no bright lime accents, no glossy 3D effects. Cinematic but restrained, tightly cropped, high-end editorial technology brand image. Landscape image for a desktop landing hero.",
+    "requestId": "019daa89-5962-7521-b86c-1d098f2d61f1",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a9700a7/Ue8tswS5xDY5L6adbM5ez_6ba746a9145040c79f39970d346c3ae0.jpg",
+          "width": 2752,
+          "height": 1536,
+          "content_type": "image/jpeg"
+        }
+      ],
+      "timings": {},
+      "seed": 261422919,
+      "has_nsfw_concepts": [
+        false
+      ],
+      "prompt": "Create a premium editorial hero image for the Breathe landing page. Breathe is an AI hiring engine for high-volume teams and its ownable territory is candidate operations. The image must feel like candidate operations from application to ready-to-start, not generic enterprise software and not a chatbot. Visual direction: Palantir seriousness, Sierra composure, Luminous throughput, operational realism. Use a warm bone and stone palette with soot black structure and restrained oxide-blue system accents. The result should feel technological, operational, calm, expensive, and precise. Avoid anything military, surveillance-like, command-center heavy, sci-fi, or defense-tech. Avoid smiling office teams, generic HR stock photography, laptops, browser windows, dashboards floating in space, and mockup devices. Scene: high-density operational contact center or recruiting operations floor with repeated desks, headset stations, and visible workflow intensity, humans secondary. Overlay language: structured candidate-stage overlays, review states, routing markers, and calm computational cues embedded into the environment. Humans should be secondary to the system and the environment. Show movement, repetition, pressure, progression, and systemized work. Overlays must feel functional, not futuristic. No holograms, no purple gradients, no bright lime accents, no glossy 3D effects. Cinematic but restrained, tightly cropped, high-end editorial technology brand image. Landscape image for a desktop landing hero."
+    }
+  }
+]

@@ -41,6 +41,7 @@ export type CandidateProfile = {
 
 export type CandidateApplication = {
   id: EntityId;
+  companyId: EntityId;
   candidateId: CandidateId;
   jobId: EntityId;
   source: CandidateSource;
@@ -48,4 +49,16 @@ export type CandidateApplication = {
   submittedAt: ISODateTimeString;
   needsHumanReviewAt: ISODateTimeString | null;
   legalAcceptance: CandidateLegalAcceptance | null;
+};
+
+export type CandidateNote = {
+  id: EntityId;
+  companyId: EntityId;
+  candidateId: CandidateId;
+  applicationId: EntityId;
+  jobId: EntityId;
+  body: string;
+  createdAt: ISODateTimeString;
+  authorUserId: EntityId | null;
+  authorName: string | null;
 };

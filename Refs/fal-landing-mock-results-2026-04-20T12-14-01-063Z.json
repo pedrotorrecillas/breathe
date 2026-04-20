@@ -1,0 +1,78 @@
+[
+  {
+    "id": "warehouse-aisle-documentary",
+    "model": "fal-ai/flux-2-pro",
+    "prompt": "Photorealistic documentary-style editorial photograph of a real high-volume frontline work environment. Show a tall warehouse aisle with repeated shelving, pallets, boxes, fluorescent ceiling lights, long depth, and slight human presence in the distance. Observed, candid, operational, not staged, not polished. Early-2000s editorial photo feeling, slightly imperfect framing, believable ambient light, tactile surfaces, subtle grain, realistic color, physical atmosphere. Shot on Kodak Portra 400 with some CineStill 400D character, Leica M6, 35mm lens. Fine film grain, subtle halation, slightly deeper blacks, gentle motion blur where natural. No text overlays, no numbers, no labels added by the model, no dashboards, no floating UI, no holograms, no laptops, no command-center aesthetics, no glossy futuristic lighting, no staged corporate stock photo. Landscape composition for a landing page hero, tightly composed, highly realistic.",
+    "requestId": "019daacf-d999-77c1-a2dd-cf0c59850cb1",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a970275/aD3IVuciwVg5MEDP4yD6Y_TEq5WPB9.jpg",
+          "content_type": "image/jpeg",
+          "file_name": "aD3IVuciwVg5MEDP4yD6Y_TEq5WPB9.jpg",
+          "file_size": null,
+          "width": 1024,
+          "height": 576
+        }
+      ],
+      "seed": 1194826223
+    }
+  },
+  {
+    "id": "loading-dock-observed",
+    "model": "fal-ai/flux-2-pro",
+    "prompt": "Photorealistic documentary-style editorial photograph of a real high-volume frontline work environment. Show a loading dock or back-of-house industrial entrance with pallets, concrete, worn surfaces, open bay, muted daylight, and operational stillness with subtle movement. Observed, candid, and real rather than polished. Early-2000s editorial photo feeling, tactile surfaces, believable imperfections, restrained contrast, subtle grain, realistic color. Shot on Kodak Portra 400 with some CineStill 400D character, Contax G2, 35mm lens. Fine film grain, subtle halation, slightly deeper blacks, natural blur where appropriate, muted warm industrial palette. No text overlays, no numbers, no labels added by the model, no dashboards, no floating UI, no holograms, no laptops, no command-center aesthetics, no staged corporate stock photo. Landscape composition for a landing page hero, tightly composed, highly realistic.",
+    "requestId": "019daad0-1a7d-7b62-a34d-fa1eaf6d236c",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a970277/FQegbQb0C3aEX4Bv6_Qn6_KXohhFDX.jpg",
+          "content_type": "image/jpeg",
+          "file_name": "FQegbQb0C3aEX4Bv6_Qn6_KXohhFDX.jpg",
+          "file_size": null,
+          "width": 1024,
+          "height": 576
+        }
+      ],
+      "seed": 1920005616
+    }
+  },
+  {
+    "id": "kitchen-line-candid",
+    "model": "fal-ai/flux-2-pro",
+    "prompt": "Photorealistic documentary-style editorial photograph of a real high-volume frontline work environment. Show a kitchen line or service counter during prep, stainless steel, heat, clutter, gestures, candid staff, and tight crop. Workers must feel natural, busy, and unposed, secondary to the sense of operational flow. Observed, real, slightly imperfect, more documentary than campaign. Early-2000s editorial photo feeling, believable ambient light, tactile surfaces, subtle grain, realistic color, physical atmosphere. Shot on Kodak Portra 400 with some CineStill 400D character, Leica M6, 35mm lens. Fine film grain, subtle halation, slightly deeper blacks, gentle motion blur in hands or small actions, realism first. No text overlays, no numbers, no labels added by the model, no dashboards, no floating UI, no holograms, no laptops, no command-center aesthetics, no staged corporate stock photo. Landscape composition for a landing page hero, tightly composed, highly realistic.",
+    "requestId": "019daad0-64d1-7392-92bc-64b036953df7",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a970279/nbAzWmeZto5a-X2wFKOK7_VqN914kI.jpg",
+          "content_type": "image/jpeg",
+          "file_name": "nbAzWmeZto5a-X2wFKOK7_VqN914kI.jpg",
+          "file_size": null,
+          "width": 1024,
+          "height": 576
+        }
+      ],
+      "seed": 1486672146
+    }
+  },
+  {
+    "id": "production-line-rhythm",
+    "model": "fal-ai/flux-2-pro",
+    "prompt": "Photorealistic documentary-style editorial photograph of a real high-volume frontline work environment. Show a repetitive production or conveyor environment with strong linear perspective, moving objects, industrial materials, cool practical light, and visible rhythm. Observed, candid, operational, and real. Early-2000s editorial photo feeling, believable imperfections, tactile surfaces, subtle grain, realistic color, slightly imperfect framing. Shot on Kodak Portra 400 with some CineStill 400D character, Contax G2, 35mm lens. Fine film grain, subtle halation, slightly deeper blacks, stronger motion blur in moving objects, realism first. No text overlays, no numbers, no labels added by the model, no dashboards, no floating UI, no holograms, no laptops, no command-center aesthetics, no staged corporate stock photo. Landscape composition for a landing page hero, tightly composed, highly realistic.",
+    "requestId": "019daad0-b8c7-79f3-83f1-47f311b0a783",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a97027b/piakFOw4n8CCoNm6lrR9g_XoVghHTh.jpg",
+          "content_type": "image/jpeg",
+          "file_name": "piakFOw4n8CCoNm6lrR9g_XoVghHTh.jpg",
+          "file_size": null,
+          "width": 1024,
+          "height": 576
+        }
+      ],
+      "seed": 363507900
+    }
+  }
+]

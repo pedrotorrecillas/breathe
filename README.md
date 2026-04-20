@@ -39,6 +39,9 @@ npm run format:write
 Testing conventions live in [docs/testing.md](./docs/testing.md).
 Module boundaries live in [docs/domain-boundaries.md](./docs/domain-boundaries.md).
 Neon/Postgres setup lives in [docs/neon-postgres.md](./docs/neon-postgres.md).
+Auth setup lives in [docs/auth.md](./docs/auth.md).
+
+Recruiter authentication supports password login and optional Google sign-in, both backed by the same local recruiter user, company membership, and session foundation.
 
 ## Structure
 
@@ -73,6 +76,8 @@ Initial routes:
   Job detail placeholder
 - `/apply/[jobId]`
   Public candidate apply placeholder
+- `/auth/login`
+  Recruiter login surface
 
 Routing convention:
 

@@ -1,0 +1,53 @@
+[
+  {
+    "id": "proof-early-enterprise",
+    "label": "Proof-Early Enterprise",
+    "model": "fal-ai/recraft-v3",
+    "prompt": "Desktop landing page mockup for Breathe, enterprise AI hiring SaaS. Palantir seriousness, luminous throughput, hiring workflow specificity. Hard, precise, technological, operational, high-volume. Avoid chatbot, ATS replacement, generic HR SaaS, sci-fi. Warm light neutral background, graphite structure, sparse lime and cold blue accents. Compact editorial grotesk typography, premium product-marketing layout. Real frontline environments with subtle computational overlays, workflow logic, queues, routing, throughput. Sections: hero, compact proof bar, friction section, mechanism section, workflow autonomy section, ATS fit section, business outcomes, enterprise trust, use cases, final CTA. Hero: \"Automate the manual work between application and hire.\" Support: \"Fill more roles, faster\", \"The workflow moves itself\", \"Works on top of your ATS\". Include restrained proof strip with placeholder metrics or logos. Realistic full-page landing screenshot, 16:9.",
+    "requestId": "019da757-f66a-7d00-8bce-70f10389c06a",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a96ebba/XjHrjiECf3JGQW5igVZ5j_image.webp",
+          "content_type": "image/webp",
+          "file_name": "image.webp",
+          "file_size": 1135614
+        }
+      ]
+    }
+  },
+  {
+    "id": "mechanism-first-system",
+    "label": "Mechanism-First System",
+    "model": "fal-ai/recraft-v3",
+    "prompt": "Desktop landing page mockup for Breathe, enterprise AI hiring SaaS. Palantir seriousness, luminous throughput, hiring workflow specificity. Hard, precise, technological, operational, high-volume. Avoid chatbot, ATS replacement, generic HR SaaS, sci-fi. Warm light neutral background, graphite structure, sparse lime and cold blue accents. Compact editorial grotesk typography, premium product-marketing layout. Real frontline environments with subtle computational overlays, workflow logic, queues, routing, throughput. Sections: hero, mechanism section, workflow autonomy section, ATS fit section, proof bar, business outcomes, enterprise trust, use cases, final CTA. Hero: \"Automate the manual work between application and hire.\" Support: \"Fill more roles, faster\", \"The workflow moves itself\", \"Works on top of your ATS\". Include restrained proof strip with placeholder metrics or logos. Realistic full-page landing screenshot, 16:9.",
+    "requestId": "019da758-2210-77c3-b851-f5f1f531f609",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a96ebbb/1Xbi33Uhz_qR-IoNmpHIz_image.webp",
+          "content_type": "image/webp",
+          "file_name": "image.webp",
+          "file_size": 1056874
+        }
+      ]
+    }
+  },
+  {
+    "id": "throughput-first-operations",
+    "label": "Throughput-First Operations",
+    "model": "fal-ai/recraft-v3",
+    "prompt": "Desktop landing page mockup for Breathe, enterprise AI hiring SaaS. Palantir seriousness, luminous throughput, hiring workflow specificity. Hard, precise, technological, operational, high-volume. Avoid chatbot, ATS replacement, generic HR SaaS, sci-fi. Warm light neutral background, graphite structure, sparse lime and cold blue accents. Compact editorial grotesk typography, premium product-marketing layout. Real frontline environments with subtle computational overlays, workflow logic, queues, routing, throughput. Sections: hero, friction section, business outcomes, mechanism section, workflow autonomy section, ATS fit section, proof bar, use cases, final CTA. Hero: \"Automate the manual work between application and hire.\" Support: \"Fill more roles, faster\", \"The workflow moves itself\", \"Works on top of your ATS\". Include restrained proof strip with placeholder metrics or logos. Realistic full-page landing screenshot, 16:9.",
+    "requestId": "019da758-c94b-7313-8e00-56d59acc90c1",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a96ebbf/O4AlPGcCE3IIXZD9HEISU_image.webp",
+          "content_type": "image/webp",
+          "file_name": "image.webp",
+          "file_size": 1070188
+        }
+      ]
+    }
+  }
+]

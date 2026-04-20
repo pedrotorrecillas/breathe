@@ -119,6 +119,7 @@ describe("domain boundaries", () => {
 
     const evaluation: CandidateEvaluation = {
       id: "eval_1",
+      companyId: "company_seed_demo",
       interviewRunId: "run_1",
       generatedAt: "2026-03-24T00:00:00.000Z",
       finalNumericScore: null,

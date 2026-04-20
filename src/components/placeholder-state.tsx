@@ -14,13 +14,15 @@ export function PlaceholderState({
   children,
 }: PlaceholderStateProps) {
   return (
-    <section className="relative overflow-hidden rounded-[0.95rem] border border-slate-200/85 bg-white/92 p-5 shadow-[0_12px_28px_rgba(15,23,42,0.04)] md:p-6">
-      <p className="ops-kicker relative z-10 text-slate-500">{eyebrow}</p>
-      <h2 className="font-heading mt-3 max-w-3xl text-2xl font-semibold text-slate-950">
+    <section className="brand-surface relative overflow-hidden rounded-[0.95rem] p-5 md:p-6">
+      <p className="ops-kicker text-muted-foreground relative z-10">
+        {eyebrow}
+      </p>
+      <h2 className="font-heading text-foreground mt-3 max-w-3xl text-2xl font-semibold">
         {title}
       </h2>
       {description ? (
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+        <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
           {description}
         </p>
       ) : null}

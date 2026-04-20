@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 
+import { requireAuthenticatedApiRequest } from "@/lib/auth/server";
 import { parseJobExtractionDraft } from "@/domain/jobs/configuration";
 import { publishRecruiterJob } from "@/lib/recruiter-jobs";
 
 export async function POST(request: Request) {
+  const recruiter = await requireAuthenticatedApiRequest();
+
+  if (recruiter instanceof NextResponse) {
+    return recruiter;
+  }
+
   const body = await request.json();
   const parsedDraft = parseJobExtractionDraft(body.draft);
 
@@ -32,6 +39,7 @@ export async function POST(request: Request) {
   }
 
   const job = await publishRecruiterJob({
+    companyId: recruiter.company.id,
     title: body.title,
     language: body.language,
     description: body.description,

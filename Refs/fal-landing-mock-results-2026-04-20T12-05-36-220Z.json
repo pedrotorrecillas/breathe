@@ -1,0 +1,40 @@
+[
+  {
+    "id": "portra-cinestill-balanced",
+    "model": "fal-ai/flux-2-pro",
+    "prompt": "Photorealistic editorial photograph of a high-volume frontline hiring environment inside a warehouse staging area. Repeated shelving, carts, labels, clipboards, safety markings, and visible operational depth. A few workers in the background, natural and unposed, secondary to the environment. Premium documentary-style technology campaign with a realistic early-2000s editorial feel. Shot on Kodak Portra 400 with a touch of CineStill 400D character, Leica M6, 35mm lens. Natural light, realistic color, fine film grain, subtle halation, slightly harder blacks, slight motion blur in small details, tactile materials, believable imperfections. Warm bone and stone tones, muted blacks, understated industrial palette, realism first. No dashboards, no floating interface, no holograms, no browser windows, no laptops, no command-center aesthetics, no smiling office team, no staged corporate stock photo. Cinematic crop, tightly composed, landscape hero image, highly realistic.",
+    "requestId": "019daac8-255f-7361-b708-6e29ace02caa",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a970242/dqOoqqhmh6Flqy8lmuI94_iZQOyAVo.jpg",
+          "content_type": "image/jpeg",
+          "file_name": "dqOoqqhmh6Flqy8lmuI94_iZQOyAVo.jpg",
+          "file_size": null,
+          "width": 1024,
+          "height": 576
+        }
+      ],
+      "seed": 1286134967
+    }
+  },
+  {
+    "id": "portra-cinestill-kinetic",
+    "model": "fal-ai/flux-2-pro",
+    "prompt": "Photorealistic editorial photograph of a high-volume frontline hiring environment inside a warehouse staging area. Repeated shelving, labels, carts, handoff points, and visible operational pressure, with more movement in the frame. Workers natural and secondary, with believable motion in small gestures and background activity. Premium editorial image with documentary realism, more grit, and more kinetic energy. Shot on Kodak Portra 400 with CineStill 400D energy, Contax G2, 35mm lens. Natural light, realistic color, visible film grain, subtle halation, deeper blacks, slight motion blur, tactile surfaces, believable imperfections. Warm industrial tones, understated palette, realism first, not cinematic perfection. No dashboards, no floating UI, no holograms, no command-center look, no staged office team. Landscape hero image, tightly composed, highly realistic.",
+    "requestId": "019daac8-614f-7030-bb07-06a0460ee793",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a970244/3JOEkhsPQ1yIB76sbigzo_b2S8RXPW.jpg",
+          "content_type": "image/jpeg",
+          "file_name": "3JOEkhsPQ1yIB76sbigzo_b2S8RXPW.jpg",
+          "file_size": null,
+          "width": 1024,
+          "height": 576
+        }
+      ],
+      "seed": 1452833297
+    }
+  }
+]

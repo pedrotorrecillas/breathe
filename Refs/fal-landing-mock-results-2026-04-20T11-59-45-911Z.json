@@ -1,0 +1,78 @@
+[
+  {
+    "id": "portra-400-baseline",
+    "model": "fal-ai/flux-2-pro",
+    "prompt": "Photorealistic editorial photograph of a high-volume frontline hiring environment inside a warehouse staging area. Repeated shelving, carts, labels, clipboards, safety markings, and visible operational depth. A few workers in the background, natural and unposed, secondary to the environment. Premium documentary-style technology campaign. Shot on Kodak Portra 400, Leica M6, 50mm lens. Natural light, restrained contrast, subtle halation, fine film grain, slight motion blur in small details, tactile materials, believable imperfections, realistic color. Warm bone and stone tones, muted blacks, understated industrial palette. No dashboards, no floating interface, no holograms, no browser windows, no laptops, no command-center aesthetics, no smiling office team, no staged corporate stock photo. Cinematic crop, tightly composed, landscape hero image, highly realistic.",
+    "requestId": "019daac2-ccbb-77b3-ac0c-96d6ff50005e",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a970220/y2c-xOFPGYsjQuX8G5-Ca_607Pn4jV.jpg",
+          "content_type": "image/jpeg",
+          "file_name": "y2c-xOFPGYsjQuX8G5-Ca_607Pn4jV.jpg",
+          "file_size": null,
+          "width": 1024,
+          "height": 576
+        }
+      ],
+      "seed": 1665697200
+    }
+  },
+  {
+    "id": "ektar-100-hard-color",
+    "model": "fal-ai/flux-2-pro",
+    "prompt": "Photorealistic editorial photograph of a high-volume frontline hiring environment inside a warehouse staging area. Repeated shelving, carts, labels, clipboards, safety markings, visible operational depth, stronger visual rhythm, more movement. Workers in the background, natural and secondary to the environment. Harder, sharper, more contrasty premium technology campaign image. Shot on Kodak Ektar 100, Contax G2, 45mm lens. Punchier contrast, crisper edges, richer blacks, tighter composition, realistic color, visible film grain, slight motion blur, tactile materials. Warm industrial palette with muted bone, stone, soot black, and realistic warehouse color. No dashboards, no floating interface, no holograms, no laptops, no staged corporate stock photo. Landscape hero image, highly realistic.",
+    "requestId": "019daac3-0cc6-7a01-8534-278c89c018d3",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a970221/0vEJoEATs62pMzz8CuoI1_Xnh2eoDM.jpg",
+          "content_type": "image/jpeg",
+          "file_name": "0vEJoEATs62pMzz8CuoI1_Xnh2eoDM.jpg",
+          "file_size": null,
+          "width": 1024,
+          "height": 576
+        }
+      ],
+      "seed": 554650277
+    }
+  },
+  {
+    "id": "cinestill-400d-kinetic",
+    "model": "fal-ai/flux-2-pro",
+    "prompt": "Photorealistic editorial photograph of a high-volume frontline hiring environment inside a warehouse staging area. Repeated shelving, labels, carts, handoff points, and visible operational pressure. Workers natural and secondary, slight movement in the scene. Premium editorial image with more movement, more grit, and more tension. Shot on CineStill 400D, Canon AE-1, 35mm lens. Harder contrast, stronger halation on bright practical lights, fine grain, tactile surfaces, realistic color, slight motion blur, documentary realism. Warm industrial tones, deep blacks, understated palette. No dashboards, no floating UI, no holograms, no command-center look, no staged office team. Landscape hero image, tightly composed, highly realistic.",
+    "requestId": "019daac3-4370-74f2-9c61-bde3baba82fb",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a970226/K_p5aGYwROHSHIs8C2FIg_SKFN9slv.jpg",
+          "content_type": "image/jpeg",
+          "file_name": "K_p5aGYwROHSHIs8C2FIg_SKFN9slv.jpg",
+          "file_size": null,
+          "width": 1024,
+          "height": 576
+        }
+      ],
+      "seed": 249058111
+    }
+  },
+  {
+    "id": "vision3-250d-editorial-cinema",
+    "model": "fal-ai/flux-2-pro",
+    "prompt": "Photorealistic editorial photograph of a high-volume frontline hiring environment inside a warehouse staging area. Repeated structures, long depth, carts, pallets, labels, handoff zones, and visible workflow pressure. Natural workers in the background, secondary to the environment. Expensive editorial technology image with stronger contrast and more motion. Shot on Kodak Vision3 250D, Arricam LT, 40mm lens. Cinematic realism, deeper blacks, more dynamic contrast, subtle halation, film grain, tactile materials, believable motion blur, realistic color. Warm bone and stone palette with muted industrial blacks. No dashboards, no floating interface, no holograms, no laptops, no command-center aesthetics, no staged corporate stock image. Landscape hero image, cinematic crop, highly realistic.",
+    "requestId": "019daac4-03f8-76b2-984b-981ba54455b9",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a970227/RmrvxbmxOW-A1eOKHNDqy_Ruv0sCCU.jpg",
+          "content_type": "image/jpeg",
+          "file_name": "RmrvxbmxOW-A1eOKHNDqy_Ruv0sCCU.jpg",
+          "file_size": null,
+          "width": 1024,
+          "height": 576
+        }
+      ],
+      "seed": 1667764336
+    }
+  }
+]

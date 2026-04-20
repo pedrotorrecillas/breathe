@@ -1,0 +1,38 @@
+[
+  {
+    "model": "fal-ai/flux-2-pro",
+    "prompt": "Photorealistic editorial photograph of a high-volume frontline hiring environment inside a warehouse staging area. Repeated shelving, carts, labels, clipboards, safety markings, and visible operational depth. A few workers in the background, natural and unposed, secondary to the environment. The image should feel calm, expensive, precise, and real, like a premium documentary-style technology campaign. Shot on Kodak Portra 400, 35mm film look, Leica M6, 50mm lens. Natural light, restrained contrast, subtle halation, fine film grain, slight motion blur in small details, tactile materials, believable imperfections, realistic color. Warm bone and stone tones, muted blacks, understated industrial palette. No dashboards, no floating interface, no holograms, no browser windows, no laptops, no command-center aesthetics, no smiling office team, no staged corporate stock photo. Cinematic crop, tightly composed, landscape hero image, highly realistic.",
+    "requestId": "019daabd-2a7f-70b2-a657-4057153f40f9",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a9701fb/vUzr_8H0uXngTTFzzwnDi_oDYT9xLK.jpg",
+          "content_type": "image/jpeg",
+          "file_name": "vUzr_8H0uXngTTFzzwnDi_oDYT9xLK.jpg",
+          "file_size": null,
+          "width": 1024,
+          "height": 576
+        }
+      ],
+      "seed": 631567490
+    }
+  },
+  {
+    "model": "fal-ai/nano-banana-pro",
+    "prompt": "Photorealistic editorial photograph of a high-volume frontline hiring environment inside a warehouse staging area. Repeated shelving, carts, labels, clipboards, safety markings, and visible operational depth. A few workers in the background, natural and unposed, secondary to the environment. The image should feel calm, expensive, precise, and real, like a premium documentary-style technology campaign. Shot on Kodak Portra 400, 35mm film look, Leica M6, 50mm lens. Natural light, restrained contrast, subtle halation, fine film grain, slight motion blur in small details, tactile materials, believable imperfections, realistic color. Warm bone and stone tones, muted blacks, understated industrial palette. No dashboards, no floating interface, no holograms, no browser windows, no laptops, no command-center aesthetics, no smiling office team, no staged corporate stock photo. Cinematic crop, tightly composed, landscape hero image, highly realistic.",
+    "requestId": "019daabd-6afd-7a02-b10c-312dc94eecc3",
+    "data": {
+      "images": [
+        {
+          "url": "https://v3b.fal.media/files/b/0a9701fb/a5UQSG7TFOqSJcNCNkaoy_ji0uwKHk.jpg",
+          "content_type": "image/jpeg",
+          "file_name": "a5UQSG7TFOqSJcNCNkaoy_ji0uwKHk.jpg",
+          "file_size": null,
+          "width": 2752,
+          "height": 1536
+        }
+      ],
+      "description": "**Analyzing the Core Elements**\n\nI'm currently focused on the prompt's main components: photorealism, the warehouse setting, and the desired atmosphere. The \"documentary-style\" element is guiding my thinking about composition and lighting. I'm exploring the implications of \"high-volume hiring environment\" to inform details like the number of people, the types of interactions, and the overall impression.\n\n\n\n**Defining the Scene's Details**\n\nI'm working on refining the specific visual details to enhance realism. I'm considering the types of paperwork, the presence of safety equipment, and the attire of the workers to reflect a genuine warehouse environment. I am also thinking about the appropriate lighting conditions to achieve the desired film aesthetic, focusing on natural light and minimal artificial sources.\n\n\n\n**Considering Image Compliance**\n\nI'm currently evaluating the generated image in light of the prompt's specifications. The goal is to verify that all the detailed requests are met by the current output. There are many specific items that must be verified.\n\n\n\n**Analyzing the Visual Elements**\n\nI'm presently focused on the image's adherence to the prompt's aesthetic criteria. The film grain, warmth, and lighting are under close scrutiny. I am also verifying that the subject matter accurately reflects the requested warehouse hiring area.\n\n\n"
+    }
+  }
+]

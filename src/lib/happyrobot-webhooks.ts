@@ -1,6 +1,7 @@
 import type { InterviewRun } from "@/domain/interviews/types";
 import type {
   HappyRobotWebhookEvent,
+  HappyRobotWebhookIngestionFailure,
   HappyRobotWebhookIngestionResponse,
   HappyRobotWebhookRecord,
   HappyRobotTranscriptSegment,
@@ -181,8 +182,8 @@ function normalizeTranscriptSegments(
       text:
         (typeof (segment as { text?: unknown }).text === "string"
           ? (segment as { text: string }).text
-          : typeof (segment as { content?: unknown }).content === "string"
-            ? (segment as { content: string }).content
+          : typeof (segment as unknown as { content?: unknown }).content === "string"
+            ? (segment as unknown as { content: string }).content
             : ""
         ).trim(),
       startMs:
@@ -290,7 +291,12 @@ function normalizeHappyRobotStatus(value: unknown) {
 
 export function parseHappyRobotWebhookEvent(
   rawPayload: unknown,
-): HappyRobotWebhookIngestionResponse | { success: true; event: HappyRobotWebhookEvent } {
+):
+  | { success: true; event: HappyRobotWebhookEvent }
+  | {
+      success: false;
+      error: HappyRobotWebhookIngestionFailure;
+    } {
   const candidatePayload = unwrapHappyRobotWebhookPayload(rawPayload);
 
   if (!isRecord(candidatePayload)) {

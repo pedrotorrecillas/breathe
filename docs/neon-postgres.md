@@ -1,6 +1,7 @@
 # Neon + Postgres Setup
 
 Clara can now persist runtime/application state durably when `DATABASE_URL` is configured.
+That now includes recruiter auth foundation records and sessions.
 
 ## Stack
 
@@ -18,6 +19,10 @@ cp .env.example .env.local
 
 ```env
 DATABASE_URL=postgres://USER:PASSWORD@HOST/DBNAME?sslmode=require
+AUTH_SEED_EMAIL=recruiter@company.com
+AUTH_SEED_PASSWORD=change-me
+AUTH_GOOGLE_CLIENT_ID=your-google-oauth-client-id
+AUTH_GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
 ```
 
 ## Commands
@@ -52,6 +57,10 @@ npm run dev
 ## Current persisted records
 
 - jobs
+- companies
+- users
+- company memberships
+- sessions
 - candidates
 - applications
 - interview runs

@@ -52,6 +52,7 @@ export type JobPipelineSnapshot = {
 
 export type Job = {
   id: JobId;
+  companyId: EntityId;
   title: string;
   summary: string;
   location: string | null;

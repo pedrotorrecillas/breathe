@@ -9,6 +9,7 @@ import { saveStoredJob } from "@/lib/db/runtime-store";
 import type { PublicJobRecord } from "@/lib/public-jobs";
 
 type PublishRecruiterJobInput = {
+  companyId: string;
   title: string;
   language: SupportedLanguage;
   description: string;
@@ -76,6 +77,7 @@ export async function publishRecruiterJob(input: PublishRecruiterJobInput) {
 
   const job: PublicJobRecord = {
     id: `job_${slug}`,
+    companyId: input.companyId,
     recruiterSlug: slug,
     title: input.title.trim(),
     summary: input.description.trim().slice(0, 140),

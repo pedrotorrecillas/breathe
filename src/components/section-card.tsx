@@ -16,7 +16,7 @@ const toneStyles = {
   default: "ops-panel",
   strong: "ops-panel-strong",
   subtle:
-    "border border-slate-200/80 bg-white/96 shadow-[0_12px_32px_rgba(15,23,42,0.045)]",
+    "border border-border/82 bg-card/96 shadow-[0_12px_32px_rgba(23,23,23,0.045)]",
 } as const;
 
 export function SectionCard({
@@ -30,16 +30,16 @@ export function SectionCard({
 }: SectionCardProps) {
   return (
     <section className={cn("rounded-[1rem] p-4 md:p-5", toneStyles[tone])}>
-      <div className="flex flex-col gap-3 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="border-border/78 flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           {kicker ? (
-            <p className="ops-kicker text-slate-500">{kicker}</p>
+            <p className="ops-kicker text-muted-foreground">{kicker}</p>
           ) : null}
-          <h2 className="font-heading mt-2 text-xl font-semibold text-slate-950">
+          <h2 className="font-heading text-foreground mt-2 text-xl font-semibold">
             {title}
           </h2>
           {description ? (
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            <p className="text-muted-foreground mt-2 max-w-3xl text-sm leading-6">
               {description}
             </p>
           ) : null}
@@ -50,7 +50,7 @@ export function SectionCard({
       <div className="mt-4">{children}</div>
 
       {footer ? (
-        <div className="mt-4 border-t border-slate-200/80 pt-4">{footer}</div>
+        <div className="border-border/78 mt-4 border-t pt-4">{footer}</div>
       ) : null}
     </section>
   );
@@ -64,13 +64,15 @@ type DataPointProps = {
 
 export function DataPoint({ label, value, detail }: DataPointProps) {
   return (
-    <div className="rounded-[0.7rem] border border-slate-200/85 bg-white/88 px-3 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]">
-      <p className="ops-kicker text-slate-500">{label}</p>
-      <p className="mt-2 text-[1.55rem] leading-none font-semibold tracking-tight text-slate-950">
+    <div className="border-border/84 bg-card/88 rounded-[0.7rem] border px-3 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+      <p className="ops-kicker text-muted-foreground">{label}</p>
+      <p className="text-foreground mt-2 text-[1.55rem] leading-none font-semibold tracking-tight">
         {value}
       </p>
       {detail ? (
-        <p className="mt-1 text-[11px] leading-5 text-slate-500">{detail}</p>
+        <p className="text-muted-foreground mt-1 text-[11px] leading-5">
+          {detail}
+        </p>
       ) : null}
     </div>
   );
@@ -90,14 +92,14 @@ export function DetailPanel({
   children,
 }: DetailPanelProps) {
   return (
-    <aside className="ops-panel-strong rounded-[0.95rem] border-l-[3px] border-l-cyan-400 p-4 md:p-5">
-      <div className="border-b border-slate-200/80 pb-4">
-        {kicker ? <p className="ops-kicker text-cyan-900">{kicker}</p> : null}
-        <h2 className="font-heading mt-2 text-xl font-semibold text-slate-950">
+    <aside className="ops-panel-strong border-l-highlight rounded-[0.95rem] border-l-[3px] p-4 md:p-5">
+      <div className="border-border/78 border-b pb-4">
+        {kicker ? <p className="ops-kicker text-highlight">{kicker}</p> : null}
+        <h2 className="font-heading text-foreground mt-2 text-xl font-semibold">
           {title}
         </h2>
         {description ? (
-          <p className="mt-2 text-sm leading-6 text-slate-600">
+          <p className="text-muted-foreground mt-2 text-sm leading-6">
             {description}
           </p>
         ) : null}

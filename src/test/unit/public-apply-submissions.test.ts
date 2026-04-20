@@ -361,6 +361,7 @@ describe("public apply submissions", () => {
 
     const evaluation: CandidateEvaluation = {
       id: "eval_1",
+      companyId: "company_seed_demo",
       interviewRunId: "run_1",
       generatedAt: "2026-03-25T12:15:00.000Z",
       finalNumericScore: 74,
@@ -411,6 +412,7 @@ describe("public apply submissions", () => {
   it("refuses to store an evaluation when the interview run is missing", async () => {
     const evaluation: CandidateEvaluation = {
       id: "eval_1",
+      companyId: "company_seed_demo",
       interviewRunId: "missing_run",
       generatedAt: "2026-03-25T12:15:00.000Z",
       finalNumericScore: 74,
