@@ -60,6 +60,7 @@ describe("happyrobot dispatch payload", () => {
       },
       candidate: {
         id: "cand_1",
+        companyId: "company_seed_demo",
         fullName: "Ana Torres",
         phone: "+34910000000",
         normalizedPhone: "+34910000000",
@@ -296,6 +297,7 @@ describe("happyrobot dispatch payload", () => {
     });
 
     expect(response).toEqual({
+      interviewRunId: "run_1",
       success: false,
       error: {
         code: "missing_outbound_number",

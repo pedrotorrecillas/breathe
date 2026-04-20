@@ -26,7 +26,11 @@ import { scoreEvaluationFromRequirementEvidence } from "@/lib/evaluation-scoring
 import { executeHappyRobotDispatch } from "@/lib/happyrobot-orchestration";
 import { ingestHappyRobotWebhookEvent } from "@/lib/happyrobot-webhooks";
 import { transitionCandidateApplicationForInterviewRun } from "@/lib/interview-pipeline-transitions";
-import { findPublicJobById, type PublicJobRecord } from "@/lib/public-jobs";
+import {
+  findPublicJobById,
+  isPublicJobAvailable,
+  type PublicJobRecord,
+} from "@/lib/public-jobs";
 import type {
   NormalizedCandidateProfileSource,
   PublicApplyLegalAcceptance,
@@ -62,6 +66,18 @@ type TranscriptResolver = (input: {
   webhookRecord: HappyRobotWebhookRecord;
 }) => string | TranscriptSegment[] | null;
 
+function buildPublicJobAvailabilityError(job: PublicJobRecord) {
+  const availability = isPublicJobAvailable(job);
+
+  if (availability.isAvailable) {
+    return null;
+  }
+
+  return availability.reason === "inactive"
+    ? "Application intake is closed for this job."
+    : "This job has already reached its interview limit.";
+}
+
 export type InterviewRunRuntimeSnapshot = {
   interviewRun: InterviewRun;
   candidate: CandidateProfile | null;
@@ -89,6 +105,21 @@ function normalizeEmail(email: string) {
 
 function nextId(prefix: string, count: number) {
   return `${prefix}_${count + 1}`;
+}
+
+function candidateBelongsToCompany(
+  state: RuntimeStoreState,
+  candidate: CandidateProfile,
+  companyId: string,
+) {
+  if (candidate.companyId === companyId) {
+    return true;
+  }
+
+  return state.applications.some(
+    (application) =>
+      application.candidateId === candidate.id && application.companyId === companyId,
+  );
 }
 
 function appendRuntimeTraceEvent(
@@ -188,9 +219,8 @@ function buildRuntimeSnapshot(
     state.dispatchPayloads.find((item) => item.interviewRunId === interviewRunId) ??
     null;
   const dispatchResponse =
-    dispatchRequest
-      ? state.dispatchResponses[state.dispatchRequests.indexOf(dispatchRequest)] ?? null
-      : null;
+    state.dispatchResponses.find((item) => item.interviewRunId === interviewRunId) ??
+    null;
   const evaluation =
     state.evaluations.find((item) => item.interviewRunId === interviewRunId) ?? null;
 
@@ -504,23 +534,46 @@ export async function submitPublicApplication(
     };
   }
 
+  const job = await findPublicJobById(input.jobId);
+
+  if (!job) {
+    return {
+      success: false,
+      error: "Interview dispatch preparation failed because the job was not found.",
+    };
+  }
+
+  const availabilityError = buildPublicJobAvailabilityError(job);
+
+  if (availabilityError) {
+    return {
+      success: false,
+      error: availabilityError,
+    };
+  }
+
   const normalizedPhone = normalizePhone(input.phone);
   const normalizedEmail = normalizeEmail(input.email);
   const source: CandidateSource = "public_apply_link";
 
   const existingCandidate =
     state.candidates.find(
-      (candidate) => candidate.normalizedPhone === normalizedPhone,
+      (candidate) =>
+        candidate.normalizedPhone === normalizedPhone &&
+        candidateBelongsToCompany(state, candidate, job.companyId),
     ) ??
     (normalizedEmail
       ? state.candidates.find(
-          (candidate) => candidate.normalizedEmail === normalizedEmail,
+          (candidate) =>
+            candidate.normalizedEmail === normalizedEmail &&
+            candidateBelongsToCompany(state, candidate, job.companyId),
         ) ?? null
       : null);
 
   const stagedCandidate: CandidateProfile = existingCandidate
     ? {
         ...existingCandidate,
+        companyId: job.companyId,
         fullName: input.fullName.trim(),
         phone: input.phone.trim(),
         normalizedPhone,
@@ -534,6 +587,7 @@ export async function submitPublicApplication(
       }
     : {
         id: nextId("cand", state.candidates.length),
+        companyId: job.companyId,
         fullName: input.fullName.trim(),
         phone: input.phone.trim(),
         normalizedPhone,
@@ -553,15 +607,6 @@ export async function submitPublicApplication(
     };
   }
 
-  const job = await findPublicJobById(input.jobId);
-
-  if (!job) {
-    return {
-      success: false,
-      error: "Interview dispatch preparation failed because the job was not found.",
-    };
-  }
-
   const stagedApplication: CandidateApplication = {
     id: nextId("app", state.applications.length),
     companyId: job.companyId,
@@ -572,6 +617,7 @@ export async function submitPublicApplication(
     submittedAt: input.legalAcceptance.acceptedAt,
     needsHumanReviewAt: null,
     legalAcceptance: input.legalAcceptance,
+    recruiterOutcomeNote: null,
   };
 
   if (options?.failureMode === "interview") {

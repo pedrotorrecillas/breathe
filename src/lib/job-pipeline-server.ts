@@ -379,7 +379,9 @@ function buildLivePipelineSnapshot(
           ),
           rejectedReason:
             stage === "Rejected"
-              ? interviewRun?.interviewRun.metadata.failureReason ?? "Rejected"
+              ? application.recruiterOutcomeNote ??
+                interviewRun?.interviewRun.metadata.failureReason ??
+                "Rejected"
               : undefined,
         } satisfies PipelineCandidate,
       ];

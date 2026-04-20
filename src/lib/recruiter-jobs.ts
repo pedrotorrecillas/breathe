@@ -5,7 +5,7 @@ import type {
 } from "@/domain/jobs/configuration";
 import type { JobRequirement } from "@/domain/jobs/types";
 import type { SupportedLanguage } from "@/domain/shared/types";
-import { saveStoredJob } from "@/lib/db/runtime-store";
+import { listStoredJobs, saveStoredJob } from "@/lib/db/runtime-store";
 import type { PublicJobRecord } from "@/lib/public-jobs";
 
 type PublishRecruiterJobInput = {
@@ -71,8 +71,25 @@ function findConditionValue(
   return conditions.find((condition) => condition.code === code)?.value || null;
 }
 
+async function createUniqueJobSlug(baseSlug: string) {
+  const existingJobs = await listStoredJobs();
+  const usedSlugs = new Set(existingJobs.map((job) => job.recruiterSlug));
+
+  if (!usedSlugs.has(baseSlug)) {
+    return baseSlug;
+  }
+
+  let suffix = 2;
+
+  while (usedSlugs.has(`${baseSlug}-${suffix}`)) {
+    suffix += 1;
+  }
+
+  return `${baseSlug}-${suffix}`;
+}
+
 export async function publishRecruiterJob(input: PublishRecruiterJobInput) {
-  const slug = slugify(input.title) || "job-draft";
+  const slug = await createUniqueJobSlug(slugify(input.title) || "job-draft");
   const createdAt = new Date().toISOString();
 
   const job: PublicJobRecord = {

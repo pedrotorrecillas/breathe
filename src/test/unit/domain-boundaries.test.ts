@@ -17,6 +17,7 @@ describe("domain boundaries", () => {
   it("exposes coherent domain shapes for the Breathe MVP", () => {
     const candidate: CandidateProfile = {
       id: "cand_1",
+      companyId: "company_1",
       fullName: "Ana Torres",
       phone: "+34123456789",
       normalizedPhone: "+34123456789",

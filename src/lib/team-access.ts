@@ -40,6 +40,32 @@ function defaultTeamName() {
 
 const seededDemoCompanyId = "company_seed_demo";
 
+function normalizeCompanyOwnership(input: {
+  currentCompanyId: string | null | undefined;
+  fallbackCompanyId?: string | null;
+  soleCompanyId: string | null;
+}) {
+  const currentCompanyId = input.currentCompanyId?.trim() || null;
+  const fallbackCompanyId = input.fallbackCompanyId?.trim() || null;
+
+  if (currentCompanyId && currentCompanyId !== seededDemoCompanyId) {
+    return currentCompanyId;
+  }
+
+  if (fallbackCompanyId && fallbackCompanyId !== seededDemoCompanyId) {
+    return fallbackCompanyId;
+  }
+
+  if (
+    input.soleCompanyId &&
+    (!currentCompanyId || currentCompanyId === seededDemoCompanyId)
+  ) {
+    return input.soleCompanyId;
+  }
+
+  return currentCompanyId ?? fallbackCompanyId ?? input.soleCompanyId;
+}
+
 function uniqueById<T extends { id: string }>(items: T[]) {
   const seen = new Set<string>();
   return items.filter((item) => {
@@ -71,84 +97,117 @@ function teamMembers(
 
 export function normalizeAccessControlState(state: RuntimeStoreState) {
   let didChange = false;
+  const soleCompanyId =
+    state.companies.length === 1 ? state.companies[0]?.id ?? null : null;
+
+  state.jobs = state.jobs.map((job) => {
+    const nextCompanyId = normalizeCompanyOwnership({
+      currentCompanyId: job.companyId,
+      soleCompanyId,
+    });
+
+    if (!nextCompanyId || nextCompanyId === job.companyId) {
+      return job;
+    }
+
+    didChange = true;
+    return {
+      ...job,
+      companyId: nextCompanyId,
+    };
+  });
+
+  const jobCompanyById = new Map(
+    state.jobs.map((job) => [job.id, job.companyId]),
+  );
+
+  state.applications = state.applications.map((application) => {
+    const nextCompanyId = normalizeCompanyOwnership({
+      currentCompanyId: application.companyId,
+      fallbackCompanyId: jobCompanyById.get(application.jobId),
+      soleCompanyId,
+    });
+
+    if (!nextCompanyId || nextCompanyId === application.companyId) {
+      return application;
+    }
+
+    didChange = true;
+    return {
+      ...application,
+      companyId: nextCompanyId,
+    };
+  });
+
+  const applicationCompanyById = new Map(
+    state.applications.map((application) => [application.id, application.companyId]),
+  );
+
+  state.candidateNotes = state.candidateNotes.map((note) => {
+    const nextCompanyId = normalizeCompanyOwnership({
+      currentCompanyId: note.companyId,
+      fallbackCompanyId:
+        applicationCompanyById.get(note.applicationId) ??
+        jobCompanyById.get(note.jobId),
+      soleCompanyId,
+    });
+
+    if (!nextCompanyId || nextCompanyId === note.companyId) {
+      return note;
+    }
+
+    didChange = true;
+    return {
+      ...note,
+      companyId: nextCompanyId,
+    };
+  });
+
+  state.interviewRuns = state.interviewRuns.map((interviewRun) => {
+    const nextCompanyId = normalizeCompanyOwnership({
+      currentCompanyId: interviewRun.companyId,
+      fallbackCompanyId:
+        applicationCompanyById.get(interviewRun.applicationId) ??
+        jobCompanyById.get(interviewRun.jobId),
+      soleCompanyId,
+    });
+
+    if (!nextCompanyId || nextCompanyId === interviewRun.companyId) {
+      return interviewRun;
+    }
+
+    didChange = true;
+    return {
+      ...interviewRun,
+      companyId: nextCompanyId,
+    } satisfies InterviewRun;
+  });
+
+  const interviewRunCompanyById = new Map(
+    state.interviewRuns.map((interviewRun) => [interviewRun.id, interviewRun.companyId]),
+  );
+
+  state.evaluations = state.evaluations.map((evaluation) => {
+    const nextCompanyId = normalizeCompanyOwnership({
+      currentCompanyId: evaluation.companyId,
+      fallbackCompanyId: interviewRunCompanyById.get(evaluation.interviewRunId),
+      soleCompanyId,
+    });
+
+    if (!nextCompanyId || nextCompanyId === evaluation.companyId) {
+      return evaluation;
+    }
+
+    didChange = true;
+    return {
+      ...evaluation,
+      companyId: nextCompanyId,
+    } satisfies CandidateEvaluation;
+  });
 
   for (const company of state.companies) {
     const companyId = company.id;
     const now = new Date().toISOString();
-
-    state.jobs = state.jobs.map((job) => {
-      if (job.companyId && job.companyId !== seededDemoCompanyId) {
-        return job;
-      }
-      didChange = true;
-      return {
-        ...job,
-        companyId,
-      };
-    });
-
-    const jobCompanyById = new Map(
-      state.jobs.map((job) => [job.id, job.companyId]),
-    );
-
-    state.applications = state.applications.map((application) => {
-      if (application.companyId && application.companyId !== seededDemoCompanyId) {
-        return application;
-      }
-      const derivedCompanyId = jobCompanyById.get(application.jobId) ?? companyId;
-      didChange = true;
-      return {
-        ...application,
-        companyId: derivedCompanyId,
-      };
-    });
-
-    const applicationCompanyById = new Map(
-      state.applications.map((application) => [application.id, application.companyId]),
-    );
-
-    state.candidateNotes = state.candidateNotes.map((note) => {
-      if (note.companyId && note.companyId !== seededDemoCompanyId) {
-        return note;
-      }
-      didChange = true;
-      return {
-        ...note,
-        companyId:
-          applicationCompanyById.get(note.applicationId) ??
-          jobCompanyById.get(note.jobId) ??
-          companyId,
-      };
-    });
-
-    state.interviewRuns = state.interviewRuns.map((interviewRun) => {
-      if (interviewRun.companyId && interviewRun.companyId !== seededDemoCompanyId) {
-        return interviewRun;
-      }
-      didChange = true;
-      return {
-        ...interviewRun,
-        companyId:
-          applicationCompanyById.get(interviewRun.applicationId) ??
-          jobCompanyById.get(interviewRun.jobId) ??
-          companyId,
-      } satisfies InterviewRun;
-    });
-
-    const interviewRunCompanyById = new Map(
-      state.interviewRuns.map((interviewRun) => [interviewRun.id, interviewRun.companyId]),
-    );
-
-    state.evaluations = state.evaluations.map((evaluation) => {
-      if (evaluation.companyId && evaluation.companyId !== seededDemoCompanyId) {
-        return evaluation;
-      }
-      didChange = true;
-      return {
-        ...evaluation,
-        companyId: interviewRunCompanyById.get(evaluation.interviewRunId) ?? companyId,
-      } satisfies CandidateEvaluation;
-    });
 
     let defaultTeam =
       state.teams.find(

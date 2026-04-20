@@ -29,6 +29,7 @@ import {
   applyRecruiterAction,
   getCandidatesForStage,
   type PipelineCandidate,
+  type RecruiterAction,
 } from "@/lib/job-pipeline";
 import type { RuntimeTraceEvent } from "@/lib/runtime-tracing";
 
@@ -156,6 +157,8 @@ export function JobDetailWorkspace({
   const [noteDraft, setNoteDraft] = useState("");
   const [noteError, setNoteError] = useState<string | null>(null);
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
+  const [stageActionError, setStageActionError] = useState<string | null>(null);
+  const [isUpdatingStage, setIsUpdatingStage] = useState(false);
 
   const selectedCandidate =
     candidates.find((candidate) => candidate.id === selectedCandidateId) ??
@@ -199,23 +202,17 @@ export function JobDetailWorkspace({
     setSelectedCandidateId(null);
     setNoteDraft("");
     setNoteError(null);
+    setStageActionError(null);
   };
 
   const selectCandidate = (candidateId: string) => {
     setSelectedCandidateId(candidateId);
     setNoteDraft("");
     setNoteError(null);
+    setStageActionError(null);
   };
 
-  const handleRecruiterAction = (
-    action:
-      | "shortlist"
-      | "reject"
-      | "hire"
-      | "move_to_interviewed"
-      | "move_to_shortlisted"
-      | "restore_to_interviewed",
-  ) => {
+  const applySuccessfulRecruiterAction = (action: RecruiterAction) => {
     if (!selectedCandidateId) {
       return;
     }
@@ -230,6 +227,56 @@ export function JobDetailWorkspace({
 
     if (action === "restore_to_interviewed") {
       setShowRejected(false);
+    }
+  };
+
+  const handleRecruiterAction = async (action: RecruiterAction) => {
+    if (!selectedCandidateId || !selectedCandidate) {
+      return;
+    }
+
+    if (!selectedCandidate.jobId) {
+      setStageActionError(null);
+      applySuccessfulRecruiterAction(action);
+      return;
+    }
+
+    setIsUpdatingStage(true);
+    setStageActionError(null);
+
+    try {
+      const response = await fetch(
+        `/api/recruiter/candidates/${selectedCandidate.id}/stage`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            action,
+            jobId: selectedCandidate.jobId,
+          }),
+        },
+      );
+
+      const result = (await response.json()) as
+        | { success: true }
+        | { success: false; error: string };
+
+      if (!response.ok || !result.success) {
+        setStageActionError(
+          result.success
+            ? "Candidate stage could not be updated right now."
+            : result.error,
+        );
+        return;
+      }
+
+      applySuccessfulRecruiterAction(action);
+    } catch {
+      setStageActionError("Candidate stage could not be updated right now.");
+    } finally {
+      setIsUpdatingStage(false);
     }
   };
 
@@ -327,6 +374,7 @@ export function JobDetailWorkspace({
             size="xs"
             variant="default"
             onClick={() => handleRecruiterAction("shortlist")}
+            disabled={isUpdatingStage}
           >
             Shortlist
           </Button>
@@ -334,6 +382,7 @@ export function JobDetailWorkspace({
             size="xs"
             variant="outline"
             onClick={() => handleRecruiterAction("reject")}
+            disabled={isUpdatingStage}
           >
             Reject
           </Button>
@@ -344,6 +393,7 @@ export function JobDetailWorkspace({
           size="xs"
           variant="outline"
           onClick={() => handleRecruiterAction("reject")}
+          disabled={isUpdatingStage}
         >
           Reject
         </Button>
@@ -354,6 +404,7 @@ export function JobDetailWorkspace({
             size="xs"
             variant="default"
             onClick={() => handleRecruiterAction("hire")}
+            disabled={isUpdatingStage}
           >
             Hire
           </Button>
@@ -361,6 +412,7 @@ export function JobDetailWorkspace({
             size="xs"
             variant="outline"
             onClick={() => handleRecruiterAction("move_to_interviewed")}
+            disabled={isUpdatingStage}
           >
             Back to interviewed
           </Button>
@@ -371,6 +423,7 @@ export function JobDetailWorkspace({
           size="xs"
           variant="outline"
           onClick={() => handleRecruiterAction("move_to_shortlisted")}
+          disabled={isUpdatingStage}
         >
           Back to shortlisted
         </Button>
@@ -380,6 +433,7 @@ export function JobDetailWorkspace({
           size="xs"
           variant="outline"
           onClick={() => handleRecruiterAction("restore_to_interviewed")}
+          disabled={isUpdatingStage}
         >
           Restore
         </Button>
@@ -566,6 +620,11 @@ export function JobDetailWorkspace({
                     <div className="mt-4 flex flex-wrap items-center gap-2">
                       {selectedCandidateActions}
                     </div>
+                    {stageActionError ? (
+                      <p className="mt-3 text-sm text-rose-600" role="alert">
+                        {stageActionError}
+                      </p>
+                    ) : null}
                   </section>
 
                   <section className="rounded-[0.8rem] border border-slate-200/85 bg-white/92 px-4 py-4">

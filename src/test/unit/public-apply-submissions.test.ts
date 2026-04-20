@@ -12,6 +12,7 @@ import {
   saveInterviewEvaluation,
   submitPublicApplication,
 } from "@/lib/public-apply-submissions";
+import { saveStoredJob } from "@/lib/db/runtime-store";
 
 describe("public apply submissions", () => {
   afterEach(async () => {
@@ -174,6 +175,136 @@ describe("public apply submissions", () => {
       dispatchResponses: [],
       webhookRecords: [],
       runtimeTraceEvents: [],
+    });
+  });
+
+  it("scopes candidate identity to the job company", async () => {
+    await saveStoredJob({
+      id: "job_other_company_picker",
+      companyId: "company_other",
+      recruiterSlug: "other-company-picker",
+      title: "Picker",
+      summary: "Warehouse picker role for another company.",
+      description: "Picker role for a separate company workspace.",
+      location: "Madrid",
+      salary: null,
+      schedule: null,
+      status: "active",
+      interviewLanguage: "en",
+      createdAt: "2026-03-25T10:00:00.000Z",
+      publishedAt: "2026-03-25T10:00:00.000Z",
+      expiresAt: null,
+      publicApplyPath: "/apply/other-company-picker",
+      pipeline: {
+        applicants: 0,
+        interviewed: 0,
+        shortlisted: 0,
+        hired: 0,
+        rejected: 0,
+      },
+      requirements: [],
+      interviewLimits: {
+        maxInterviews: null,
+        outstandingCap: null,
+        greatCap: null,
+      },
+    });
+
+    const firstSubmission = await submitPublicApplication({
+      jobId: "job_warehouse_madrid",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "en",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    const secondSubmission = await submitPublicApplication({
+      jobId: "job_other_company_picker",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "en",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T13:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    expect(firstSubmission.success).toBe(true);
+    expect(secondSubmission.success).toBe(true);
+
+    const snapshot = await getPublicApplySubmissionSnapshot();
+
+    expect(snapshot.candidates).toHaveLength(2);
+    expect(snapshot.candidates.map((candidate) => candidate.companyId)).toEqual([
+      "company_seed_demo",
+      "company_other",
+    ]);
+    expect(snapshot.applications.map((application) => application.candidateId)).toEqual([
+      "cand_1",
+      "cand_2",
+    ]);
+  });
+
+  it("rejects submissions for inactive jobs even when called directly", async () => {
+    const result = await submitPublicApplication({
+      jobId: "job_retail_barcelona",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "es",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Application intake is closed for this job.",
+    });
+  });
+
+  it("rejects submissions when the job interview limit is already reached", async () => {
+    const result = await submitPublicApplication({
+      jobId: "job_ops_coordinator_valencia",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "es",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "This job has already reached its interview limit.",
     });
   });
 

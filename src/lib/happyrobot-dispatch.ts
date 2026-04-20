@@ -166,6 +166,7 @@ export async function dispatchHappyRobotCall(input: {
 
   if (!input.payload.outboundNumber) {
     return {
+      interviewRunId: input.callRequest.interviewRunId,
       success: false,
       error: {
         code: "missing_outbound_number",
@@ -180,6 +181,7 @@ export async function dispatchHappyRobotCall(input: {
 
   if (input.payload.language === "unsupported") {
     return {
+      interviewRunId: input.callRequest.interviewRunId,
       success: false,
       error: {
         code: "unsupported_language",
@@ -194,6 +196,7 @@ export async function dispatchHappyRobotCall(input: {
 
   if (input.simulateFailureReason) {
     return {
+      interviewRunId: input.callRequest.interviewRunId,
       success: false,
       error: {
         code: "provider_error",
@@ -222,6 +225,7 @@ export async function dispatchHappyRobotCall(input: {
 
       if (!response.ok) {
         return {
+          interviewRunId: input.callRequest.interviewRunId,
           success: false,
           error: {
             code: "provider_error",
@@ -234,6 +238,7 @@ export async function dispatchHappyRobotCall(input: {
       }
 
       return {
+        interviewRunId: input.callRequest.interviewRunId,
         success: true,
         result: {
           providerCallId:
@@ -252,6 +257,7 @@ export async function dispatchHappyRobotCall(input: {
       };
     } catch (error) {
       return {
+        interviewRunId: input.callRequest.interviewRunId,
         success: false,
         error: {
           code: "provider_error",
@@ -268,6 +274,7 @@ export async function dispatchHappyRobotCall(input: {
   }
 
   return {
+    interviewRunId: input.callRequest.interviewRunId,
     success: true,
     result: {
       providerCallId: `hr_call_${input.callRequest.interviewRunId}`,

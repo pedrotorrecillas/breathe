@@ -51,6 +51,7 @@ describe("happyrobot orchestration", () => {
       },
       candidate: {
         id: "cand_1",
+        companyId: "company_seed_demo",
         fullName: "Ana Torres",
         phone: "+34910000000",
         normalizedPhone: "+34910000000",
@@ -163,6 +164,7 @@ describe("happyrobot orchestration", () => {
       },
       candidate: {
         id: "cand_1",
+        companyId: "company_seed_demo",
         fullName: "Ana Torres",
         phone: "+34910000000",
         normalizedPhone: "+34910000000",

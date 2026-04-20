@@ -99,10 +99,12 @@ export type HappyRobotDispatchFailure = {
 
 export type HappyRobotDispatchResponse =
   | {
+      interviewRunId: EntityId;
       success: true;
       result: HappyRobotCallResult;
     }
   | {
+      interviewRunId: EntityId;
       success: false;
       error: HappyRobotDispatchFailure;
     };

@@ -27,6 +27,7 @@ export type CandidateLegalAcceptance = {
 
 export type CandidateProfile = {
   id: CandidateId;
+  companyId: EntityId;
   fullName: string;
   phone: string;
   normalizedPhone: string;
@@ -49,6 +50,7 @@ export type CandidateApplication = {
   submittedAt: ISODateTimeString;
   needsHumanReviewAt: ISODateTimeString | null;
   legalAcceptance: CandidateLegalAcceptance | null;
+  recruiterOutcomeNote?: string | null;
 };
 
 export type CandidateNote = {
