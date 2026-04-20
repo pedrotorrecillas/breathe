@@ -648,6 +648,7 @@ function buildImportedData(rows: CsvRow[]) {
 
     candidates.push({
       id: candidateId,
+      companyId,
       fullName,
       phone: normalizeWhitespace(row["móvil"]),
       normalizedPhone: normalizePhone(row["móvil"]),
