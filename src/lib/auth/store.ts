@@ -5,6 +5,7 @@ import {
   saveRuntimeStoreState,
   type RuntimeStoreState,
 } from "@/lib/db/runtime-store";
+import { getDatabaseClient, hasDatabaseUrl } from "@/lib/db/client";
 
 import { SESSION_TTL_MS } from "@/lib/auth/constants";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
@@ -17,6 +18,12 @@ import type {
   CompanyMembershipRole,
   CompanyRecord,
 } from "@/lib/auth/types";
+import {
+  companiesTable,
+  companyMembershipsTable,
+  sessionsTable,
+  usersTable,
+} from "@/lib/db/schema";
 
 type SeededCredentials = {
   companyName: string;
@@ -26,6 +33,8 @@ type SeededCredentials = {
   password: string;
   workspaceKey: string | null;
 };
+
+const SESSION_LAST_SEEN_REFRESH_MS = 5 * 60 * 1000;
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -58,11 +67,95 @@ async function loadAuthState() {
 }
 
 async function saveAuthState(state: RuntimeStoreState, auth: AuthState) {
+  if (hasDatabaseUrl()) {
+    const db = getDatabaseClient();
+
+    await db.transaction(async (tx) => {
+      await tx.delete(companyMembershipsTable);
+      await tx.delete(sessionsTable);
+      await tx.delete(usersTable);
+      await tx.delete(companiesTable);
+
+      if (auth.companies.length > 0) {
+        await tx.insert(companiesTable).values(
+          auth.companies.map((item, index) => ({
+            id: item.id,
+            slug: item.slug,
+            name: item.name,
+            defaultWorkspaceKey: item.defaultWorkspaceKey,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
+
+      if (auth.users.length > 0) {
+        await tx.insert(usersTable).values(
+          auth.users.map((item, index) => ({
+            id: item.id,
+            email: item.email,
+            normalizedEmail: item.normalizedEmail,
+            passwordHash: item.passwordHash,
+            authProvider: item.authProvider,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
+
+      if (auth.memberships.length > 0) {
+        await tx.insert(companyMembershipsTable).values(
+          auth.memberships.map((item, index) => ({
+            id: item.id,
+            companyId: item.companyId,
+            userId: item.userId,
+            role: item.role,
+            workspaceKey: item.workspaceKey,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
+
+      if (auth.sessions.length > 0) {
+        await tx.insert(sessionsTable).values(
+          auth.sessions.map((item, index) => ({
+            id: item.id,
+            userId: item.userId,
+            companyId: item.companyId,
+            membershipId: item.membershipId,
+            tokenHash: item.tokenHash,
+            activeWorkspaceKey: item.activeWorkspaceKey,
+            expiresAt: item.expiresAt,
+            lastSeenAt: item.lastSeenAt,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
+    });
+
+    return;
+  }
+
   state.companies = auth.companies;
   state.memberships = auth.memberships;
   state.sessions = auth.sessions;
   state.users = auth.users;
   await saveRuntimeStoreState(state);
+}
+
+function shouldRefreshSessionLastSeen(
+  session: AuthSessionRecord,
+  now: Date,
+) {
+  const lastSeenAt = new Date(session.lastSeenAt).getTime();
+
+  if (Number.isNaN(lastSeenAt)) {
+    return true;
+  }
+
+  return now.getTime() - lastSeenAt >= SESSION_LAST_SEEN_REFRESH_MS;
 }
 
 function readSeededCredentials(): SeededCredentials | null {
@@ -436,15 +529,21 @@ export async function getAuthenticatedRecruiterBySessionToken(
     return null;
   }
 
-  const lastSeenAt = new Date().toISOString();
-  const nextSession = {
-    ...session,
-    lastSeenAt,
-  };
-  auth.sessions = auth.sessions.map((item) =>
-    item.id === session.id ? nextSession : item,
-  );
-  await saveAuthState(state, auth);
+  let nextSession = session;
+  const now = new Date();
+
+  if (shouldRefreshSessionLastSeen(session, now)) {
+    nextSession = {
+      ...session,
+      lastSeenAt: now.toISOString(),
+    };
+    auth.sessions = auth.sessions.map((item) =>
+      item.id === session.id ? nextSession : item,
+    );
+    await saveAuthState(state, auth);
+  } else if (authChanged) {
+    await saveAuthState(state, auth);
+  }
 
   return {
     ...recruiter,
