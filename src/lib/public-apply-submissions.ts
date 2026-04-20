@@ -91,6 +91,21 @@ function nextId(prefix: string, count: number) {
   return `${prefix}_${count + 1}`;
 }
 
+function candidateBelongsToCompany(
+  state: RuntimeStoreState,
+  candidate: CandidateProfile,
+  companyId: string,
+) {
+  if (candidate.companyId === companyId) {
+    return true;
+  }
+
+  return state.applications.some(
+    (application) =>
+      application.candidateId === candidate.id && application.companyId === companyId,
+  );
+}
+
 function appendRuntimeTraceEvent(
   state: RuntimeStoreState,
   event: RuntimeTraceEvent,
@@ -504,23 +519,37 @@ export async function submitPublicApplication(
     };
   }
 
+  const job = await findPublicJobById(input.jobId);
+
+  if (!job) {
+    return {
+      success: false,
+      error: "Interview dispatch preparation failed because the job was not found.",
+    };
+  }
+
   const normalizedPhone = normalizePhone(input.phone);
   const normalizedEmail = normalizeEmail(input.email);
   const source: CandidateSource = "public_apply_link";
 
   const existingCandidate =
     state.candidates.find(
-      (candidate) => candidate.normalizedPhone === normalizedPhone,
+      (candidate) =>
+        candidate.normalizedPhone === normalizedPhone &&
+        candidateBelongsToCompany(state, candidate, job.companyId),
     ) ??
     (normalizedEmail
       ? state.candidates.find(
-          (candidate) => candidate.normalizedEmail === normalizedEmail,
+          (candidate) =>
+            candidate.normalizedEmail === normalizedEmail &&
+            candidateBelongsToCompany(state, candidate, job.companyId),
         ) ?? null
       : null);
 
   const stagedCandidate: CandidateProfile = existingCandidate
     ? {
         ...existingCandidate,
+        companyId: job.companyId,
         fullName: input.fullName.trim(),
         phone: input.phone.trim(),
         normalizedPhone,
@@ -534,6 +563,7 @@ export async function submitPublicApplication(
       }
     : {
         id: nextId("cand", state.candidates.length),
+        companyId: job.companyId,
         fullName: input.fullName.trim(),
         phone: input.phone.trim(),
         normalizedPhone,
@@ -550,15 +580,6 @@ export async function submitPublicApplication(
     return {
       success: false,
       error: "Application creation failed before persistence.",
-    };
-  }
-
-  const job = await findPublicJobById(input.jobId);
-
-  if (!job) {
-    return {
-      success: false,
-      error: "Interview dispatch preparation failed because the job was not found.",
     };
   }
 

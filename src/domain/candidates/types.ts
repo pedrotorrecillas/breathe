@@ -27,6 +27,7 @@ export type CandidateLegalAcceptance = {
 
 export type CandidateProfile = {
   id: CandidateId;
+  companyId: EntityId;
   fullName: string;
   phone: string;
   normalizedPhone: string;
