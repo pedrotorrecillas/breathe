@@ -39,18 +39,6 @@ type JobDetailWorkspaceProps = {
     publicApplyPath: string | null;
     candidates: PipelineCandidate[];
   };
-  accessSummary: {
-    jobId: string;
-    teams: {
-      id: string;
-      name: string;
-      members: {
-        id: string;
-        email: string;
-        displayName: string;
-      }[];
-    }[];
-  } | null;
   candidateNotesByCandidateId: Record<
     string,
     {
@@ -135,8 +123,14 @@ function humanizeRequirementExplanation(explanation: string) {
     .replace(/^candidate demonstrated\s+/i, "The candidate showed ")
     .replace(/^candidate shared\s+/i, "The candidate shared ")
     .replace(/^provided evidence of\s+/i, "The candidate showed ")
-    .replace(/^no evidence of\s+/i, "The interview did not surface evidence of ")
-    .replace(/^limited evidence of\s+/i, "Only limited evidence came through for ");
+    .replace(
+      /^no evidence of\s+/i,
+      "The interview did not surface evidence of ",
+    )
+    .replace(
+      /^limited evidence of\s+/i,
+      "Only limited evidence came through for ",
+    );
 }
 
 function formatNoteTimestamp(value: string) {
@@ -148,15 +142,17 @@ function formatNoteTimestamp(value: string) {
 
 export function JobDetailWorkspace({
   initialSnapshot,
-  accessSummary,
   candidateNotesByCandidateId: initialCandidateNotesByCandidateId,
   runtimeSnapshotsByCandidateId,
 }: JobDetailWorkspaceProps) {
-  const [candidates, setCandidates] = useState(() => initialSnapshot.candidates);
-  const [candidateNotesByCandidateId, setCandidateNotesByCandidateId] = useState(
-    () => initialCandidateNotesByCandidateId,
+  const [candidates, setCandidates] = useState(
+    () => initialSnapshot.candidates,
   );
-  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+  const [candidateNotesByCandidateId, setCandidateNotesByCandidateId] =
+    useState(() => initialCandidateNotesByCandidateId);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(
+    null,
+  );
   const [showRejected, setShowRejected] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const [noteError, setNoteError] = useState<string | null>(null);
@@ -165,37 +161,41 @@ export function JobDetailWorkspace({
   const [isUpdatingStage, setIsUpdatingStage] = useState(false);
 
   const selectedCandidate =
-    candidates.find((candidate) => candidate.id === selectedCandidateId) ?? null;
+    candidates.find((candidate) => candidate.id === selectedCandidateId) ??
+    null;
   const selectedCandidateRuntime = selectedCandidate
-    ? runtimeSnapshotsByCandidateId[selectedCandidate.id] ?? null
+    ? (runtimeSnapshotsByCandidateId[selectedCandidate.id] ?? null)
     : null;
   const selectedCandidateEvaluation =
     selectedCandidateRuntime?.evaluation ?? null;
   const selectedCandidateReport = selectedCandidateEvaluation
     ? buildCandidateReportFromEvaluation(selectedCandidateEvaluation)
     : null;
-  const selectedCandidateRecording = selectedCandidateRuntime?.interviewRun.artifacts
-    .recordingUrl
+  const selectedCandidateRecording = selectedCandidateRuntime?.interviewRun
+    .artifacts.recordingUrl
     ? {
-        recordingUrl: selectedCandidateRuntime.interviewRun.artifacts.recordingUrl,
+        recordingUrl:
+          selectedCandidateRuntime.interviewRun.artifacts.recordingUrl,
       }
     : null;
   const selectedCandidateNotesEntry = selectedCandidate
-    ? candidateNotesByCandidateId[selectedCandidate.id] ?? {
+    ? (candidateNotesByCandidateId[selectedCandidate.id] ?? {
         applicationId:
           selectedCandidate.applicationId ??
           selectedCandidateRuntime?.application?.id ??
           null,
         jobId:
-          selectedCandidate.jobId ?? selectedCandidateRuntime?.application?.jobId ?? null,
+          selectedCandidate.jobId ??
+          selectedCandidateRuntime?.application?.jobId ??
+          null,
         notes: [],
-      }
+      })
     : null;
   const selectedCandidateNotes = selectedCandidateNotesEntry?.notes ?? [];
   const canCreateNote = Boolean(
     selectedCandidate &&
-      selectedCandidateNotesEntry?.applicationId &&
-      selectedCandidateNotesEntry?.jobId,
+    selectedCandidateNotesEntry?.applicationId &&
+    selectedCandidateNotesEntry?.jobId,
   );
 
   const clearSelectedCandidate = () => {
@@ -350,14 +350,22 @@ export function JobDetailWorkspace({
   };
 
   const applicantCount = getCandidatesForStage(candidates, "Applicants").length;
-  const interviewedCount = getCandidatesForStage(candidates, "Interviewed").length;
-  const shortlistedCount = getCandidatesForStage(candidates, "Shortlisted").length;
+  const interviewedCount = getCandidatesForStage(
+    candidates,
+    "Interviewed",
+  ).length;
+  const shortlistedCount = getCandidatesForStage(
+    candidates,
+    "Shortlisted",
+  ).length;
   const hiredCount = getCandidatesForStage(candidates, "Hired").length;
   const rejectedCount = getCandidatesForStage(candidates, "Rejected").length;
-  const visiblePipelineStages = showRejected ? (["Rejected"] as const) : activePipelineStages;
+  const visiblePipelineStages = showRejected
+    ? (["Rejected"] as const)
+    : activePipelineStages;
   const selectedCandidateScoreState = selectedCandidateReport
     ? mapNumericScoreToState(selectedCandidateReport.finalNumericScore)
-    : selectedCandidate?.scoreState ?? null;
+    : (selectedCandidate?.scoreState ?? null);
   const selectedCandidateActions = selectedCandidate ? (
     <>
       {selectedCandidate.stage === "Interviewed" ? (
@@ -436,9 +444,8 @@ export function JobDetailWorkspace({
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6 md:px-8">
       <PlaceholderState
-        eyebrow="Pipeline"
         title={initialSnapshot.title}
-        description="Review applicants, interview outcomes, and hiring decisions from one screen."
+        titleSuffix={<StatusBadge intent="success">Active</StatusBadge>}
       >
         <div className="space-y-5">
           <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-4 lg:flex-row lg:items-start lg:justify-between">
@@ -470,7 +477,6 @@ export function JobDetailWorkspace({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge intent="success">Active</StatusBadge>
               {initialSnapshot.publicApplyPath ? (
                 <Link
                   href={initialSnapshot.publicApplyPath}
@@ -500,54 +506,8 @@ export function JobDetailWorkspace({
             </div>
           </div>
 
-          {accessSummary ? (
-            <section className="rounded-[0.85rem] border border-slate-200/85 bg-white/88 px-4 py-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="ops-kicker text-slate-500">Opportunity access</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Teams below can currently view and work this opportunity.
-                  </p>
-                </div>
-                <StatusBadge intent="neutral" density="compact">
-                  {accessSummary.teams.length} teams
-                </StatusBadge>
-              </div>
-
-              <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                {accessSummary.teams.map((team) => (
-                  <article
-                    key={team.id}
-                    className="rounded-[0.75rem] border border-slate-200/80 bg-slate-50/80 px-3 py-3"
-                  >
-                    <p className="text-sm font-semibold text-slate-950">{team.name}</p>
-                    <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-500">
-                      Members
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {team.members.map((member) => (
-                        <StatusBadge key={member.id} intent="info" density="compact">
-                          {member.displayName || member.email}
-                        </StatusBadge>
-                      ))}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-          ) : null}
-
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.28fr)_minmax(24rem,0.92fr)]">
             <section className="space-y-4">
-              <div className="flex items-end justify-between gap-3">
-                <div>
-                  <p className="ops-kicker text-slate-500">Pipeline workspace</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Select a candidate to review the evaluation and take the next action.
-                  </p>
-                </div>
-              </div>
-
               <div
                 className={
                   showRejected
@@ -556,7 +516,10 @@ export function JobDetailWorkspace({
                 }
               >
                 {visiblePipelineStages.map((stage) => {
-                  const stageCandidates = getCandidatesForStage(candidates, stage);
+                  const stageCandidates = getCandidatesForStage(
+                    candidates,
+                    stage,
+                  );
 
                   return (
                     <section
@@ -582,8 +545,12 @@ export function JobDetailWorkspace({
                               onSelect={selectCandidate}
                               showOperationalState={stage === "Applicants"}
                               extraBadges={
-                                stage === "Rejected" && candidate.rejectedReason ? (
-                                  <StatusBadge intent="warning" density="compact">
+                                stage === "Rejected" &&
+                                candidate.rejectedReason ? (
+                                  <StatusBadge
+                                    intent="warning"
+                                    density="compact"
+                                  >
                                     {candidate.rejectedReason}
                                   </StatusBadge>
                                 ) : null
@@ -627,7 +594,9 @@ export function JobDetailWorkspace({
                               intent={
                                 selectedCandidateScoreState === "Pending"
                                   ? "neutral"
-                                  : scoreBadgeIntent[selectedCandidateScoreState]
+                                  : scoreBadgeIntent[
+                                      selectedCandidateScoreState
+                                    ]
                               }
                               density="compact"
                             >
@@ -640,7 +609,9 @@ export function JobDetailWorkspace({
                         <p className="ops-kicker text-slate-500">Score</p>
                         <p className="mt-2 text-4xl font-semibold tracking-tight text-slate-950">
                           {selectedCandidateReport
-                            ? selectedCandidateReport.finalNumericScore.toFixed(0)
+                            ? selectedCandidateReport.finalNumericScore.toFixed(
+                                0,
+                              )
                             : "--"}
                         </p>
                       </div>
@@ -663,7 +634,8 @@ export function JobDetailWorkspace({
                           Internal recruiter notes
                         </p>
                         <p className="mt-2 text-sm leading-6 text-slate-600">
-                          Private recruiter-only notes. These stay separate from the AI-generated evaluation below.
+                          Private recruiter-only notes. These stay separate from
+                          the AI-generated evaluation below.
                         </p>
                       </div>
                       <StatusBadge intent="neutral" density="compact">
@@ -714,7 +686,7 @@ export function JobDetailWorkspace({
                                 {formatNoteTimestamp(note.createdAt)}
                               </p>
                             </div>
-                            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                            <p className="mt-2 text-sm leading-6 whitespace-pre-wrap text-slate-700">
                               {note.body}
                             </p>
                           </article>
@@ -734,7 +706,8 @@ export function JobDetailWorkspace({
                           Structured evaluation
                         </p>
                         <p className="mt-2 text-sm leading-6 text-slate-600">
-                          AI-generated interview scoring and evidence for recruiter review.
+                          AI-generated interview scoring and evidence for
+                          recruiter review.
                         </p>
                       </div>
                       <StatusBadge intent="info" density="compact">
@@ -752,9 +725,10 @@ export function JobDetailWorkspace({
                           </h3>
                           <div className="mt-3 space-y-3">
                             {block.requirements.map((requirement) => {
-                              const requirementScoreState = mapNumericScoreToState(
-                                requirement.numericScore,
-                              );
+                              const requirementScoreState =
+                                mapNumericScoreToState(
+                                  requirement.numericScore,
+                                );
 
                               return (
                                 <div
@@ -767,7 +741,10 @@ export function JobDetailWorkspace({
                                         {requirement.label}
                                       </p>
                                       <div className="mt-2 flex flex-wrap gap-2">
-                                        <StatusBadge intent="neutral" density="compact">
+                                        <StatusBadge
+                                          intent="neutral"
+                                          density="compact"
+                                        >
                                           {requirement.importance}
                                         </StatusBadge>
                                         <StatusBadge
@@ -820,13 +797,18 @@ export function JobDetailWorkspace({
                       </div>
                     ) : (
                       <p className="mt-3 text-sm leading-6 text-slate-600">
-                        No interview recording is available for this candidate yet.
+                        No interview recording is available for this candidate
+                        yet.
                       </p>
                     )}
                   </section>
 
                   <div className="flex justify-end">
-                    <Button size="xs" variant="outline" onClick={clearSelectedCandidate}>
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      onClick={clearSelectedCandidate}
+                    >
                       Close
                     </Button>
                   </div>

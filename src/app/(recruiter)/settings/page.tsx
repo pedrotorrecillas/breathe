@@ -14,6 +14,11 @@ import {
   recruiterCanManageTeams,
 } from "@/lib/team-access";
 
+import {
+  CompanySettingsForm,
+  ProfileSettingsForm,
+} from "./settings-forms";
+
 function prettyAuthProvider(value: "password" | "google") {
   return value === "google" ? "Google" : "Password";
 }
@@ -63,19 +68,13 @@ export default async function SettingsPage() {
               <p className="ops-kicker text-muted-foreground">Account</p>
               <CardTitle>Profile and session context</CardTitle>
               <CardDescription>
-                Basic information about the recruiter account currently signed
-                in.
+                Basic information about the recruiter account currently signed in.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">
-              <Card className="bg-white/88">
-                <CardContent className="px-4 py-3">
-                  <p className="ops-kicker text-muted-foreground">Name</p>
-                  <p className="mt-2 text-sm font-medium text-slate-950">
-                    {recruiter.user.displayName}
-                  </p>
-                </CardContent>
-              </Card>
+              <ProfileSettingsForm
+                defaultDisplayName={recruiter.user.displayName}
+              />
               <Card className="bg-white/88">
                 <CardContent className="px-4 py-3">
                   <p className="ops-kicker text-muted-foreground">Email</p>
@@ -112,6 +111,33 @@ export default async function SettingsPage() {
                   </p>
                 </CardContent>
               </Card>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <p className="ops-kicker text-muted-foreground">Company basics</p>
+              <CardTitle>Workspace identity</CardTitle>
+              <CardDescription>
+                Keep the company profile visible to recruiters consistent across the
+                product.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              {canManageTeams ? (
+                <CompanySettingsForm
+                  defaultCompanyName={recruiter.company.name}
+                />
+              ) : (
+                <Card className="border-amber-200/90 bg-amber-50/85">
+                  <CardContent className="px-4 py-3">
+                    <p className="ops-kicker text-amber-700">Admin-only</p>
+                    <p className="mt-2 text-sm leading-6 text-amber-950">
+                      Only admins and owners can edit company basics.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </CardContent>
           </Card>
 

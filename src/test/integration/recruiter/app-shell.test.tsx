@@ -74,6 +74,15 @@ describe("recruiter shell", () => {
         .getAllByText(/^Performance$/i)[0]
         ?.closest("[aria-disabled='true']"),
     ).toHaveAttribute("aria-disabled", "true");
+    expect(
+      screen
+        .getAllByText(/^Teams$/i)[0]
+        ?.closest("[aria-disabled='true']"),
+    ).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getAllByRole("link", { name: /^Settings$/i })[0]).toHaveAttribute(
+      "href",
+      "/settings",
+    );
     expect(screen.getAllByText(/Coming soon/i).length).toBeGreaterThan(0);
   });
 });

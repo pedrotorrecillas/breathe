@@ -9,6 +9,7 @@ import type {
   TeamMembershipRecord,
   TeamRecord,
 } from "@/lib/auth/types";
+import { appendAuditEvent } from "@/lib/audit/log";
 import {
   loadRuntimeStoreState,
   saveRuntimeStoreState,
@@ -427,6 +428,17 @@ export async function createTeam(params: {
     updatedAt: now,
   };
   state.teams.push(team);
+  appendAuditEvent({
+    state,
+    recruiter: params.recruiter,
+    action: "team.created",
+    targetType: "team",
+    targetId: team.id,
+    summary: `Created team ${team.name}.`,
+    metadata: {
+      teamSlug: team.slug,
+    },
+  });
   await saveRuntimeStoreState(state);
   return team;
 }
@@ -488,6 +500,20 @@ export async function addTeamMemberByEmail(params: {
     updatedAt: now,
   };
   state.teamMemberships.push(teamMembership);
+  appendAuditEvent({
+    state,
+    recruiter: params.recruiter,
+    action: "team.member_added",
+    targetType: "team_membership",
+    targetId: teamMembership.id,
+    summary: `Added ${user.email} to ${team.name}.`,
+    metadata: {
+      teamId: team.id,
+      teamName: team.name,
+      userId: user.id,
+      userEmail: user.email,
+    },
+  });
   await saveRuntimeStoreState(state);
   return teamMembership;
 }
@@ -517,6 +543,18 @@ export async function removeTeamMember(params: {
   }
 
   state.teamMemberships = nextMemberships;
+  appendAuditEvent({
+    state,
+    recruiter: params.recruiter,
+    action: "team.member_removed",
+    targetType: "team_membership",
+    targetId: `${params.teamId}:${params.userId}`,
+    summary: "Removed a recruiter from a team.",
+    metadata: {
+      teamId: params.teamId,
+      userId: params.userId,
+    },
+  });
   await saveRuntimeStoreState(state);
   return true;
 }
@@ -554,6 +592,18 @@ export async function grantTeamAccessToJob(params: {
     updatedAt: now,
   };
   state.jobAccessGrants.push(grant);
+  appendAuditEvent({
+    state,
+    recruiter: params.recruiter,
+    action: "job_access.granted",
+    targetType: "job_access",
+    targetId: grant.id,
+    summary: "Granted team access to an opportunity.",
+    metadata: {
+      teamId: params.teamId,
+      jobId: params.jobId,
+    },
+  });
   await saveRuntimeStoreState(state);
   return grant;
 }
@@ -583,6 +633,18 @@ export async function revokeTeamAccessToJob(params: {
   }
 
   state.jobAccessGrants = nextGrants;
+  appendAuditEvent({
+    state,
+    recruiter: params.recruiter,
+    action: "job_access.revoked",
+    targetType: "job_access",
+    targetId: `${params.teamId}:${params.jobId}`,
+    summary: "Revoked team access to an opportunity.",
+    metadata: {
+      teamId: params.teamId,
+      jobId: params.jobId,
+    },
+  });
   await saveRuntimeStoreState(state);
   return true;
 }

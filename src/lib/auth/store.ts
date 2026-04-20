@@ -571,6 +571,60 @@ export async function invalidateSession(
   await saveAuthState(state, auth);
 }
 
+export async function updateAuthenticatedRecruiterProfile(params: {
+  userId: string;
+  displayName: string;
+}) {
+  const { auth, state } = await loadAuthState();
+  const user = auth.users.find((item) => item.id === params.userId);
+
+  if (!user) {
+    throw new Error("User not found.");
+  }
+
+  const nextDisplayName = params.displayName.trim();
+
+  if (!nextDisplayName) {
+    throw new Error("Display name is required.");
+  }
+
+  if (user.displayName === nextDisplayName) {
+    return user;
+  }
+
+  user.displayName = nextDisplayName;
+  user.updatedAt = new Date().toISOString();
+  await saveAuthState(state, auth);
+  return user;
+}
+
+export async function updateCompanyProfile(params: {
+  companyId: string;
+  companyName: string;
+}) {
+  const { auth, state } = await loadAuthState();
+  const company = auth.companies.find((item) => item.id === params.companyId);
+
+  if (!company) {
+    throw new Error("Company not found.");
+  }
+
+  const nextCompanyName = params.companyName.trim();
+
+  if (!nextCompanyName) {
+    throw new Error("Company name is required.");
+  }
+
+  if (company.name === nextCompanyName) {
+    return company;
+  }
+
+  company.name = nextCompanyName;
+  company.updatedAt = new Date().toISOString();
+  await saveAuthState(state, auth);
+  return company;
+}
+
 export async function createAuthUser(params: {
   companyName: string;
   companySlug?: string;

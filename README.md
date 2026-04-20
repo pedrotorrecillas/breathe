@@ -145,6 +145,38 @@ API routes:
 
 ## Architecture
 
+## Tenant Isolation Baseline
+
+The recruiter product now uses a logical multi-tenant model with company-aware access control:
+
+- recruiter auth resolves a `user + company membership + session`
+- recruiter data is scoped by `companyId`
+- opportunity visibility is granted through `teams` and `job_access_grants`
+- sensitive mutations write a lightweight audit trail into `audit_events`
+
+The current audit trail covers:
+
+- team creation
+- team member add and remove
+- opportunity grant and revoke
+- recruiter profile updates
+- company settings updates
+
+This is the current baseline, not the final compliance posture. The intended guarantee for this layer is:
+
+- no recruiter should see jobs outside their company
+- no recruiter should see jobs outside their granted teams
+- non-admin recruiters should not be able to mutate admin-only settings
+- auth redirects should resolve against the public auth base URL and sanitize unsafe `next` targets
+
+Relevant tests now live under:
+
+- `src/test/unit/auth/*`
+- `src/test/unit/settings/*`
+- `src/test/unit/teams/*`
+- `src/test/integration/recruiter/*`
+
+## Structure
 The repository is split around product boundaries instead of generic layers.
 
 High-level flow:
