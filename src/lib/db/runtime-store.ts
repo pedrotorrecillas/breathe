@@ -13,6 +13,9 @@ import type {
   HappyRobotWebhookRecord,
 } from "@/domain/runtime/happyrobot/types";
 import type {
+  AuditEvent,
+} from "@/lib/audit/types";
+import type {
   AuthSessionRecord,
   JobAccessGrantRecord,
   AuthUserRecord,
@@ -25,6 +28,7 @@ import type { RuntimeTraceEvent } from "@/lib/runtime-tracing";
 import { getDatabaseClient, hasDatabaseUrl } from "@/lib/db/client";
 import {
   applicationsTable,
+  auditEventsTable,
   candidateNotesTable,
   candidatesTable,
   companiesTable,
@@ -54,6 +58,7 @@ export type RuntimeStoreState = {
   teams: TeamRecord[];
   teamMemberships: TeamMembershipRecord[];
   jobAccessGrants: JobAccessGrantRecord[];
+  auditEvents: AuditEvent[];
   jobs: SeededPublicJobRecord[];
   candidates: CandidateProfile[];
   applications: CandidateApplication[];
@@ -76,6 +81,7 @@ const memoryState: RuntimeStoreState = {
   teams: [],
   teamMemberships: [],
   jobAccessGrants: [],
+  auditEvents: [],
   jobs: seededPublicJobs.map((job) => ({ ...job })),
   candidates: [],
   applications: [],
@@ -111,6 +117,7 @@ function cloneState(state: RuntimeStoreState): RuntimeStoreState {
     teams: [...state.teams],
     teamMemberships: [...state.teamMemberships],
     jobAccessGrants: [...state.jobAccessGrants],
+    auditEvents: [...state.auditEvents],
     jobs: [...state.jobs],
     candidates: [...state.candidates],
     applications: [...state.applications],
@@ -180,6 +187,7 @@ export async function loadRuntimeStoreState(): Promise<RuntimeStoreState> {
       teams,
       teamMemberships,
       jobAccessGrants,
+      auditEvents,
       jobs,
       candidates,
       applications,
@@ -200,6 +208,7 @@ export async function loadRuntimeStoreState(): Promise<RuntimeStoreState> {
       db.select().from(teamsTable),
       db.select().from(teamMembershipsTable),
       db.select().from(jobAccessGrantsTable),
+      db.select().from(auditEventsTable),
       db.select().from(jobsTable),
       db.select().from(candidatesTable),
       db.select().from(applicationsTable),
@@ -236,6 +245,9 @@ export async function loadRuntimeStoreState(): Promise<RuntimeStoreState> {
       jobAccessGrants: jobAccessGrants
         .sort((left, right) => left.position - right.position)
         .map((row) => row.payload as JobAccessGrantRecord),
+      auditEvents: auditEvents
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as AuditEvent),
       jobs: jobs
         .sort((left, right) => left.position - right.position)
         .map((row) => row.payload as SeededPublicJobRecord),
@@ -296,6 +308,7 @@ export async function saveRuntimeStoreState(state: RuntimeStoreState) {
       await tx.delete(companiesTable);
       await tx.delete(teamMembershipsTable);
       await tx.delete(jobAccessGrantsTable);
+      await tx.delete(auditEventsTable);
       await tx.delete(teamsTable);
       await tx.delete(candidatesTable);
       await tx.delete(applicationsTable);
@@ -402,6 +415,21 @@ export async function saveRuntimeStoreState(state: RuntimeStoreState) {
             companyId: item.companyId,
             teamId: item.teamId,
             jobId: item.jobId,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
+
+      if (state.auditEvents.length > 0) {
+        await tx.insert(auditEventsTable).values(
+          state.auditEvents.map((item, index) => ({
+            id: item.id,
+            companyId: item.companyId,
+            action: item.action,
+            targetType: item.targetType,
+            targetId: item.targetId,
+            occurredAt: item.occurredAt,
             position: index,
             payload: item,
           })),
@@ -571,6 +599,7 @@ export async function resetRuntimeStoreState() {
       teams: [],
       teamMemberships: [],
       jobAccessGrants: [],
+      auditEvents: [],
       jobs: seededPublicJobs.map((job) => ({ ...job })),
       candidates: [],
       applications: [],
@@ -594,6 +623,7 @@ export async function resetRuntimeStoreState() {
   await db.delete(companiesTable);
   await db.delete(teamMembershipsTable);
   await db.delete(jobAccessGrantsTable);
+  await db.delete(auditEventsTable);
   await db.delete(teamsTable);
   await db.delete(candidatesTable);
   await db.delete(applicationsTable);

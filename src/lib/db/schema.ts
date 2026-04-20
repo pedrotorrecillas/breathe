@@ -126,6 +126,17 @@ export const jobAccessGrantsTable = pgTable(
   }),
 );
 
+export const auditEventsTable = pgTable("audit_events", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull(),
+  action: text("action").notNull(),
+  targetType: text("target_type").notNull(),
+  targetId: text("target_id").notNull(),
+  occurredAt: text("occurred_at").notNull(),
+  position: integer("position").notNull(),
+  payload: jsonb("payload").notNull(),
+});
+
 export const jobsTable = pgTable(
   "jobs",
   {
