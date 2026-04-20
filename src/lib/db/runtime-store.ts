@@ -511,7 +511,7 @@ export async function saveRuntimeStoreState(state: RuntimeStoreState) {
       if (state.dispatchResponses.length > 0) {
         await tx.insert(dispatchResponsesTable).values(
           state.dispatchResponses.map((item, index) => ({
-            interviewRunId: `dispatch_response_${index}`,
+            interviewRunId: item.interviewRunId,
             position: index,
             payload: item,
           })),

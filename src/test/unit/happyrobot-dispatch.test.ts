@@ -297,6 +297,7 @@ describe("happyrobot dispatch payload", () => {
     });
 
     expect(response).toEqual({
+      interviewRunId: "run_1",
       success: false,
       error: {
         code: "missing_outbound_number",

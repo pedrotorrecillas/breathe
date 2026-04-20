@@ -203,9 +203,8 @@ function buildRuntimeSnapshot(
     state.dispatchPayloads.find((item) => item.interviewRunId === interviewRunId) ??
     null;
   const dispatchResponse =
-    dispatchRequest
-      ? state.dispatchResponses[state.dispatchRequests.indexOf(dispatchRequest)] ?? null
-      : null;
+    state.dispatchResponses.find((item) => item.interviewRunId === interviewRunId) ??
+    null;
   const evaluation =
     state.evaluations.find((item) => item.interviewRunId === interviewRunId) ?? null;
 
