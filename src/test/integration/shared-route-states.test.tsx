@@ -28,11 +28,12 @@ describe("shared route states", () => {
     render(page);
 
     expect(
-      screen.getByText(/Review applicants, interview outcomes, and hiring decisions/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Pipeline workspace/i),
-    ).toBeInTheDocument();
+      screen.queryByText(
+        /Review applicants, interview outcomes, and hiring decisions/i,
+      ),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Pipeline workspace/i)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Active/i).length).toBeGreaterThan(0);
     expect(
       screen.getByRole("button", { name: /Rejected/i }),
     ).toBeInTheDocument();

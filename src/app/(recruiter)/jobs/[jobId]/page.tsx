@@ -8,7 +8,6 @@ import {
   getJobPipelineSnapshotForRecruiter,
 } from "@/lib/job-pipeline-server";
 import { listInterviewRunRuntimeSnapshotsByCandidateId } from "@/lib/public-apply-submissions";
-import { findRecruiterScopedJobBySlug, listJobAccessSummary } from "@/lib/team-access";
 
 type JobDetailPageProps = {
   params: Promise<{
@@ -31,26 +30,17 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
     await listInterviewRunRuntimeSnapshotsByCandidateId(
       snapshot.candidates.map((candidate) => candidate.id),
     );
-  const candidateNotesByCandidateId = await listCandidateNotesByCandidateIdForJob(
-    snapshot.candidates[0]?.jobId ?? jobId,
-    snapshot.candidates.map((candidate) => candidate.id),
-  );
-  const scopedJob = recruiter
-    ? await findRecruiterScopedJobBySlug(recruiter, jobId)
-    : null;
-  const accessSummary = recruiter
-    ? await listJobAccessSummary(
-        recruiter,
-        scopedJob?.id ?? snapshot.candidates[0]?.jobId ?? jobId,
-      )
-    : null;
+  const candidateNotesByCandidateId =
+    await listCandidateNotesByCandidateIdForJob(
+      snapshot.candidates[0]?.jobId ?? jobId,
+      snapshot.candidates.map((candidate) => candidate.id),
+    );
 
   return (
     <JobDetailWorkspace
       initialSnapshot={snapshot}
       candidateNotesByCandidateId={candidateNotesByCandidateId}
       runtimeSnapshotsByCandidateId={runtimeSnapshotsByCandidateId}
-      accessSummary={accessSummary}
     />
   );
 }
