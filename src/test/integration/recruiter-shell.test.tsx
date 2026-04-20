@@ -32,7 +32,13 @@ describe("recruiter shell", () => {
 
   it("renders the primary navigation and highlights Jobs by default", () => {
     render(
-      <AppShell>
+      <AppShell
+        viewer={{
+          companyName: "Breathe Recruiting",
+          email: "recruiter@breathe.test",
+          name: "Recruiter Admin",
+        }}
+      >
         <div>Recruiter content</div>
       </AppShell>,
     );
@@ -46,11 +52,19 @@ describe("recruiter shell", () => {
     );
     expect(screen.queryByText(/Hiring in one place/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Recruiter content/i)).toBeInTheDocument();
+    expect(screen.getByText(/Breathe Recruiting/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Log out/i })).toBeInTheDocument();
   });
 
   it("keeps future sections visible but disabled", () => {
     render(
-      <AppShell>
+      <AppShell
+        viewer={{
+          companyName: "Breathe Recruiting",
+          email: "recruiter@breathe.test",
+          name: "Recruiter Admin",
+        }}
+      >
         <div>Recruiter content</div>
       </AppShell>,
     );

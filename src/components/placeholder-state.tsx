@@ -19,9 +19,11 @@ export function PlaceholderState({
       <h2 className="font-heading mt-3 max-w-3xl text-2xl font-semibold text-slate-950">
         {title}
       </h2>
-      <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-        {description}
-      </p>
+      {description ? (
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+          {description}
+        </p>
+      ) : null}
       {children ? <div className="relative z-10 mt-5">{children}</div> : null}
     </section>
   );

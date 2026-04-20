@@ -399,14 +399,14 @@ export function CreateJobWorkspace() {
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6 md:px-8">
       <PlaceholderState
-        eyebrow="Create job"
-        title="Create a role brief and publish it."
-        description=""
+        eyebrow="New job"
+        title="Draft and publish a role"
+        description="Paste the real brief, tighten the extraction, and open the public apply link."
       >
         <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <SectionCard
-            title="Brief"
-            kicker="Input"
+            title="Role brief"
+            kicker="Draft input"
             tone="strong"
             footer={
               <div className="flex flex-wrap gap-3">
@@ -472,12 +472,13 @@ export function CreateJobWorkspace() {
           </SectionCard>
 
           <SectionCard
-            title="Draft"
-            kicker="Review"
+            title="Working draft"
+            kicker="Status"
+            description="The extraction becomes the editable role setup for interview conditions, scored requirements, and caps."
           >
             {draft ? (
               <div className="rounded-[1.4rem] border border-emerald-200/80 bg-emerald-50/70 px-4 py-4 text-sm leading-7 text-emerald-900">
-                Draft ready. Review and publish.
+                Draft ready for review.
               </div>
             ) : isExtracting ? (
               <LoadingState
@@ -496,18 +497,24 @@ export function CreateJobWorkspace() {
             )}
             <div className="grid gap-3 sm:grid-cols-2">
               <DataPoint
-                label="Brief"
-                value="3 fields"
-                detail="Title, language, description"
+                label="Conditions"
+                value={draft ? draft.jobConditions.length : "--"}
+                detail="Editable before publish"
               />
               <DataPoint
-                label="Flow"
-                value="Review"
-                detail="Extract, edit, publish"
+                label="Requirements"
+                value={
+                  draft
+                    ? draft.essentialRequirements.length +
+                      draft.technicalSkills.length +
+                      draft.interpersonalSkills.length
+                    : "--"
+                }
+                detail="Across essential, technical, and interpersonal"
               />
             </div>
             <div className="mt-5 rounded-[1.4rem] border border-dashed border-slate-300/90 bg-white/70 px-4 py-5 text-sm leading-7 text-slate-600">
-              Draft sections appear after extraction.
+              Generate a draft to start editing conditions and requirements.
             </div>
             {extractionError ? (
               <div className="mt-4 rounded-[1.2rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
@@ -526,7 +533,7 @@ export function CreateJobWorkspace() {
           <SectionCard
             title="Conditions"
             kicker="Conditions"
-            description="Confirm the role constraints."
+            description="Confirm the hard role constraints before the interview goes live."
           >
             <div className="grid gap-3">
               {draft.jobConditions.map((condition) => (
@@ -621,7 +628,7 @@ export function CreateJobWorkspace() {
           <SectionCard
             title="Essential requirements"
             kicker="Requirements"
-            description="Must-have experience."
+            description="Keep only the non-negotiable requirements the interview should score against."
           >
             <div className="grid gap-3">
               {draft.essentialRequirements.map((requirement) => (
@@ -707,7 +714,7 @@ export function CreateJobWorkspace() {
           <SectionCard
             title="Technical skills"
             kicker="Requirements"
-            description="Technical signals to score."
+            description="Refine the technical signals that should appear in the interview evaluation."
           >
             <div className="grid gap-3">
               {draft.technicalSkills.map((requirement) => (
@@ -808,7 +815,7 @@ export function CreateJobWorkspace() {
           <SectionCard
             title="Interpersonal skills"
             kicker="Requirements"
-            description="Collaboration and communication."
+            description="Capture the collaboration and communication traits worth scoring."
           >
             <div className="grid gap-3">
               {draft.interpersonalSkills.map((requirement) => (
@@ -923,7 +930,7 @@ export function CreateJobWorkspace() {
           <SectionCard
             title="Interview limits"
             kicker="Capacity"
-            description="Set interview caps."
+            description="Set caps only when the role needs controlled throughput."
           >
             <div className="grid gap-4 lg:grid-cols-3">
               <FormField
@@ -985,9 +992,9 @@ export function CreateJobWorkspace() {
 
         {draft ? (
           <SectionCard
-            title="Publish job"
+            title="Go live"
             kicker="Publish"
-            description="Publish to create the live link."
+            description="Publish only when the role brief and scoring setup are ready for candidates."
             tone="strong"
             footer={
               <div className="flex flex-wrap gap-3">
@@ -1035,9 +1042,9 @@ export function CreateJobWorkspace() {
 
         {publishedJob ? (
           <SectionCard
-            title="Published"
-            kicker="Live role"
-            description="The live link is ready."
+            title="Live role"
+            kicker="Published"
+            description="The role is active and the public apply link is ready to share."
             tone="strong"
             actions={<StatusBadge intent="success">Active</StatusBadge>}
           >
@@ -1072,7 +1079,11 @@ export function CreateJobWorkspace() {
             title="Publish error"
             kicker="Persistence"
             description={publishError}
-          />
+          >
+            <p className="text-sm leading-6 text-slate-600">
+              Review the recruiter brief inputs and try publishing again.
+            </p>
+          </SectionCard>
         ) : null}
 
       </PlaceholderState>

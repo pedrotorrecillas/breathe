@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { JobDetailWorkspace } from "@/components/job-detail-workspace";
 import type { CandidateEvaluation } from "@/domain/evaluations/types";
+import { createCandidateNote, listCandidateNotesByCandidateIdForJob } from "@/lib/candidate-notes";
 import { getInterviewRecordingForCandidate } from "@/lib/candidate-recording";
 import { getJobPipelineSnapshot } from "@/lib/job-pipeline-server";
 import { publicApplyTermsVersion } from "@/lib/public-apply";
@@ -25,10 +26,15 @@ async function renderJobDetail(jobId = "warehouse-associate-madrid") {
     await listInterviewRunRuntimeSnapshotsByCandidateId(
       initialSnapshot.candidates.map((candidate) => candidate.id),
     );
+  const candidateNotesByCandidateId = await listCandidateNotesByCandidateIdForJob(
+    initialSnapshot.candidates[0]?.jobId ?? jobId,
+    initialSnapshot.candidates.map((candidate) => candidate.id),
+  );
 
   render(
     <JobDetailWorkspace
       initialSnapshot={initialSnapshot}
+      candidateNotesByCandidateId={candidateNotesByCandidateId}
       runtimeSnapshotsByCandidateId={runtimeSnapshotsByCandidateId}
     />,
   );
@@ -37,6 +43,7 @@ async function renderJobDetail(jobId = "warehouse-associate-madrid") {
 describe("job detail pipeline", () => {
   afterEach(async () => {
     cleanup();
+    vi.restoreAllMocks();
     await resetPublicApplySubmissionStore();
   });
 
@@ -199,31 +206,33 @@ describe("job detail pipeline", () => {
   it("supports explicit shortlist and reject actions", async () => {
     await renderJobDetail();
 
-    fireEvent.click(screen.getAllByRole("button", { name: /^Shortlist$/i })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: /Open candidate Bea Soto/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Shortlist$/i }));
 
-    expect(screen.getAllByRole("button", { name: /^Shortlist$/i })).toHaveLength(3);
+    expect(screen.getByRole("button", { name: /^Hire$/i })).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole("button", { name: /^Reject$/i })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: /Open candidate Lucia Torres/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Reject$/i }));
 
-    expect(screen.getByRole("button", { name: /Rejected \(3\)/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Back to active pipeline/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Rejected from applicants/i)).toBeInTheDocument();
   });
 
   it("supports hire and move-back actions for recruiter-controlled stages", async () => {
     await renderJobDetail();
 
-    fireEvent.click(screen.getAllByRole("button", { name: /^Hire$/i })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: /Open candidate Ines Gomez/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Hire$/i }));
 
-    expect(screen.getAllByRole("button", { name: /^Hire$/i })).toHaveLength(1);
     expect(
-      screen.getAllByRole("button", { name: /^Back to shortlisted$/i }),
-    ).toHaveLength(1);
+      screen.getByRole("button", { name: /^Back to shortlisted$/i }),
+    ).toBeInTheDocument();
 
-    fireEvent.click(
-      screen.getAllByRole("button", { name: /^Back to shortlisted$/i })[0]!,
-    );
+    fireEvent.click(screen.getByRole("button", { name: /^Back to shortlisted$/i }));
 
-    expect(screen.getAllByRole("button", { name: /^Hire$/i })).toHaveLength(2);
+    expect(screen.getByRole("button", { name: /^Hire$/i })).toBeInTheDocument();
   });
 
   it("opens and closes candidate detail without losing pipeline context", async () => {
@@ -255,5 +264,109 @@ describe("job detail pipeline", () => {
     expect(
       screen.queryByLabelText(/Interview recording for Bea Soto/i),
     ).not.toBeInTheDocument();
+  });
+
+  it("renders recruiter notes separately from the structured evaluation", async () => {
+    await submitPublicApplication({
+      jobId: "job_warehouse_madrid",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "en",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    await createCandidateNote({
+      candidateId: "cand_1",
+      applicationId: "app_1",
+      jobId: "job_warehouse_madrid",
+      body: "Strong forklift background. Double-check weekend availability.",
+      author: {
+        userId: "user_recruiter",
+        name: "Recruiter Admin",
+      },
+    });
+
+    await renderJobDetail();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Open candidate Lucia Torres/i }),
+    );
+
+    expect(screen.getByText(/Internal recruiter notes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Structured evaluation/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Strong forklift background\. Double-check weekend availability\./i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Recruiter Admin/i)).toBeInTheDocument();
+  });
+
+  it("adds a recruiter note from the candidate detail panel", async () => {
+    await submitPublicApplication({
+      jobId: "job_warehouse_madrid",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "en",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          id: "note_1",
+          candidateId: "cand_1",
+          applicationId: "app_1",
+          jobId: "job_warehouse_madrid",
+          body: "Prefers early shifts and can start next week.",
+          createdAt: "2026-03-25T13:00:00.000Z",
+          authorUserId: "user_recruiter",
+          authorName: "Recruiter Admin",
+        },
+      }),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await renderJobDetail();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Open candidate Lucia Torres/i }),
+    );
+    fireEvent.change(screen.getByLabelText(/Internal note for Lucia Torres/i), {
+      target: {
+        value: "Prefers early shifts and can start next week.",
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Add note$/i }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/recruiter/candidates/cand_1/notes",
+        expect.objectContaining({
+          method: "POST",
+        }),
+      ),
+    );
+    expect(
+      await screen.findByText(/Prefers early shifts and can start next week\./i),
+    ).toBeInTheDocument();
   });
 });
