@@ -4,7 +4,7 @@ import {
   authenticateUser,
   createAuthUser,
 } from "@/lib/auth/store";
-import { resetRuntimeStoreState } from "@/lib/db/runtime-store";
+import { loadRuntimeStoreState, resetRuntimeStoreState } from "@/lib/db/runtime-store";
 import {
   addTeamMemberByEmail,
   createTeam,
@@ -91,8 +91,18 @@ describe("team access", () => {
 
     const ownerJobs = await listRecruiterScopedJobs(owner!.recruiter);
     const recruiterJobs = await listRecruiterScopedJobs(recruiter!.recruiter);
+    const state = await loadRuntimeStoreState();
 
     expect(ownerJobs.some((job) => job.id === aiJob!.id)).toBe(true);
     expect(recruiterJobs.map((job) => job.id)).toEqual([aiJob!.id]);
+    expect(
+      state.auditEvents.map((event) => event.action),
+    ).toEqual([
+      "team.created",
+      "team.member_added",
+      "team.member_added",
+      "job_access.granted",
+      "job_access.revoked",
+    ]);
   });
 });
