@@ -137,6 +137,32 @@ describe("happyrobot webhooks", () => {
     });
   });
 
+  it("accepts no-answer aliases and normalizes them to no_response", () => {
+    const parsed = parseHappyRobotWebhookEvent({
+      interviewRunId: "run_1",
+      providerCallId: "hr_call_run_1",
+      status: "no_answer",
+      happenedAt: "2026-03-24T08:20:00.000Z",
+    });
+
+    expect(parsed).toEqual({
+      success: true,
+      event: {
+        eventId: "hr_call_run_1:no_response:2026-03-24T08:20:00.000Z",
+        interviewRunId: "run_1",
+        providerCallId: "hr_call_run_1",
+        status: "no_response",
+        happenedAt: "2026-03-24T08:20:00.000Z",
+        recordingUrl: null,
+        transcriptUrl: null,
+        transcript: null,
+        transcriptSegments: null,
+        failureReason: null,
+        rawPayloadRef: null,
+      },
+    });
+  });
+
   it("falls back to a generated timestamp when HappyRobot omits happenedAt", () => {
     const before = Date.now();
     const parsed = parseHappyRobotWebhookEvent({

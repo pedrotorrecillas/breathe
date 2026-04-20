@@ -271,6 +271,7 @@ function isHappyRobotStatus(value: string): value is HappyRobotWebhookEvent["sta
     value === "connected" ||
     value === "completed" ||
     value === "failed" ||
+    value === "no_response" ||
     value === "needs_human"
   );
 }
