@@ -1,45 +1,17 @@
-import { render, screen } from "@testing-library/react";
-import type { AnchorHTMLAttributes, ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-vi.mock("next/link", () => ({
-  default: ({
-    href,
-    children,
-    ...props
-  }: AnchorHTMLAttributes<HTMLAnchorElement> & {
-    href: string;
-    children: ReactNode;
-  }) => (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  ),
-}));
-
-import Home from "@/app/page";
+import { GET } from "@/app/route";
 
 describe("root smoke", () => {
-  it("renders the Nacar landing shell", () => {
-    render(<Home />);
+  it("serves the Nacar landing shell", async () => {
+    const response = await GET();
+    const html = await response.text();
 
-    expect(
-      screen.getByRole("heading", {
-        name: /AI agents for faster high-volume hiring/i,
-        level: 1,
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getAllByRole("link", { name: /Book a demo/i })[0],
-    ).toHaveAttribute("href", "mailto:hello@nacar.ai?subject=Nacar%20demo");
-    expect(
-      screen.getByText(/Automation on top of your ATS, not around it\./i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /Privacy Policy/i }),
-    ).toHaveAttribute("href", "/privacy");
-    expect(
-      screen.getByRole("link", { name: /Terms of Service/i }),
-    ).toHaveAttribute("href", "/terms");
+    expect(response.headers.get("content-type")).toContain("text/html");
+    expect(html).toContain("AI agents for faster");
+    expect(html).toContain("high‑volume");
+    expect(html).toContain("href=\"/privacy\"");
+    expect(html).toContain("href=\"/terms\"");
+    expect(html).toContain("REAL PRODUCT WALK‑THROUGH");
   });
 });
