@@ -269,7 +269,8 @@ export default function Home() {
           <div className="max-w-[42rem] lg:col-span-6">
             <Label>AI candidate operations</Label>
             <h1 className="text-background mt-5 text-[3.5rem] leading-[0.95] font-medium sm:text-[5.4rem] lg:text-[6.8rem]">
-              AI agents for faster high-volume hiring
+              AI agents for faster{" "}
+              <span className="whitespace-nowrap">high-volume</span> hiring
             </h1>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <PrimaryButton href={demoHref} inverse>
