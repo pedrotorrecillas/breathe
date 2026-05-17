@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-ibm-plex-sans);
   --font-mono: var(--font-ibm-plex-mono);
-  --font-heading: var(--font-archivo-black);
+  --font-heading: var(--font-eb-garamond);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -64,62 +64,60 @@
 }
 
 :root {
-  --font-archivo-black:
-    "Archivo Black", "Arial Black", "Helvetica Neue", Helvetica, Arial,
-    sans-serif;
+  --font-eb-garamond: "EB Garamond", Georgia, "Times New Roman", serif;
   --font-ibm-plex-sans:
     "IBM Plex Sans", "Avenir Next", Avenir, "Segoe UI", "Helvetica Neue",
     Helvetica, Arial, sans-serif;
   --font-ibm-plex-mono:
     "IBM Plex Mono", "SFMono-Regular", "SF Mono", Menlo, Monaco, Consolas,
     "Liberation Mono", monospace;
-  --background: #f2ede3;
-  --foreground: #171717;
-  --card: #f7f1e7;
-  --card-foreground: #171717;
-  --popover: #fbf6ee;
-  --popover-foreground: #171717;
-  --primary: #171717;
-  --primary-foreground: #f2ede3;
-  --secondary: #e6ded0;
-  --secondary-foreground: #171717;
+  --background: #f7f3ea;
+  --foreground: #171713;
+  --card: #fffdf8;
+  --card-foreground: #171713;
+  --popover: #fffdf8;
+  --popover-foreground: #171713;
+  --primary: #171713;
+  --primary-foreground: #fffdf8;
+  --secondary: #ede7db;
+  --secondary-foreground: #171713;
   --muted: #ebe3d7;
-  --muted-foreground: #5d564d;
-  --accent: #d7def6;
-  --accent-foreground: #171717;
+  --muted-foreground: #665f55;
+  --accent: #d8d1c3;
+  --accent-foreground: #171713;
   --destructive: #b24747;
-  --border: #c8bfaf;
+  --border: #d8d1c3;
   --input: #d4cbbd;
-  --ring: #5e7eff;
-  --chart-1: #5e7eff;
-  --chart-2: #7f93e9;
-  --chart-3: #171717;
-  --chart-4: #8b7e6c;
-  --chart-5: #aab8e8;
-  --surface-0: #f8f3eb;
-  --surface-1: #eee6d9;
-  --surface-2: #e6ded0;
-  --surface-inverse: #171717;
+  --ring: #064e5b;
+  --chart-1: #064e5b;
+  --chart-2: #0f6f74;
+  --chart-3: #171713;
+  --chart-4: #7b846a;
+  --chart-5: #a36f53;
+  --surface-0: #fffdf8;
+  --surface-1: #f7f3ea;
+  --surface-2: #ede7db;
+  --surface-inverse: #171713;
   --panel-line: #d2c8ba;
-  --panel-strong: #bbb09f;
-  --panel-glow: rgba(94, 126, 255, 0.14);
+  --panel-strong: #bdb3a4;
+  --panel-glow: rgba(6, 78, 91, 0.12);
   --grid-line: rgba(108, 98, 86, 0.12);
-  --structure-secondary: #323232;
-  --highlight: #5e7eff;
-  --highlight-foreground: #f6f8ff;
-  --highlight-soft: #aab8e8;
-  --radius: 0.65rem;
-  --shadow-panel: 0 18px 42px rgba(23, 23, 23, 0.06);
-  --shadow-panel-strong: 0 22px 54px rgba(23, 23, 23, 0.1);
-  --shadow-shell: 0 28px 72px rgba(23, 23, 23, 0.1);
-  --sidebar: #171717;
-  --sidebar-foreground: #f2ede3;
-  --sidebar-primary: #5e7eff;
-  --sidebar-primary-foreground: #f6f8ff;
+  --structure-secondary: #3f3c36;
+  --highlight: #064e5b;
+  --highlight-foreground: #fffdf8;
+  --highlight-soft: #9fb7af;
+  --radius: 0.5rem;
+  --shadow-panel: 0 18px 42px rgba(23, 23, 19, 0.06);
+  --shadow-panel-strong: 0 24px 60px rgba(23, 23, 19, 0.12);
+  --shadow-shell: 0 30px 70px rgba(23, 23, 19, 0.12);
+  --sidebar: #171713;
+  --sidebar-foreground: #fffdf8;
+  --sidebar-primary: #064e5b;
+  --sidebar-primary-foreground: #fffdf8;
   --sidebar-accent: #323232;
-  --sidebar-accent-foreground: #f2ede3;
-  --sidebar-border: rgba(242, 237, 227, 0.1);
-  --sidebar-ring: #5e7eff;
+  --sidebar-accent-foreground: #fffdf8;
+  --sidebar-border: rgba(247, 243, 234, 0.12);
+  --sidebar-ring: #064e5b;
 }
 
 @layer base {
@@ -132,30 +130,21 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image:
-      radial-gradient(
-        circle at top left,
-        rgba(94, 126, 255, 0.08),
-        transparent 28%
-      ),
-      radial-gradient(
-        circle at bottom right,
-        rgba(170, 184, 232, 0.14),
-        transparent 36%
-      ),
-      linear-gradient(
-        180deg,
-        rgba(252, 248, 241, 0.94),
-        rgba(242, 237, 227, 0.98)
-      );
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 253, 248, 0.9),
+      rgba(247, 243, 234, 1)
+    );
   }
   html {
     @apply font-sans;
   }
   .brand-stage h1,
-  .brand-stage h2 {
+  .brand-stage h2,
+  .brand-stage h3,
+  .brand-wordmark {
     @apply font-heading;
-    letter-spacing: -0.045em;
+    letter-spacing: 0;
   }
   a {
     @apply transition-colors;
@@ -172,7 +161,7 @@
       ),
       radial-gradient(
         circle at top left,
-        rgba(170, 184, 232, 0.16),
+        rgba(6, 78, 91, 0.08),
         transparent 28%
       ),
       linear-gradient(
@@ -246,42 +235,35 @@
     background:
       radial-gradient(
         circle at top right,
-        rgba(94, 126, 255, 0.12),
+        rgba(6, 78, 91, 0.1),
         transparent 24%
       ),
       linear-gradient(
         120deg,
         transparent 0%,
-        rgba(170, 184, 232, 0.08) 48%,
+        rgba(123, 132, 106, 0.08) 48%,
         transparent 100%
       );
     opacity: 0.72;
   }
 
   .ops-signal-dot {
-    box-shadow: 0 0 0 4px rgba(94, 126, 255, 0.16);
+    box-shadow: 0 0 0 4px rgba(6, 78, 91, 0.14);
   }
 
   .brand-stage {
-    background:
-      radial-gradient(
-        circle at top left,
-        rgba(94, 126, 255, 0.12),
-        transparent 26%
-      ),
-      radial-gradient(
-        circle at bottom right,
-        rgba(170, 184, 232, 0.16),
-        transparent 30%
-      ),
-      linear-gradient(180deg, rgba(250, 246, 238, 0.98), rgba(242, 237, 227, 1));
+    background: linear-gradient(
+      180deg,
+      rgba(255, 253, 248, 0.9),
+      rgba(247, 243, 234, 1)
+    );
   }
 
   .brand-hero {
     background:
       radial-gradient(
         circle at top left,
-        rgba(94, 126, 255, 0.16),
+        rgba(6, 78, 91, 0.16),
         transparent 28%
       ),
       linear-gradient(180deg, rgba(23, 23, 23, 0.985), rgba(34, 34, 34, 0.96));
@@ -315,11 +297,22 @@
     background:
       radial-gradient(
         circle at top right,
-        rgba(94, 126, 255, 0.1),
+        rgba(6, 78, 91, 0.1),
         transparent 24%
       ),
       linear-gradient(180deg, rgba(23, 23, 23, 0.985), rgba(39, 39, 39, 0.96));
     border: 1px solid rgba(242, 237, 227, 0.08);
     box-shadow: var(--shadow-panel-strong);
+  }
+
+  .nacar-media-treatment {
+    filter: saturate(0.78) contrast(0.95);
+  }
+
+  .nacar-paper {
+    background-image:
+      linear-gradient(rgba(23, 23, 19, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(23, 23, 19, 0.02) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
 }

@@ -20,18 +20,26 @@ vi.mock("next/link", () => ({
 import Home from "@/app/page";
 
 describe("root smoke", () => {
-  it("renders the Breathe landing shell", () => {
+  it("renders the Nacar landing shell", () => {
     render(<Home />);
 
     expect(
       screen.getByRole("heading", {
-        name: /From application to ready-to-start\./i,
+        name: /AI agents for faster high-volume hiring/i,
         level: 1,
       }),
     ).toBeInTheDocument();
     expect(
       screen.getAllByRole("link", { name: /Book a demo/i })[0],
-    ).toHaveAttribute("href", "#final-cta");
-    expect(screen.getByText(/Automation on top of your ATS, not around it\./i)).toBeInTheDocument();
+    ).toHaveAttribute("href", "mailto:hello@nacar.ai?subject=Nacar%20demo");
+    expect(
+      screen.getByText(/Automation on top of your ATS, not around it\./i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Privacy Policy/i }),
+    ).toHaveAttribute("href", "/privacy");
+    expect(
+      screen.getByRole("link", { name: /Terms of Service/i }),
+    ).toHaveAttribute("href", "/terms");
   });
 });

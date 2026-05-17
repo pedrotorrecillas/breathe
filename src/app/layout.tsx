@@ -1,19 +1,21 @@
 import type { Metadata } from "next";
-import { Archivo_Black, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { EB_Garamond, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Breathe",
-  description: "Recruiter and candidate surfaces for the Breathe hiring flow.",
+  metadataBase: new URL("https://nacar.ai"),
+  title: "Nacar | AI agents for faster high-volume hiring",
+  description:
+    "Nacar automates candidate operations between application and hire for high-volume recruiting teams.",
 };
 
 const locale = "en";
 
-const headingFont = Archivo_Black({
+const headingFont = EB_Garamond({
   subsets: ["latin"],
-  variable: "--font-archivo-black",
-  weight: "400",
+  variable: "--font-eb-garamond",
+  weight: ["400", "500", "600"],
 });
 
 const bodyFont = IBM_Plex_Sans({

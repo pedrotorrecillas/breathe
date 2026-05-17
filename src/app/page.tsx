@@ -1,942 +1,781 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  CircleAlert,
+  CircleDashed,
+  ClipboardCheck,
+  DatabaseZap,
+  FileCheck2,
+  Headphones,
+  HeartPulse,
+  Inbox,
+  MessageSquare,
+  PackageCheck,
+  ShieldCheck,
+  Store,
+  UserRoundCheck,
+  Workflow,
+} from "lucide-react";
 
-import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 
+const demoHref = "mailto:hello@nacar.ai?subject=Nacar%20demo";
+
 const navItems = [
-  { label: "Mechanism", href: "#mechanism" },
-  { label: "Stack fit", href: "#stack-fit" },
-  { label: "Outcomes", href: "#outcomes" },
-  { label: "Environments", href: "#environments" },
-  { label: "Security", href: "#security" },
+  { label: "Product", href: "#product" },
+  { label: "Stack", href: "#stack-fit" },
+  { label: "Industries", href: "#industries" },
+  { label: "Method", href: "#problem" },
 ] as const;
 
-const heroStages = [
-  { step: "01", label: "Apply" },
-  { step: "02", label: "Screen" },
-  { step: "03", label: "Reach out" },
-  { step: "04", label: "Interview" },
-  { step: "05", label: "Document" },
-  { step: "06", label: "Enroll" },
-  { step: "07", label: "Ready-to-start" },
-] as const;
-
-const tickerItems = [
-  "Candidate operations",
-  "Application → ready-to-start",
-  "On top of your ATS",
-  "Built for high-volume hiring",
-  "Recruiters on decisions, not admin",
-  "Human control. System speed.",
-] as const;
-
-const proofItems = [
-  {
-    label: "Origin",
-    body: "From the team that increased recruiter productivity at Job&Talent.",
-  },
-  {
-    label: "Built for",
-    body: "Real high-volume hiring operations with stages, shifts, sites, and handoffs.",
-  },
-  {
-    label: "Fit",
-    body: "Operates on top of the ATS and systems teams already use.",
-  },
-  {
-    label: "Scope",
-    body: "From application to ready-to-start.",
-  },
+const overlayCards = [
+  { label: "Candidate contacted", icon: MessageSquare },
+  { label: "Interview scheduled", icon: CalendarDays },
+  { label: "Recruiter review needed", icon: CircleAlert },
 ] as const;
 
 const frictionPoints = [
-  "Too many applicants to process manually.",
-  "Too many handoffs across disconnected tools.",
-  "Too much recruiter time spent pushing the workflow forward.",
-  "Too much inconsistency between candidates, sites, and shifts.",
+  "Qualified candidates wait too long for first contact and screening.",
+  "Recruiters lose hours coordinating slots, reminders, and reschedules.",
+  "Document collection and verification sit in manual queues.",
+  "ATS updates happen late, creating blind spots across sites and shifts.",
 ] as const;
 
-type MechanismModule = {
-  id: string;
-  title: string;
-  tag: string;
-  body: string;
-  details: readonly string[];
-  wide?: boolean;
-};
-
-const mechanismModules: readonly MechanismModule[] = [
-  {
-    id: "M-01",
-    title: "Screen",
-    tag: "Auto",
-    body: "Parse applications, apply rules, and move qualified candidates forward at the rate demand arrives.",
-    details: ["Application intake", "Rule engine", "Queue write-back"],
-    wide: true,
-  },
-  {
-    id: "M-02",
-    title: "Reach out",
-    tag: "Auto",
-    body: "Handle follow-up, reminders, and next-step communication automatically across the channels your team already uses.",
-    details: ["SMS", "Email", "WhatsApp"],
-    wide: true,
-  },
-  {
-    id: "M-03",
-    title: "Interview",
-    tag: "Auto",
-    body: "Run structured interviews and capture signals in a consistent format across every candidate, site, and shift.",
-    details: ["Structured", "Signal capture"],
-  },
-  {
-    id: "M-04",
-    title: "Coordinate",
-    tag: "Auto",
-    body: "Move candidates across stages, trigger next actions, and keep the process aligned with the ATS of record.",
-    details: ["Stage orchestration"],
-  },
-  {
-    id: "M-05",
-    title: "Document",
-    tag: "Auto",
-    body: "Collect required information and keep documentation moving without manual chasing or spreadsheet hand-offs.",
-    details: ["Collection", "Validation"],
-  },
-  {
-    id: "M-06",
-    title: "Enroll",
-    tag: "Auto",
-    body: "Support handoff into enrollment and ready-to-start steps once a candidate is selected.",
-    details: ["Handoff", "Ready-to-start"],
-  },
-];
-
-type StackLayer = {
-  tag: string;
-  title: string;
-  body: string;
-  meta: string;
-  inverted?: boolean;
-};
-
-const stackLayers: readonly StackLayer[] = [
-  {
-    tag: "Layer 03",
-    title: "Breathe",
-    body: "Candidate operations engine: screen, reach out, interview, coordinate, document, enroll, escalate.",
-    meta: "Active",
-    inverted: true,
-  },
-  {
-    tag: "Layer 02",
-    title: "ATS of record",
-    body: "Your system of truth for roles, stages, and candidate state. Unchanged.",
-    meta: "Greenhouse · Workday · SmartRecruiters · iCIMS",
-  },
-  {
-    tag: "Layer 01",
-    title: "Existing hiring stack",
-    body: "Scheduling, comms, HRIS, checks, onboarding, payroll: the tools your team already uses.",
-    meta: "SMS · Email · WhatsApp · HRIS · BGC",
-  },
-];
-
-const stackFacts = [
-  ["Deploy", "Fast rollout"],
-  ["Replatform", "None"],
-  ["System of record", "ATS stays in place"],
-  ["Posture", "Readable, attributable, auditable"],
+const stages = [
+  "Applied",
+  "Contacted",
+  "Qualified",
+  "Scheduled",
+  "Review",
+  "Docs",
+  "Ready",
 ] as const;
 
-const outcomeCards = [
+const candidates = [
   {
-    label: "Throughput",
-    title: "The process scales with candidate volume, not recruiter headcount.",
-    body: "Breathe takes over the repetitive work that usually becomes the rate limiter first.",
+    name: "Maya R.",
+    role: "Retail associate",
+    context: "Madrid · Weekend shift",
+    stage: "Scheduled",
+    sync: "Synced",
   },
   {
-    label: "Recruiter load",
-    title: "Recruiters stay on judgment work.",
-    body: "Escalations arrive with context already assembled, instead of another queue to manually push.",
+    name: "Daniel K.",
+    role: "Forklift operator",
+    context: "Valencia · Night shift",
+    stage: "Review needed",
+    sync: "Pending review",
   },
   {
-    label: "Readiness",
-    title: "Documentation and enrollment keep moving before start dates slip.",
-    body: "The process does not stall after interview just because paperwork and handoff live across tools.",
+    name: "Sara M.",
+    role: "Contact center agent",
+    context: "Remote · Training cohort",
+    stage: "Docs",
+    sync: "Synced",
   },
 ] as const;
 
-const trustCards = [
+const automationBlocks = [
+  ["Screening", "Running"],
+  ["Availability", "Running"],
+  ["Scheduling", "Queued"],
+  ["Docs", "Waiting"],
+] as const;
+
+const actionLog = [
+  "Sent WhatsApp screening link to 18 new applicants.",
+  "Matched Maya R. to Saturday interview slot.",
+  "Flagged Daniel K. for forklift licence review.",
+  "Wrote stage changes back to ATS of record.",
+] as const;
+
+const stackLayers = [
   {
-    label: "Recruiter policy",
-    title: "Policy, not prompts.",
-    body: "Rules, thresholds, and escalation paths are set by your team. Breathe operates inside them every time.",
-    points: ["Role-level stage rules", "Site and shift guardrails", "Escalation on doubt"],
+    label: "Existing systems",
+    title: "ATS, calendars, comms, HRIS",
+    body: "Nacar reads and writes through the tools already running your recruiting operation.",
+    icon: DatabaseZap,
   },
   {
-    label: "Audit",
-    title: "Every action on the record.",
-    body: "Messages, stage moves, and collected information are attributable to a rule, a reason, and a timestamp.",
-    points: ["Per-candidate action log", "Policy diff history", "Export to ATS of record"],
+    label: "Operating layer",
+    title: "Nacar orchestration",
+    body: "Agent workflows move candidates across stages, trigger checks, and escalate exceptions.",
+    icon: Workflow,
+    active: true,
   },
   {
-    label: "Enterprise trust",
-    title: "Human control. System speed.",
-    body: "Recruiters keep the decisions that matter while the system keeps the pace through the operational layer.",
-    points: ["SOC 2 Type II", "GDPR", "Regional data residency", "SSO / SCIM"],
+    label: "Recruiter control",
+    title: "Judgment stays with the team",
+    body: "Recruiters approve edge cases with the candidate context already assembled.",
+    icon: ShieldCheck,
   },
 ] as const;
 
-const trustBadges = [
-  ["Standard", "SOC 2 Type II"],
-  ["Standard", "GDPR"],
-  ["Hosting", "EU · US"],
-  ["Access", "SSO · SCIM"],
-] as const;
-
-const useCases = [
+const industries = [
+  {
+    label: "Retail",
+    title: "Seasonal stores and storefront turnover",
+    body: "Move applicants through screening, availability, and interview booking before the hiring window closes.",
+    image: "/landing/img-2-loading-dock.jpg",
+    icon: Store,
+  },
   {
     label: "Logistics",
-    title: "Warehousing & logistics",
-    body: "Pickers, packers, forklift operators. Ramp volumes spike on peak windows and teams need application-to-ready-to-start inside the hiring window, not after it.",
+    title: "Warehouse ramp-up and shift qualification",
+    body: "Coordinate high applicant volume across sites, shifts, licences, and start-date constraints.",
     image: "/landing/img-1-warehouse-aisle.jpg",
-    alt: "Warehouse aisle in a high-volume logistics environment",
-    tags: ["Peak volume", "Shift-based", "Multi-site"],
+    icon: PackageCheck,
   },
   {
     label: "Hospitality",
-    title: "Kitchen & hospitality",
-    body: "Line cooks, service staff, baristas. Documentation and enrollment are often the real bottleneck, not screening.",
+    title: "Multi-location scheduling constraints",
+    body: "Handle short-response cycles, availability checks, and manager review without inbox chasing.",
     image: "/landing/img-3-kitchen-line.jpg",
-    alt: "Kitchen line during service preparation",
-    tags: ["High churn", "Fast starts", "Docs-heavy"],
+    icon: Building2,
   },
   {
-    label: "Production",
-    title: "Production & assembly",
-    body: "Line operators, QA, packaging. Repetitive environments where consistency between candidates, shifts, and sites is the real hiring KPI.",
+    label: "Healthcare operations",
+    title: "Admin desks and clinical support staffing",
+    body: "Collect credentials, route exceptions, and keep documentation moving with auditability.",
     image: "/landing/img-4-production-line.jpg",
-    alt: "Production line in an assembly environment",
-    tags: ["Repetition", "Consistency", "Operational rhythm"],
+    icon: HeartPulse,
+  },
+  {
+    label: "Contact centers",
+    title: "Class-based hiring and training cohorts",
+    body: "Batch candidates into screening, interview, and onboarding flows without manual spreadsheet control.",
+    image: null,
+    icon: Headphones,
+  },
+  {
+    label: "Staffing agencies",
+    title: "Rapid deployment to client sites",
+    body: "Keep candidate status, client requirements, and recruiter review aligned across many requisitions.",
+    image: null,
+    icon: BriefcaseBusiness,
   },
 ] as const;
+
+function NacarLogo({ inverse = false }: { inverse?: boolean }) {
+  return (
+    <span className="flex items-center gap-2.5" aria-label="Nacar">
+      <span
+        className={cn(
+          "flex h-8 w-6 items-center justify-center",
+          inverse && "brightness-0 invert",
+        )}
+      >
+        <Image
+          src="/brand/nacar-mark.svg"
+          alt=""
+          width={24}
+          height={42}
+          priority
+          className="h-8 w-auto"
+        />
+      </span>
+      <span className="brand-wordmark text-[1.35rem] leading-none font-medium lowercase">
+        nacar
+      </span>
+    </span>
+  );
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-muted-foreground font-mono text-[11px] font-medium tracking-[0.14em] uppercase">
+      {children}
+    </p>
+  );
+}
+
+function PrimaryButton({
+  href,
+  children,
+  inverse = false,
+}: {
+  href: string;
+  children: React.ReactNode;
+  inverse?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "focus-visible:ring-ring/30 inline-flex h-11 items-center justify-center gap-2 border px-5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
+        inverse
+          ? "border-background bg-background text-foreground hover:bg-card"
+          : "border-primary bg-primary text-primary-foreground hover:bg-highlight",
+      )}
+    >
+      {children}
+      <ArrowRight className="size-4" aria-hidden="true" />
+    </Link>
+  );
+}
 
 export default function Home() {
   return (
     <main
       id="top"
-      className="brand-stage text-foreground relative flex flex-1 flex-col"
+      className="brand-stage nacar-paper text-foreground min-h-screen"
     >
-      <header className="sticky top-0 z-40 border-b border-border/90 bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[104rem] items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="#top" className="flex items-center gap-3">
-            <span className="relative size-[18px]">
-              <span className="absolute inset-0 border border-foreground" />
-              <span className="absolute inset-0 translate-x-1 translate-y-1 border border-highlight/85" />
-            </span>
-            <span className="text-base">Breathe</span>
+      <header className="border-border/80 bg-background/88 fixed inset-x-0 top-0 z-50 border-b backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-[118rem] items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link href="#top" className="shrink-0">
+            <NacarLogo />
           </Link>
 
-          <nav className="hidden items-center gap-8 md:flex">
+          <nav
+            className="hidden items-center gap-8 md:flex"
+            aria-label="Main navigation"
+          >
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="font-mono text-[11px] tracking-[0.14em] uppercase text-structure-secondary hover:text-highlight"
+                className="text-muted-foreground hover:text-foreground font-mono text-[11px] font-medium tracking-[0.14em] uppercase"
               >
                 {item.label}
               </Link>
             ))}
           </nav>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href="/auth/login"
-              className="font-mono text-[11px] tracking-[0.14em] uppercase text-structure-secondary hover:text-foreground"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="#final-cta"
-              className={cn(
-                buttonVariants({ size: "lg", variant: "default" }),
-                "h-10 rounded-none px-4 font-mono text-[11px] tracking-[0.14em] uppercase",
-              )}
-            >
-              Book a demo
-              <ArrowRight className="size-4" />
-            </Link>
-          </div>
+          <PrimaryButton href={demoHref}>Book a demo</PrimaryButton>
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-[104rem] flex-col px-4 sm:px-6 lg:px-8">
-        <section className="border-b border-border py-12 sm:py-16 lg:py-20">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <p className="ops-kicker text-structure-secondary">
-              The candidate-operations layer for high-volume hiring
-            </p>
-            <p className="ops-kicker text-muted-foreground">
-              On top of your ATS · built for operational teams
-            </p>
-          </div>
+      <section className="bg-foreground text-background relative min-h-[100svh] overflow-hidden pt-16">
+        <div className="absolute inset-0 top-16">
+          <Image
+            src="/landing/img-4-production-line.jpg"
+            alt="High-volume operational workplace with multiple shift workers"
+            fill
+            priority
+            sizes="100vw"
+            className="nacar-media-treatment object-cover"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(23,23,19,0.78)_0%,rgba(23,23,19,0.48)_38%,rgba(23,23,19,0.12)_68%,rgba(23,23,19,0.02)_100%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent,rgba(23,23,19,0.72))]" />
+        </div>
 
-          <div className="mt-8 grid gap-10 lg:grid-cols-[1.18fr_0.82fr] lg:items-end">
-            <div>
-              <h1 className="max-w-[10ch] text-[3.9rem] leading-[0.88] sm:text-[5.6rem] lg:text-[8rem]">
-                From application to{" "}
-                <span className="text-highlight">ready-to-start.</span>
-              </h1>
-            </div>
-
-            <div className="space-y-6 lg:pb-3">
-              <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.14em] uppercase text-structure-secondary">
-                <span className="ops-signal-dot size-2 bg-highlight" />
-                Candidate operations for high-volume teams
-              </div>
-              <p className="max-w-[42ch] text-lg leading-8 text-structure-secondary">
-                Breathe runs candidate operations for high-volume teams:
-                screening, outreach, interviews, documentation, and enrollment
-                on top of your ATS, so you can fill more roles, faster, without
-                adding recruiter load.
-              </p>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="#final-cta"
-                  className={cn(
-                    buttonVariants({ size: "lg", variant: "default" }),
-                    "h-11 rounded-none px-5 font-mono text-[11px] tracking-[0.14em] uppercase",
-                  )}
-                >
-                  Book a demo
-                  <ArrowRight className="size-4" />
-                </Link>
-                <Link
-                  href="#mechanism"
-                  className={cn(
-                    buttonVariants({ size: "lg", variant: "outline" }),
-                    "h-11 rounded-none px-5 font-mono text-[11px] tracking-[0.14em] uppercase",
-                  )}
-                >
-                  See how it runs
-                  <ArrowRight className="size-4" />
-                </Link>
-              </div>
-              <p className="ops-kicker text-muted-foreground">
-                Operates on top of your ATS · no replatform
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-14 border-y border-foreground pt-4">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="ops-kicker text-muted-foreground">
-                Ref. 01 — operational context / warehouse aisle
-              </p>
-              <p className="ops-kicker text-muted-foreground">
-                Documentary photography · no overlay
-              </p>
-            </div>
-            <div className="relative aspect-[24/9] overflow-hidden bg-secondary">
-              <Image
-                src="/landing/img-1-warehouse-aisle.jpg"
-                alt="Warehouse aisle in a high-volume hiring environment"
-                fill
-                priority
-                className="object-cover saturate-90"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/15" />
-            </div>
-            <div className="grid border-t border-border md:grid-cols-7">
-              {heroStages.map((stage, index) => (
-                <div
-                  key={stage.step}
-                  className={cn(
-                    "flex flex-col gap-2 border-r border-border px-4 py-4 last:border-r-0",
-                    index === heroStages.length - 1 && "bg-highlight/6",
-                  )}
-                >
-                  <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-muted-foreground">
-                    Stage {stage.step}
-                  </span>
-                  <span
-                    className={cn(
-                      "font-heading text-lg leading-none tracking-[-0.03em]",
-                      index === heroStages.length - 1 && "text-highlight",
-                    )}
-                  >
-                    {stage.label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="overflow-hidden border-b border-foreground">
-          <div className="flex w-max animate-[ticker_36s_linear_infinite] gap-12 py-4">
-            {[...tickerItems, ...tickerItems].map((item, index) => (
-              <span
-                key={`${item}-${index}`}
-                className="inline-flex items-center gap-3 font-mono text-[11px] tracking-[0.14em] uppercase text-foreground"
-              >
-                <span className="size-[6px] bg-highlight" />
-                {item}
-              </span>
-            ))}
-          </div>
-        </section>
-
-        <section className="border-b border-border">
-          <div className="grid lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-            {proofItems.map((item, index) => (
-              <article
-                key={item.label}
-                className={cn(
-                  "border-r border-border px-6 py-8 last:border-r-0",
-                  index === 0 && "lg:border-l-0",
-                )}
-              >
-                <p className="mb-3 flex items-center gap-2 font-mono text-[10px] tracking-[0.14em] uppercase text-muted-foreground">
-                  <span className="size-[5px] bg-highlight" />
-                  {item.label}
-                </p>
-                <p className="max-w-[30ch] text-base leading-7 text-foreground">
-                  {item.body}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="border-b border-border py-20" id="friction">
-          <div className="mb-12 grid gap-6 md:grid-cols-[12rem_1fr]">
-            <p className="ops-kicker text-foreground">03 · Friction</p>
-            <p className="ops-kicker text-muted-foreground">
-              What breaks first when volume rises
-            </p>
-          </div>
-
-          <div className="grid border-y border-foreground lg:grid-cols-2">
-            <div className="relative aspect-[4/5] overflow-hidden border-r border-foreground bg-secondary">
-              <Image
-                src="/landing/img-2-loading-dock.jpg"
-                alt="Loading dock and staging area"
-                fill
-                className="object-cover"
-              />
-            </div>
-
-            <div className="flex flex-col">
-              <div className="px-8 py-10 sm:px-12 sm:py-14">
-                <h2 className="max-w-[9ch] text-[3.4rem] leading-[0.92] sm:text-[4.2rem]">
-                  Volume breaks candidate operations first.
-                </h2>
-                <p className="mt-6 max-w-[46ch] text-lg leading-8 text-structure-secondary">
-                  When every stage depends on recruiters chasing responses,
-                  scheduling interviews, moving candidates forward, collecting
-                  documentation, and coordinating handoffs across tools,
-                  throughput slows down long before demand does.
-                </p>
-
-                <div className="mt-10 border-t border-border">
-                  {frictionPoints.map((point, index) => (
-                    <div
-                      key={point}
-                      className="grid grid-cols-[3.5rem_1fr] border-b border-border py-5"
-                    >
-                      <span className="font-mono text-[11px] tracking-[0.14em] uppercase text-muted-foreground">
-                        0{index + 1}
-                      </span>
-                      <p className="text-base leading-7 text-foreground">
-                        {point}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-auto flex flex-col gap-4 bg-foreground px-8 py-7 sm:flex-row sm:items-center sm:justify-between sm:px-12">
-                <p className="ops-kicker text-highlight-soft">Observed outcome</p>
-                <p className="max-w-[28ch] text-2xl leading-tight text-background">
-                  Open roles stay open, candidates drop, and operations feel it.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="border-b border-border py-20" id="mechanism">
-          <div className="mb-12 grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-end">
-            <div>
-              <p className="ops-kicker text-foreground">04 · Mechanism</p>
-              <h2 className="mt-6 max-w-[10ch] text-[3.5rem] leading-[0.92] sm:text-[5rem]">
-                Candidate operations, from application to ready-to-start.
-              </h2>
-            </div>
-            <div>
-              <p className="max-w-[44ch] text-lg leading-8 text-structure-secondary">
-                Breathe uses AI to run screening, outreach, interviews,
-                scheduling, documentation, enrollment, and recruiter review, so
-                the process keeps moving without relying on recruiters to push
-                every step by hand.
-              </p>
-            </div>
-          </div>
-
-          <div className="overflow-hidden border border-foreground bg-secondary/45">
-            <div className="flex items-center justify-between gap-4 border-b border-foreground px-6 py-4">
-              <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.14em] uppercase text-foreground">
-                <span className="size-[7px] bg-highlight" />
-                Breathe / candidate-ops / run 2641
-              </div>
-              <p className="ops-kicker text-muted-foreground">
-                Active · recruiter-in-the-loop only where needed
-              </p>
-            </div>
-
-            <div className="grid border-b border-foreground md:grid-cols-7">
-              {[
-                ...heroStages.slice(1, 6).map((stage) => ({
-                  ...stage,
-                  human: false,
-                })),
-                { step: "07", label: "Escalate", human: true },
-              ].map((stage, index) => (
-                <div
-                  key={stage.label}
-                  className={cn(
-                    "flex flex-col gap-3 border-r border-border px-4 py-5 last:border-r-0",
-                    stage.human ? "bg-foreground text-background" : "bg-background/55",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "font-mono text-[10px] tracking-[0.14em] uppercase",
-                      stage.human ? "text-highlight-soft" : "text-muted-foreground",
-                    )}
-                  >
-                    Stage {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className="font-heading text-[1.05rem] leading-none tracking-[-0.03em]">
-                    {stage.label}
-                  </span>
-                  <span
-                    className={cn(
-                      "mt-auto font-mono text-[9.5px] tracking-[0.14em] uppercase",
-                      stage.human ? "text-highlight-soft" : "text-structure-secondary",
-                    )}
-                  >
-                    {stage.human ? "Human" : "Auto"}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid md:grid-cols-12">
-              {mechanismModules.map((module, index) => (
-                <article
-                  key={module.id}
-                  className={cn(
-                    "flex min-h-[15rem] flex-col justify-between border-r border-b border-border px-5 py-6 last:border-r-0 md:px-6",
-                    module.wide ? "md:col-span-6" : "md:col-span-3",
-                    index === mechanismModules.length - 1 && "md:border-r-0",
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-muted-foreground">
-                      {module.id}
-                    </span>
-                    <span className="rounded-sm border border-highlight/40 px-2 py-1 font-mono text-[9.5px] tracking-[0.14em] uppercase text-highlight">
-                      {module.tag}
-                    </span>
-                  </div>
-
-                  <div className="mt-6">
-                    <h3 className="text-[1.8rem] leading-none tracking-[-0.03em]">
-                      {module.title}
-                    </h3>
-                    <p className="mt-4 max-w-[34ch] text-[0.95rem] leading-7 text-structure-secondary">
-                      {module.body}
-                    </p>
-                  </div>
-
-                  <div className="mt-6 flex flex-wrap gap-x-4 gap-y-2">
-                    {module.details.map((detail) => (
-                      <span
-                        key={detail}
-                        className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.12em] uppercase text-structure-secondary"
-                      >
-                        <span className="size-[5px] bg-highlight" />
-                        {detail}
-                      </span>
-                    ))}
-                  </div>
-                </article>
-              ))}
-
-              <article className="flex flex-col gap-5 bg-foreground px-6 py-7 text-background md:col-span-12 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-4">
-                  <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-highlight-soft">
-                    M-07
-                  </span>
-                  <span className="rounded-sm border border-highlight/40 px-2 py-1 font-mono text-[9.5px] tracking-[0.14em] uppercase text-highlight-soft">
-                    Human-in-the-loop
-                  </span>
-                  <h3 className="text-[1.8rem] leading-none tracking-[-0.03em]">
-                    Escalate
-                  </h3>
-                </div>
-                <p className="max-w-[48ch] text-[0.95rem] leading-7 text-background/78">
-                  Ask recruiters for input only where judgment or approval is
-                  needed. Every escalation arrives with the relevant context
-                  already assembled.
-                </p>
-              </article>
-            </div>
-
-            <div className="flex flex-col gap-4 border-t border-foreground px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[1.45rem] leading-tight tracking-[-0.02em] text-foreground">
-                Candidate operations keep moving.{" "}
-                <span className="text-highlight">
-                  Recruiters stay focused on decisions.
-                </span>
-              </p>
-              <Link
-                href="#final-cta"
-                className="font-mono text-[11px] tracking-[0.14em] uppercase text-foreground underline underline-offset-4 hover:text-highlight"
-              >
-                Walk through the engine
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <section className="border-b border-border py-20" id="stack-fit">
-          <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:items-start">
-            <div>
-              <p className="ops-kicker text-foreground">06 · Stack fit</p>
-              <h2 className="mt-6 max-w-[8ch] text-[3.5rem] leading-[0.92] sm:text-[4.8rem]">
-                Automation on top of your ATS, not around it.
-              </h2>
-              <p className="mt-6 max-w-[36ch] text-lg leading-8 text-structure-secondary">
-                Breathe operates as the candidate-operations layer on top of
-                your system of record. The ATS stays the source of truth;
-                Breathe runs the work between the stages.
-              </p>
-            </div>
-
-            <div className="border border-foreground bg-secondary/45 p-7">
-              <div className="space-y-4">
-                {stackLayers.map((layer) => (
-                  <div key={layer.title}>
-                    <div
-                      className={cn(
-                        "grid items-center gap-5 border border-foreground px-5 py-5 md:grid-cols-[6rem_1fr_auto]",
-                        layer.inverted
-                          ? "bg-foreground text-background"
-                          : "bg-background/70 text-foreground",
-                      )}
-                    >
-                      <p
-                        className={cn(
-                          "font-mono text-[10px] tracking-[0.14em] uppercase",
-                          layer.inverted
-                            ? "text-highlight-soft"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        {layer.tag}
-                      </p>
-                      <div>
-                        <h3 className="text-[1.7rem] leading-none tracking-[-0.02em]">
-                          {layer.title}
-                        </h3>
-                        <p
-                          className={cn(
-                            "mt-2 max-w-[42ch] text-[0.95rem] leading-7",
-                            layer.inverted
-                              ? "text-background/72"
-                              : "text-structure-secondary",
-                          )}
-                        >
-                          {layer.body}
-                        </p>
-                      </div>
-                      <p
-                        className={cn(
-                          "font-mono text-[10px] tracking-[0.12em] uppercase",
-                          layer.inverted
-                            ? "text-highlight-soft"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        {layer.meta}
-                      </p>
-                    </div>
-                    {layer !== stackLayers[stackLayers.length - 1] && (
-                      <div className="ml-7 h-5 border-l border-dashed border-foreground" />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 grid gap-0 border border-border sm:grid-cols-2 xl:grid-cols-4">
-                {stackFacts.map(([label, value], index) => (
-                  <div
-                    key={label}
-                    className={cn(
-                      "border-r border-border px-4 py-4 last:border-r-0",
-                      index > 1 && "border-t border-border xl:border-t-0",
-                    )}
-                  >
-                    <p className="font-mono text-[10px] tracking-[0.12em] uppercase text-muted-foreground">
-                      {label}
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-foreground">
-                      {value}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="border-b border-border py-20" id="outcomes">
-          <div className="mb-12 grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-end">
-            <div>
-              <p className="ops-kicker text-foreground">07 · Business outcome</p>
-              <h2 className="mt-6 max-w-[9ch] text-[3.8rem] leading-[0.92] sm:text-[5.6rem]">
-                Fill more roles, faster —{" "}
-                <span className="text-highlight">
-                  without adding recruiter load.
-                </span>
-              </h2>
-            </div>
-            <p className="max-w-[40ch] text-lg leading-8 text-structure-secondary">
-              Breathe shifts the rate limiter off the recruiting team.
-              Throughput scales with candidate volume, not headcount.
-            </p>
-          </div>
-
-          <div className="grid border-y border-foreground md:grid-cols-3">
-            {outcomeCards.map((card, index) => (
-              <article
-                key={card.label}
-                className={cn(
-                  "flex min-h-[17rem] flex-col gap-5 border-r border-border px-6 py-8 last:border-r-0",
-                  index === 0 && "bg-background/72",
-                )}
-              >
-                <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-muted-foreground">
-                  {card.label}
-                </p>
-                <h3 className="text-[2rem] leading-[0.98] tracking-[-0.03em]">
-                  {card.title}
-                </h3>
-                <p className="max-w-[30ch] text-[0.95rem] leading-7 text-structure-secondary">
-                  {card.body}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="border-b border-border py-20" id="security">
-          <div className="mb-12 grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-end">
-            <div>
-              <p className="ops-kicker text-foreground">08 · Security</p>
-              <h2 className="mt-6 max-w-[7ch] text-[3.6rem] leading-[0.92] sm:text-[5rem]">
-                Human control.{" "}
-                <span className="text-highlight">System speed.</span>
-              </h2>
-            </div>
-            <p className="max-w-[40ch] text-lg leading-8 text-structure-secondary">
-              Breathe operates inside clear guardrails your team sets. Actions
-              are attributable, reversible, and kept on the record, while
-              recruiters keep control of the decisions that matter.
-            </p>
-          </div>
-
-          <div className="grid border-y border-foreground md:grid-cols-3">
-            {trustCards.map((card) => (
-              <article
-                key={card.title}
-                className="flex min-h-[18rem] flex-col gap-4 border-r border-border px-6 py-8 last:border-r-0"
-              >
-                <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-muted-foreground">
-                  {card.label}
-                </p>
-                <h3 className="text-[2rem] leading-[0.98] tracking-[-0.03em]">
-                  {card.title}
-                </h3>
-                <p className="max-w-[32ch] text-[0.95rem] leading-7 text-structure-secondary">
-                  {card.body}
-                </p>
-                <div className="mt-auto flex flex-col gap-2 pt-2">
-                  {card.points.map((point) => (
-                    <span
-                      key={point}
-                      className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.12em] uppercase text-structure-secondary"
-                    >
-                      <span className="h-[1px] w-2 bg-highlight" />
-                      {point}
-                    </span>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-
-          <div className="mt-7 grid border border-border sm:grid-cols-2 xl:grid-cols-4">
-            {trustBadges.map(([label, value], index) => (
-              <div
-                key={value}
-                className={cn(
-                  "border-r border-border px-4 py-4 last:border-r-0",
-                  index > 1 && "border-t border-border xl:border-t-0",
-                )}
-              >
-                <p className="font-mono text-[9.5px] tracking-[0.12em] uppercase text-muted-foreground">
-                  {label}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-foreground">{value}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="py-20" id="environments">
-          <div className="mb-12">
-            <p className="ops-kicker text-foreground">09 · Environments</p>
-            <h2 className="mt-6 max-w-[9ch] text-[3.8rem] leading-[0.92] sm:text-[5rem]">
-              Built for high-volume hiring environments.
-            </h2>
-            <p className="mt-6 max-w-[44ch] text-lg leading-8 text-structure-secondary">
-              Shared pattern: many roles, many sites, many shifts, short
-              time-to-start. Breathe is tuned for the operational rhythm of the
-              frontline, not the office.
-            </p>
-          </div>
-
-          <div className="grid border-y border-foreground lg:grid-cols-3">
-            {useCases.map((useCase) => (
-              <article
-                key={useCase.title}
-                className="flex flex-col border-r border-foreground last:border-r-0"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden border-b border-foreground bg-secondary">
-                  <Image
-                    src={useCase.image}
-                    alt={useCase.alt}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="flex flex-1 flex-col bg-background/78 px-6 py-7">
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-muted-foreground">
-                      {useCase.label}
-                    </p>
-                  </div>
-                  <h3 className="mt-4 text-[2rem] leading-[0.98] tracking-[-0.03em]">
-                    {useCase.title}
-                  </h3>
-                  <p className="mt-4 max-w-[31ch] text-[0.95rem] leading-7 text-structure-secondary">
-                    {useCase.body}
-                  </p>
-                  <div className="mt-auto flex flex-wrap gap-x-4 gap-y-2 border-t border-border pt-5">
-                    {useCase.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.12em] uppercase text-structure-secondary"
-                      >
-                        <span className="size-[5px] bg-highlight" />
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      <section
-        id="final-cta"
-        className="relative mt-6 border-t border-foreground bg-foreground text-background"
-      >
-        <div className="absolute inset-x-0 top-0 h-px bg-highlight" />
-        <div className="mx-auto grid max-w-[104rem] gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1.25fr_0.75fr] lg:px-8 lg:py-24">
-          <div>
-            <p className="ops-kicker text-highlight-soft">10 · Book a demo</p>
-            <h2 className="mt-6 max-w-[8ch] text-[4rem] leading-[0.9] text-background sm:text-[5.8rem] lg:text-[7.4rem]">
-              From application to{" "}
-              <span className="text-highlight">ready-to-start.</span>
-            </h2>
-            <p className="mt-8 max-w-[36ch] text-lg leading-8 text-background/72">
-              A walkthrough on your own ATS, your own roles, your own volume.
-              You leave with a scoped picture of what Breathe would run and
-              where recruiters would still step in.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-6 lg:items-start lg:justify-end">
-            <div className="flex w-full max-w-sm flex-col gap-3">
-              <Link
-                href="mailto:hello@breathe.work?subject=Breathe%20demo"
-                className={cn(
-                  buttonVariants({ size: "lg", variant: "secondary" }),
-                  "h-12 rounded-none border-highlight bg-highlight px-5 font-mono text-[11px] tracking-[0.14em] uppercase text-highlight-foreground hover:bg-background hover:text-foreground",
-                )}
-              >
+        <div className="relative z-10 mx-auto grid min-h-[calc(100svh-4rem)] max-w-[118rem] grid-cols-1 items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-12 lg:px-8">
+          <div className="max-w-[42rem] lg:col-span-6">
+            <Label>AI candidate operations</Label>
+            <h1 className="text-background mt-5 text-[3.5rem] leading-[0.95] font-medium sm:text-[5.4rem] lg:text-[6.8rem]">
+              AI agents for faster high-volume hiring
+            </h1>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <PrimaryButton href={demoHref} inverse>
                 Book a demo
-                <ArrowRight className="size-4" />
-              </Link>
+              </PrimaryButton>
               <Link
-                href="#mechanism"
-                className={cn(
-                  buttonVariants({ size: "lg", variant: "outline" }),
-                  "h-12 rounded-none border-background/70 bg-transparent px-5 font-mono text-[11px] tracking-[0.14em] uppercase text-background hover:bg-background hover:text-foreground",
-                )}
+                href="#product"
+                className="border-background/45 bg-background/8 text-background hover:bg-background/15 focus-visible:ring-background/30 inline-flex h-11 items-center justify-center gap-2 border px-5 text-sm font-medium backdrop-blur transition-colors focus-visible:ring-2 focus-visible:outline-none"
               >
                 See how it works
-                <ArrowRight className="size-4" />
+                <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
             </div>
+          </div>
 
-            <div className="grid w-full max-w-xl border border-background/14 sm:grid-cols-2">
-              {[
-                ["Walk-through", "On your ATS and hiring flow"],
-                ["Scope", "Application → ready-to-start"],
-                ["Rollout", "Fast, on top of your stack"],
-                ["For", "Heads of talent and ops"],
-              ].map(([label, value], index) => (
-                <div
-                  key={label}
-                  className={cn(
-                    "border-r border-background/14 px-5 py-4 last:border-r-0",
-                    index > 1 && "border-t border-background/14",
-                  )}
-                >
-                  <p className="font-mono text-[10px] tracking-[0.12em] uppercase text-highlight-soft">
-                    {label}
+          <div className="flex flex-col items-start gap-3 lg:col-span-5 lg:col-start-8 lg:items-end">
+            {overlayCards.map(({ label, icon: Icon }, index) => (
+              <div
+                key={label}
+                className={cn(
+                  "border-background/20 bg-background/18 text-background flex w-full max-w-[20rem] items-center gap-3 border px-4 py-3 shadow-[0_18px_46px_rgba(0,0,0,0.18)] backdrop-blur-md",
+                  index === 1 && "lg:mr-12",
+                )}
+              >
+                <Icon
+                  className="text-highlight-soft size-4"
+                  aria-hidden="true"
+                />
+                <span className="text-sm font-medium">{label}</span>
+                {index === 0 && (
+                  <span className="bg-highlight-soft ml-auto size-2" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-border bg-background border-b">
+        <div className="mx-auto grid max-w-[118rem] gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
+          <p className="text-structure-secondary max-w-[48rem] text-xl leading-8 sm:text-2xl sm:leading-9">
+            Automate the work between application and hire, so recruiters can
+            move more qualified candidates before they go cold.
+          </p>
+          <div className="border-border border-l pl-6">
+            <Label>Operational proof</Label>
+            <p className="mt-3 max-w-[32rem] text-2xl leading-8">
+              From a team that automated 300,000 interviews per month.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="problem" className="border-border bg-card/70 border-b">
+        <div className="mx-auto grid max-w-[118rem] gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
+          <div>
+            <Label>Where volume breaks</Label>
+            <h2 className="mt-5 max-w-[34rem] text-[3rem] leading-none font-medium sm:text-[4.4rem]">
+              Delays cause candidate drop-off.
+            </h2>
+            <p className="text-muted-foreground mt-6 max-w-[34rem] text-base leading-7">
+              In high-volume hiring, the expensive failure is not a lack of
+              applicants. It is losing qualified people while teams manually
+              coordinate the next step.
+            </p>
+          </div>
+
+          <div className="border-border border-t">
+            {frictionPoints.map((point, index) => (
+              <div
+                key={point}
+                className="border-border grid grid-cols-[4rem_1fr] border-b py-5"
+              >
+                <span className="text-muted-foreground font-mono text-[11px] tracking-[0.14em] uppercase">
+                  0{index + 1}
+                </span>
+                <p className="text-lg leading-7">{point}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="product" className="border-border bg-background border-b">
+        <div className="mx-auto max-w-[118rem] px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto mb-12 max-w-3xl text-center">
+            <Label>The operating surface</Label>
+            <h2 className="mt-5 text-[3rem] leading-none font-medium sm:text-[4.8rem]">
+              The workflow moves itself.
+            </h2>
+            <p className="text-muted-foreground mt-5 text-base leading-7">
+              Nacar maps each candidate journey, activates the right workflow
+              blocks, and writes outcomes back to your system of record.
+            </p>
+          </div>
+
+          <div className="border-foreground bg-card shadow-shell overflow-hidden border">
+            <div className="border-border bg-background/70 flex flex-col gap-4 border-b px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                <NacarLogo />
+                <span className="bg-border h-5 w-px" />
+                <span className="text-muted-foreground font-mono text-[11px] tracking-[0.14em] uppercase">
+                  General retail hire · Madrid · 42 open shifts
+                </span>
+              </div>
+              <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                <CheckCircle2
+                  className="text-highlight size-4"
+                  aria-hidden="true"
+                />
+                ATS sync active
+              </div>
+            </div>
+
+            <div className="grid min-h-[42rem] lg:grid-cols-[1.1fr_0.78fr_0.62fr]">
+              <div className="border-border border-b p-5 lg:border-r lg:border-b-0">
+                <div className="mb-6 grid gap-4 sm:grid-cols-3">
+                  {[
+                    ["Role", "Retail associate"],
+                    ["Site", "Madrid Norte"],
+                    ["Shift", "Weekend close"],
+                  ].map(([label, value]) => (
+                    <div
+                      key={label}
+                      className="border-border bg-background/60 border p-4"
+                    >
+                      <p className="text-muted-foreground font-mono text-[10px] tracking-[0.14em] uppercase">
+                        {label}
+                      </p>
+                      <p className="mt-2 text-sm font-medium">{value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="relative mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
+                  {stages.map((stage, index) => (
+                    <div
+                      key={stage}
+                      className={cn(
+                        "border-border bg-background relative border px-3 py-4",
+                        index < 4 && "border-highlight/50 bg-highlight/5",
+                        stage === "Review" &&
+                          "border-foreground bg-foreground text-background",
+                      )}
+                    >
+                      <span className="font-mono text-[10px] tracking-[0.14em] uppercase opacity-60">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <p className="mt-3 text-sm font-medium">{stage}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <div className="mb-3 flex items-center justify-between">
+                    <Label>Candidate queue</Label>
+                    <span className="text-muted-foreground text-sm">
+                      Live intake
+                    </span>
+                  </div>
+                  <div className="divide-border border-border divide-y border">
+                    {candidates.map((candidate) => (
+                      <div
+                        key={candidate.name}
+                        className="bg-card grid gap-3 px-4 py-4 sm:grid-cols-[1fr_auto]"
+                      >
+                        <div>
+                          <p className="font-medium">{candidate.name}</p>
+                          <p className="text-muted-foreground mt-1 text-sm">
+                            {candidate.role} · {candidate.context}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                          <span className="border-border bg-background text-muted-foreground border px-2 py-1 font-mono text-[10px] tracking-[0.12em] uppercase">
+                            {candidate.stage}
+                          </span>
+                          <span
+                            className={cn(
+                              "border px-2 py-1 font-mono text-[10px] tracking-[0.12em] uppercase",
+                              candidate.sync === "Synced"
+                                ? "border-highlight/40 text-highlight"
+                                : "border-foreground/30 text-foreground",
+                            )}
+                          >
+                            {candidate.sync}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-border border-b p-5 lg:border-r lg:border-b-0">
+                <Label>Automation blocks running</Label>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                  {automationBlocks.map(([label, state]) => (
+                    <div
+                      key={label}
+                      className="border-border bg-background border p-4"
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="font-medium">{label}</p>
+                        {state === "Running" ? (
+                          <CheckCircle2
+                            className="text-highlight size-4"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <CircleDashed
+                            className="text-muted-foreground size-4"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </div>
+                      <p className="text-muted-foreground mt-3 font-mono text-[10px] tracking-[0.14em] uppercase">
+                        {state}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-foreground bg-foreground text-background mt-6 border p-5">
+                  <p className="text-highlight-soft font-mono text-[10px] tracking-[0.14em] uppercase">
+                    Next best action
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-background/82">
-                    {value}
+                  <p className="mt-4 text-2xl leading-7">
+                    Ask recruiter to confirm Daniel K. licence exception.
+                  </p>
+                  <p className="text-background/72 mt-4 text-sm leading-6">
+                    The candidate meets availability and location criteria, but
+                    one credential needs human approval before interview.
                   </p>
                 </div>
-              ))}
+
+                <div className="mt-6">
+                  <Label>Action log</Label>
+                  <div className="mt-4 space-y-4">
+                    {actionLog.map((item, index) => (
+                      <div
+                        key={item}
+                        className="grid grid-cols-[3.5rem_1fr] gap-3"
+                      >
+                        <span className="text-muted-foreground font-mono text-[10px] tracking-[0.12em] uppercase">
+                          14:{22 - index * 3}
+                        </span>
+                        <p className="text-sm leading-6">{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <aside className="bg-background/60 p-5">
+                <Label>Recruiter review</Label>
+                <div className="border-border bg-card mt-5 border p-5">
+                  <div className="flex items-center gap-3">
+                    <UserRoundCheck
+                      className="text-highlight size-5"
+                      aria-hidden="true"
+                    />
+                    <div>
+                      <p className="font-medium">Daniel K.</p>
+                      <p className="text-muted-foreground text-sm">
+                        Forklift operator
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-5 space-y-3 text-sm">
+                    <p className="flex items-center gap-2">
+                      <CheckCircle2
+                        className="text-highlight size-4"
+                        aria-hidden="true"
+                      />
+                      Availability matched
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <CheckCircle2
+                        className="text-highlight size-4"
+                        aria-hidden="true"
+                      />
+                      Location matched
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <CircleAlert
+                        className="text-foreground size-4"
+                        aria-hidden="true"
+                      />
+                      Licence expiry needs review
+                    </p>
+                  </div>
+                  <div className="mt-6 grid gap-2">
+                    <button className="border-primary bg-primary text-primary-foreground h-10 border px-3 text-sm font-medium">
+                      Approve and schedule
+                    </button>
+                    <button className="border-border bg-background h-10 border px-3 text-sm font-medium">
+                      Request document
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border-border bg-card mt-5 border p-5">
+                  <Label>ATS write-back</Label>
+                  <div className="text-muted-foreground mt-4 space-y-3 text-sm">
+                    <p className="flex items-center gap-2">
+                      <Inbox className="size-4" aria-hidden="true" />
+                      Candidate status
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <ClipboardCheck className="size-4" aria-hidden="true" />
+                      Review reason
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <FileCheck2 className="size-4" aria-hidden="true" />
+                      Document request
+                    </p>
+                  </div>
+                </div>
+              </aside>
             </div>
           </div>
         </div>
       </section>
+
+      <section id="stack-fit" className="border-border bg-card/70 border-b">
+        <div className="mx-auto grid max-w-[118rem] gap-12 px-4 py-24 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
+          <div>
+            <Label>Stack fit</Label>
+            <h2 className="mt-5 max-w-[36rem] text-[3rem] leading-none font-medium sm:text-[4.4rem]">
+              Automation on top of your ATS, not around it.
+            </h2>
+            <p className="text-muted-foreground mt-6 max-w-[34rem] text-base leading-7">
+              Nacar is not an ATS replacement. It is the operational layer that
+              moves the work between stages while the system of record remains
+              intact.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {stackLayers.map((layer) => {
+              const active = "active" in layer && layer.active === true;
+              const Icon = layer.icon;
+
+              return (
+                <article
+                  key={layer.title}
+                  className={cn(
+                    "grid gap-5 border p-6 sm:grid-cols-[3rem_1fr]",
+                    active
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border bg-background",
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "size-6",
+                      active ? "text-highlight-soft" : "text-highlight",
+                    )}
+                    aria-hidden="true"
+                  />
+                  <div>
+                    <p
+                      className={cn(
+                        "font-mono text-[10px] tracking-[0.14em] uppercase",
+                        active
+                          ? "text-highlight-soft"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      {layer.label}
+                    </p>
+                    <h3 className="mt-2 text-3xl leading-none font-medium">
+                      {layer.title}
+                    </h3>
+                    <p
+                      className={cn(
+                        "mt-3 max-w-[46rem] text-sm leading-6",
+                        active ? "text-background/72" : "text-muted-foreground",
+                      )}
+                    >
+                      {layer.body}
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section id="industries" className="border-border bg-background border-b">
+        <div className="mx-auto max-w-[118rem] px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-end">
+            <div>
+              <Label>Use cases</Label>
+              <h2 className="mt-5 max-w-[42rem] text-[3rem] leading-none font-medium sm:text-[4.4rem]">
+                Built for high-volume hiring environments.
+              </h2>
+            </div>
+            <p className="text-muted-foreground max-w-[30rem] text-base leading-7">
+              Different environments, same pressure: many applicants, tight
+              start windows, and too many handoffs across teams and tools.
+            </p>
+          </div>
+
+          <div className="border-border bg-border grid gap-px overflow-hidden border md:grid-cols-2 xl:grid-cols-3">
+            {industries.map(({ label, title, body, image, icon: Icon }) => (
+              <article key={label} className="bg-card">
+                <div className="bg-secondary relative aspect-[16/9] overflow-hidden">
+                  {image ? (
+                    <>
+                      <Image
+                        src={image}
+                        alt=""
+                        fill
+                        loading="eager"
+                        sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
+                        className="nacar-media-treatment object-cover"
+                      />
+                      <div className="bg-foreground/8 absolute inset-0" />
+                    </>
+                  ) : (
+                    <div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,rgba(255,253,248,0.55),rgba(216,209,195,0.78))]">
+                      <Icon
+                        className="text-highlight/70 size-10"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="p-6">
+                  <div className="mb-5 flex items-center justify-between">
+                    <Label>{label}</Label>
+                    <Icon
+                      className="text-highlight size-5"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <h3 className="text-3xl leading-none font-medium">{title}</h3>
+                  <p className="text-muted-foreground mt-4 text-sm leading-6">
+                    {body}
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="final-cta" className="bg-foreground text-background">
+        <div className="mx-auto grid max-w-[118rem] gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
+          <div>
+            <Label>Start with one hiring flow</Label>
+            <h2 className="text-background mt-5 max-w-[48rem] text-[3rem] leading-none font-medium sm:text-[4.6rem]">
+              Move high-volume hiring forward.
+            </h2>
+            <p className="text-background/72 mt-5 max-w-[36rem] text-base leading-7">
+              Run candidate operations across roles, sites, and shifts without
+              adding recruiter load.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+            <PrimaryButton href={demoHref} inverse>
+              Book a demo
+            </PrimaryButton>
+            <Link
+              href="#product"
+              className="border-background/35 text-background hover:bg-background/10 inline-flex h-11 items-center justify-center gap-2 border px-5 text-sm font-medium transition-colors"
+            >
+              See product surface
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <footer className="bg-background">
+        <div className="mx-auto grid max-w-[118rem] gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1fr_auto] lg:px-8">
+          <div>
+            <NacarLogo />
+            <p className="text-muted-foreground mt-4 max-w-[22rem] text-sm leading-6">
+              Automating the operational complexity of high-volume hiring.
+            </p>
+          </div>
+          <nav className="text-muted-foreground grid grid-cols-2 gap-x-12 gap-y-3 text-sm sm:grid-cols-4">
+            <Link href="#product" className="hover:text-foreground">
+              Product
+            </Link>
+            <Link href="#industries" className="hover:text-foreground">
+              Industries
+            </Link>
+            <Link href="/privacy" className="hover:text-foreground">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-foreground">
+              Terms of Service
+            </Link>
+          </nav>
+        </div>
+        <div className="border-border border-t">
+          <div className="text-muted-foreground mx-auto flex max-w-[118rem] flex-col gap-2 px-4 py-5 text-xs sm:px-6 md:flex-row md:justify-between lg:px-8">
+            <span>© 2026 Nacar Intelligence. All rights reserved.</span>
+            <span>Built for in-house and staffing high-volume teams.</span>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
