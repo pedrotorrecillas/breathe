@@ -1089,6 +1089,11 @@ p { margin: 0; }
   display: flex; flex-direction: column;
 }
 .ind:hover { background: var(--paper); }
+.ind:focus-visible {
+  outline: 1px solid var(--petrol);
+  outline-offset: -1px;
+  background: var(--paper);
+}
 .ind .ind-num {
   font-family: var(--mono);
   font-size: 10.5px;
@@ -1097,26 +1102,34 @@ p { margin: 0; }
   margin-bottom: 22px;
 }
 .ind .ind-media {
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9;
   height: auto;
-  border-radius: 8px;
+  border-radius: 6px;
   margin-bottom: 26px;
   background: var(--paper);
   position: relative;
   overflow: hidden;
   border: 1px solid var(--rule);
-  background-image:
-    radial-gradient(rgba(26,24,20,0.05) 0.6px, transparent 0.6px);
-  background-size: 7px 7px;
-  display: grid;
-  place-items: center;
+  display: block;
 }
-.ind .ind-media img {
-  width: 88%;
-  height: 88%;
-  object-fit: contain;
-  mix-blend-mode: multiply;
-  filter: contrast(1.05);
+.ind .ind-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(23, 23, 19, 0.08);
+}
+.ind .ind-media video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  filter: contrast(1.03);
+  background: var(--paper);
+}
+.ind:hover .ind-media video,
+.ind:focus-within .ind-media video {
+  filter: contrast(1.08);
 }
 .ind h3 {
   font-family: var(--serif);
@@ -1130,14 +1143,6 @@ p { margin: 0; }
   line-height: 1.6;
   max-width: 32ch;
 }
-
-/* Industry media variants (subtle, restrained) */
-.ind-media.v-retail   { background: linear-gradient(180deg, #ece4d2, #e0d6bd); }
-.ind-media.v-logistics{ background: linear-gradient(180deg, #d9d5cb, #c9c2b1); }
-.ind-media.v-hospo    { background: linear-gradient(180deg, #ede0c9, #e4d4b6); }
-.ind-media.v-health   { background: linear-gradient(180deg, #e3e6e0, #d3d8cd); }
-.ind-media.v-cc       { background: linear-gradient(180deg, #e8e1d0, #d8cfb6); }
-.ind-media.v-staff    { background: linear-gradient(180deg, #e6dcc6, #d4c6a6); }
 
 /* ============================================================
    FINAL CTA

@@ -412,33 +412,45 @@
       </div>
 
       <div class="ind-grid">
-        <article class="ind">
-          <div class="ind-media"><img src="/nacar-site/assets/ind-retail.png" alt="" /></div>
+        <article class="ind" tabindex="0">
+          <div class="ind-media">
+            <video src="/nacar-site/assets/industry-motion/retail.mp4" poster="/nacar-site/assets/industry-motion/retail-poster.jpg" muted loop playsinline preload="metadata" aria-label="Retail hiring operations"></video>
+          </div>
           <h3>Retail</h3>
           <p>Seasonal stores, storefront turnover, fast screening and interview booking across many locations.</p>
         </article>
-        <article class="ind">
-          <div class="ind-media"><img src="/nacar-site/assets/ind-logistics.png" alt="" /></div>
+        <article class="ind" tabindex="0">
+          <div class="ind-media">
+            <video src="/nacar-site/assets/industry-motion/logistics.mp4" poster="/nacar-site/assets/industry-motion/logistics-poster.jpg" muted loop playsinline preload="metadata" aria-label="Logistics hiring operations"></video>
+          </div>
           <h3>Logistics</h3>
           <p>Warehouse ramp‑up, shift qualification, licences, and multi‑site hiring run in parallel.</p>
         </article>
-        <article class="ind">
-          <div class="ind-media"><img src="/nacar-site/assets/ind-hospitality.png" alt="" /></div>
+        <article class="ind" tabindex="0">
+          <div class="ind-media">
+            <video src="/nacar-site/assets/industry-motion/hospitality.mp4" poster="/nacar-site/assets/industry-motion/hospitality-poster.jpg" muted loop playsinline preload="metadata" aria-label="Hospitality hiring operations"></video>
+          </div>
           <h3>Hospitality</h3>
           <p>Short response cycles, availability checks against shift patterns, and manager‑level scheduling.</p>
         </article>
-        <article class="ind">
-          <div class="ind-media"><img src="/nacar-site/assets/ind-healthcare.png" alt="" /></div>
+        <article class="ind" tabindex="0">
+          <div class="ind-media">
+            <video src="/nacar-site/assets/industry-motion/healthcare.mp4" poster="/nacar-site/assets/industry-motion/healthcare-poster.jpg" muted loop playsinline preload="metadata" aria-label="Healthcare hiring operations"></video>
+          </div>
           <h3>Healthcare operations</h3>
           <p>Admin desks, clinical support, credentials, and document collection — kept current as candidates move.</p>
         </article>
-        <article class="ind">
-          <div class="ind-media"><img src="/nacar-site/assets/ind-contact.png" alt="" /></div>
+        <article class="ind" tabindex="0">
+          <div class="ind-media">
+            <video src="/nacar-site/assets/industry-motion/contact.mp4" poster="/nacar-site/assets/industry-motion/contact-poster.jpg" muted loop playsinline preload="metadata" aria-label="Contact center hiring operations"></video>
+          </div>
           <h3>Contact centers</h3>
           <p>Class‑based hiring, training cohorts, batch scheduling — coordinated across a single class window.</p>
         </article>
-        <article class="ind">
-          <div class="ind-media"><img src="/nacar-site/assets/ind-staffing.png" alt="" /></div>
+        <article class="ind" tabindex="0">
+          <div class="ind-media">
+            <video src="/nacar-site/assets/industry-motion/staffing.mp4" poster="/nacar-site/assets/industry-motion/staffing-poster.jpg" muted loop playsinline preload="metadata" aria-label="Staffing agency hiring operations"></video>
+          </div>
           <h3>Staffing agencies</h3>
           <p>Rapid deployment to client sites, many roles, many requirements, fast candidate movement end‑to‑end.</p>
         </article>
@@ -549,6 +561,36 @@
           event.preventDefault();
           generatedButton.click();
         });
+      });
+    })();
+
+    // Industry cards: still poster by default, short motion on hover/focus.
+    (function () {
+      const cards = document.querySelectorAll('.ind');
+      const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+      cards.forEach((card) => {
+        const video = card.querySelector('.ind-media video');
+        if (!video) return;
+
+        const play = () => {
+          video.currentTime = 0;
+          const promise = video.play();
+          if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+        };
+
+        const stop = () => {
+          video.pause();
+          video.currentTime = 0;
+        };
+
+        if (canHover) {
+          card.addEventListener('mouseenter', play);
+          card.addEventListener('mouseleave', stop);
+        }
+
+        card.addEventListener('focusin', play);
+        card.addEventListener('focusout', stop);
       });
     })();
   </script>
