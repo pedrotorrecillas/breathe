@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://calendar.google.com/calendar/scheduling-button-script.css" rel="stylesheet" />
 
   <link rel="stylesheet" href="/nacar-site/styles.css" />
 </head>
@@ -24,7 +25,7 @@
         <span class="brand-tag">AI operations</span>
       </a>
       <nav>
-        <a href="#cta" class="btn btn-outline">
+        <a href="https://calendar.google.com/calendar/appointments/schedules/AcZssZ2dHpGM-kj_OcqWG5UT_rG1Zp2w2D2CoHl__NRP_ocqmgsYrcOlgtSmZ5mTXwlItxJGVENJr8OM?gv=true" class="btn btn-outline" data-calendar-cta>
           Learn more
           <svg class="arr" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -50,7 +51,7 @@
           <em>high‑volume</em> hiring
         </h1>
         <div class="hero-cta">
-          <a href="#cta" class="btn btn-ghost">
+          <a href="https://calendar.google.com/calendar/appointments/schedules/AcZssZ2dHpGM-kj_OcqWG5UT_rG1Zp2w2D2CoHl__NRP_ocqmgsYrcOlgtSmZ5mTXwlItxJGVENJr8OM?gv=true" class="btn btn-ghost" data-calendar-cta>
             Learn more
             <svg class="arr" viewBox="0 0 14 14" fill="none" aria-hidden="true">
               <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -460,7 +461,7 @@
         <p>Run candidate operations across roles, sites, and shifts without adding recruiter load. Nacar sits on top of the recruiting stack you already operate.</p>
       </div>
       <div class="cta-row">
-        <a href="mailto:pedro@nacar.ai?subject=Nacar%20demo" class="final-cta-btn">
+        <a href="https://calendar.google.com/calendar/appointments/schedules/AcZssZ2dHpGM-kj_OcqWG5UT_rG1Zp2w2D2CoHl__NRP_ocqmgsYrcOlgtSmZ5mTXwlItxJGVENJr8OM?gv=true" class="final-cta-btn" data-calendar-cta>
           Book a demo
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M9 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
@@ -488,7 +489,7 @@
           <div class="footer-col">
             <h5>Contact</h5>
             <a href="mailto:hello@nacar.ai">pedro@nacar.ai</a>
-            <a href="#cta">Book a demo</a>
+            <a href="https://calendar.google.com/calendar/appointments/schedules/AcZssZ2dHpGM-kj_OcqWG5UT_rG1Zp2w2D2CoHl__NRP_ocqmgsYrcOlgtSmZ5mTXwlItxJGVENJr8OM?gv=true" data-calendar-cta>Book a demo</a>
           </div>
         </div>
       </div>
@@ -499,6 +500,33 @@
     </div>
   </footer>
 
+  <script src="https://calendar.google.com/calendar/scheduling-button-script.js" async></script>
+  <div id="calendar-scheduling-target" class="calendar-scheduling-target" aria-hidden="true">
+    <script>
+      (function () {
+        const calendarUrl = 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ2dHpGM-kj_OcqWG5UT_rG1Zp2w2D2CoHl__NRP_ocqmgsYrcOlgtSmZ5mTXwlItxJGVENJr8OM?gv=true';
+        const target = document.currentScript;
+        let attempts = 0;
+
+        function loadSchedulingButton() {
+          if (window.calendar && window.calendar.schedulingButton) {
+            window.calendar.schedulingButton.load({
+              url: calendarUrl,
+              color: '#616161',
+              label: 'Learn more',
+              target,
+            });
+            return;
+          }
+
+          attempts += 1;
+          if (attempts < 40) window.setTimeout(loadSchedulingButton, 150);
+        }
+
+        window.addEventListener('load', loadSchedulingButton);
+      })();
+    </script>
+  </div>
   <script>
     // Nav scroll state
     (function () {
@@ -509,6 +537,25 @@
       };
       window.addEventListener('scroll', onScroll, { passive: true });
       onScroll();
+    })();
+
+    // Google Calendar appointment popup, triggered from Nacar's own buttons.
+    (function () {
+      const target = document.getElementById('calendar-scheduling-target');
+
+      function findGeneratedButton() {
+        return target && target.querySelector('button, a, [role="button"]');
+      }
+
+      document.querySelectorAll('[data-calendar-cta]').forEach((cta) => {
+        cta.addEventListener('click', function (event) {
+          const generatedButton = findGeneratedButton();
+          if (!generatedButton) return;
+
+          event.preventDefault();
+          generatedButton.click();
+        });
+      });
     })();
   </script>
 </body>
