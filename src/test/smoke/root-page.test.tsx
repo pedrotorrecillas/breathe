@@ -12,7 +12,9 @@ describe("root smoke", () => {
     expect(html).toContain("high‑volume");
     expect(html).toContain("href=\"/privacy\"");
     expect(html).toContain("href=\"/terms\"");
-    expect(html).toContain("REAL PRODUCT WALK‑THROUGH");
+    expect(html).not.toContain("REAL PRODUCT WALK‑THROUGH");
+    expect(html).toContain("Candidates are reached too late.");
+    expect(html).not.toContain("Enterprise‑ready AI hiring infrastructure.");
     expect(html).toContain("calendar.google.com/calendar/appointments/schedules");
     expect(html).toContain("data-calendar-cta");
   });
