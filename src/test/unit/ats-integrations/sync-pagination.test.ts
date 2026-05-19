@@ -165,6 +165,29 @@ describe("ATS sync pagination", () => {
     ).toEqual(["app_1", "app_2"]);
   });
 
+  it("pauses the connection with a needs_reauth marker when provider credentials fail", async () => {
+    listJobs.mockRejectedValueOnce(
+      new Error("Zoho Recruit request failed with 401."),
+    );
+
+    await expect(
+      runATSSync({
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        now: "2026-05-19T11:00:00.000Z",
+      }),
+    ).rejects.toThrow("Zoho Recruit request failed with 401.");
+
+    const afterFailure = await loadRuntimeStoreState();
+    expect(afterFailure.atsConnections[0]).toMatchObject({
+      id: "ats_conn_1",
+      status: "paused",
+      lastSyncAt: null,
+      lastError: "needs_reauth: Zoho Recruit request failed with 401.",
+      updatedAt: "2026-05-19T11:00:00.000Z",
+    });
+  });
+
   it("keeps job-scoped stages separate when providers reuse stage ids", async () => {
     listJobs.mockResolvedValue({
       records: [

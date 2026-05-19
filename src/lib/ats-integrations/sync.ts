@@ -391,6 +391,38 @@ function normalizePhone(value: string | null) {
   return value?.replace(/[^\d+]/g, "") || "";
 }
 
+function isCredentialFailure(message: string) {
+  const normalized = message.toLowerCase();
+
+  return (
+    normalized.includes("401") ||
+    normalized.includes("unauthorized") ||
+    normalized.includes("access token") ||
+    normalized.includes("refresh token") ||
+    normalized.includes("invalid_token") ||
+    normalized.includes("invalid oauth")
+  );
+}
+
+function connectionFailureState(message: string): {
+  status: RunATSSyncConnection["status"];
+  lastError: string;
+} {
+  if (!isCredentialFailure(message)) {
+    return {
+      status: "error",
+      lastError: message,
+    };
+  }
+
+  return {
+    status: "paused",
+    lastError: message.startsWith("needs_reauth:")
+      ? message
+      : `needs_reauth: ${message}`,
+  };
+}
+
 function preserveInternalApplicationLinks(input: {
   previous: ATSCanonicalApplication | undefined;
   next: ATSCanonicalApplication;
@@ -995,12 +1027,13 @@ export async function runATSSync(
     return result;
   } catch (error) {
     const message = error instanceof Error ? error.message : "ATS sync failed.";
+    const failureState = connectionFailureState(message);
     state.atsConnections = state.atsConnections.map((item) =>
       item.id === connection.id
         ? {
             ...item,
-            status: "error",
-            lastError: message,
+            status: failureState.status,
+            lastError: failureState.lastError,
             updatedAt: input.now,
           }
         : item,
