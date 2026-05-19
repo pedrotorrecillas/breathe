@@ -286,45 +286,47 @@ export function enqueueATSWritebacksForEvaluation(input: {
   existingActions: ATSWritebackAction[];
   now: string;
 }): ATSWritebackAction[] {
-  const linkedApplication = input.atsApplications.find(
+  const linkedApplications = input.atsApplications.filter(
     (application) =>
       application.internalApplicationId === input.interviewRun.applicationId ||
       application.internalCandidateId === input.interviewRun.candidateId,
   );
 
-  if (!linkedApplication) {
+  if (linkedApplications.length === 0) {
     return [];
   }
 
-  const connection = input.atsConnections.find(
-    (item) =>
-      item.id === linkedApplication.connectionId &&
-      item.companyId === linkedApplication.companyId,
-  );
-  const policy = connection?.writebackPolicy ?? defaultWritebackPolicy;
-  const actionTypes: ATSWritebackActionType[] = [];
+  return linkedApplications
+    .flatMap((linkedApplication) => {
+      const connection = input.atsConnections.find(
+        (item) =>
+          item.id === linkedApplication.connectionId &&
+          item.companyId === linkedApplication.companyId,
+      );
+      const policy = connection?.writebackPolicy ?? defaultWritebackPolicy;
+      const actionTypes: ATSWritebackActionType[] = [];
 
-  if (policy.reportMode !== "disabled") {
-    actionTypes.push(policy.reportMode);
-  }
+      if (policy.reportMode !== "disabled") {
+        actionTypes.push(policy.reportMode);
+      }
 
-  if (policy.moveToExternalStageId) {
-    actionTypes.push("application_stage_move");
-  }
+      if (policy.moveToExternalStageId) {
+        actionTypes.push("application_stage_move");
+      }
 
-  return actionTypes
-    .map((actionType) =>
-      buildWritebackAction({
-        application: linkedApplication,
-        evaluation: input.evaluation,
-        actionType,
-        targetExternalStageId:
-          actionType === "application_stage_move"
-            ? policy.moveToExternalStageId
-            : null,
-        now: input.now,
-      }),
-    )
+      return actionTypes.map((actionType) =>
+        buildWritebackAction({
+          application: linkedApplication,
+          evaluation: input.evaluation,
+          actionType,
+          targetExternalStageId:
+            actionType === "application_stage_move"
+              ? policy.moveToExternalStageId
+              : null,
+          now: input.now,
+        }),
+      );
+    })
     .filter(
       (action) =>
         !input.existingActions.some(

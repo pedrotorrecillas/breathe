@@ -192,6 +192,53 @@ describe("ATS workflow requests", () => {
     });
   });
 
+  it("enqueues writebacks for every linked ATS application", () => {
+    const secondLinkedApplication: ATSCanonicalApplication = {
+      ...linkedApplication,
+      id: "ats_app_2",
+      connectionId: "ats_conn_2",
+      externalId: "zoho_app_1",
+      externalCandidateId: "zoho_candidate_ana",
+      provider: "zoho_recruit",
+    };
+
+    const actions = enqueueATSWritebacksForEvaluation({
+      evaluation,
+      interviewRun,
+      atsConnections: [
+        buildConnection(),
+        buildConnection({
+          id: "ats_conn_2",
+          provider: "zoho_recruit",
+          displayName: "Zoho Recruit demo",
+          authMode: "env_token",
+          secretRef: "env:ZOHO_RECRUIT_ACCESS_TOKEN",
+        }),
+      ],
+      atsApplications: [linkedApplication, secondLinkedApplication],
+      existingActions: [],
+      now: "2026-05-19T11:01:00.000Z",
+    });
+
+    expect(actions).toHaveLength(2);
+    expect(actions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          connectionId: "ats_conn_1",
+          provider: "mock_ats",
+          targetExternalCandidateId: "mock_candidate_ana",
+          targetExternalApplicationId: "mock_app_1",
+        }),
+        expect.objectContaining({
+          connectionId: "ats_conn_2",
+          provider: "zoho_recruit",
+          targetExternalCandidateId: "zoho_candidate_ana",
+          targetExternalApplicationId: "zoho_app_1",
+        }),
+      ]),
+    );
+  });
+
   it("formats evaluation writebacks as a recruiter-readable interview report", () => {
     const actions = enqueueATSWritebacksForEvaluation({
       evaluation: {
