@@ -176,9 +176,9 @@ describe("Zoho Recruit client", () => {
   it("maps adapter cursors to Zoho list record pages", async () => {
     vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "access_token");
     const fetchMock = vi.fn(async (url: string | URL) => {
-      const href = String(url);
+      const parsedUrl = new URL(String(url));
 
-      if (href.includes("/recruit/v2/Job_Openings")) {
+      if (parsedUrl.pathname === "/recruit/v2/Job_Openings") {
         return new Response(
           JSON.stringify({
             data: [
@@ -319,5 +319,96 @@ describe("Zoho Recruit client", () => {
       nextCursor: null,
       hasMore: false,
     });
+  });
+
+  it("paginates associated candidates for each Zoho job opening", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "access_token");
+    const fetchMock = vi.fn(async (url: string | URL) => {
+      const parsedUrl = new URL(String(url));
+      const href = parsedUrl.href;
+      const page = parsedUrl.searchParams.get("page");
+
+      if (
+        href.includes("/recruit/v2/Job_Openings/58431000000012345/associate") &&
+        page === "1"
+      ) {
+        return new Response(
+          JSON.stringify({
+            data: [
+              {
+                id: "58431000000054321",
+                Full_Name: "Ana Martin",
+                Candidate_Status: "Breathe Screen",
+              },
+            ],
+            info: {
+              page: 1,
+              per_page: 1,
+              more_records: true,
+            },
+          }),
+          { status: 200 },
+        );
+      }
+
+      if (
+        href.includes("/recruit/v2/Job_Openings/58431000000012345/associate") &&
+        page === "2"
+      ) {
+        return new Response(
+          JSON.stringify({
+            data: [
+              {
+                id: "58431000000067890",
+                Full_Name: "Marta Ruiz",
+                Candidate_Status: "Interview Completed",
+              },
+            ],
+            info: {
+              page: 2,
+              per_page: 1,
+              more_records: false,
+            },
+          }),
+          { status: 200 },
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          data: [
+            {
+              id: "58431000000012345",
+              Posting_Title: "Store Associate",
+              Job_Opening_Status: "In-progress",
+            },
+          ],
+          info: {
+            page: 1,
+            per_page: 1,
+            more_records: false,
+          },
+        }),
+        { status: 200 },
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const applicationsPage = await zohoRecruitAdapter.listApplications({
+      connection: zohoConnection,
+      cursor: null,
+      limit: 1,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://recruit.zoho.com/recruit/v2/Job_Openings/58431000000012345/associate?per_page=1&page=2",
+      expect.any(Object),
+    );
+    expect(applicationsPage.records.map((record) => record.externalId)).toEqual(
+      [
+        "58431000000054321:58431000000012345",
+        "58431000000067890:58431000000012345",
+      ],
+    );
   });
 });

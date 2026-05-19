@@ -181,25 +181,34 @@ export const zohoRecruitAdapter: ATSAdapter = {
         (typeof job.Posting_Title === "string" && job.Posting_Title.trim()) ||
         (typeof job.Job_Opening_Name === "string" && job.Job_Opening_Name.trim()) ||
         "Unknown Zoho Job";
-      const associatedResponse = await client.request<ZohoListResponse>(
-        zohoAssociatedRecordsPath({
-          moduleApiName: "Job_Openings",
-          recordId: jobId,
-          page: 1,
-          perPage: input.limit,
-        }),
-        { method: "GET" },
-      );
+      let associatedPage = 1;
+      let hasMoreAssociatedRecords = true;
 
-      records.push(
-        ...(associatedResponse.data ?? []).map((candidate) =>
-          mapZohoCandidateToProviderApplication({
-            candidate,
-            fallbackJobId: jobId,
-            fallbackJobTitle: jobTitle,
+      while (hasMoreAssociatedRecords) {
+        const associatedResponse = await client.request<ZohoListResponse>(
+          zohoAssociatedRecordsPath({
+            moduleApiName: "Job_Openings",
+            recordId: jobId,
+            page: associatedPage,
+            perPage: input.limit,
           }),
-        ),
-      );
+          { method: "GET" },
+        );
+
+        records.push(
+          ...(associatedResponse.data ?? []).map((candidate) =>
+            mapZohoCandidateToProviderApplication({
+              candidate,
+              fallbackJobId: jobId,
+              fallbackJobTitle: jobTitle,
+            }),
+          ),
+        );
+        associatedPage += 1;
+        hasMoreAssociatedRecords = Boolean(
+          associatedResponse.info?.more_records,
+        );
+      }
     }
 
     return {
