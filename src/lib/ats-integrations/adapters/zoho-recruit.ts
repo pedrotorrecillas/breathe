@@ -159,9 +159,12 @@ export const zohoRecruitAdapter: ATSAdapter = {
       };
     }
 
-    if (input.actionType === "candidate_note" || input.actionType === "status_comment") {
+    if (
+      input.actionType === "candidate_note" ||
+      input.actionType === "status_comment"
+    ) {
       const response = await client.request<Record<string, unknown>>(
-        `/recruit/v2/Candidates/${input.targetExternalCandidateId}/Notes`,
+        "/recruit/v2/Notes",
         {
           method: "POST",
           body: JSON.stringify({
@@ -169,6 +172,8 @@ export const zohoRecruitAdapter: ATSAdapter = {
               {
                 Note_Title: "Breathe interview report",
                 Note_Content: bodyFromWriteback(input),
+                Parent_Id: input.targetExternalCandidateId,
+                se_module: "Candidates",
               },
             ],
           }),

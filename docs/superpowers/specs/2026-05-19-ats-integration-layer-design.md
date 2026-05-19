@@ -171,7 +171,9 @@ export type ATSAdapter = {
   listApplications(
     input: ATSSyncInput,
   ): Promise<ATSSyncPage<ATSProviderApplication>>;
-  getCandidate(input: ATSCandidateLookupInput): Promise<ATSProviderCandidate | null>;
+  getCandidate(
+    input: ATSCandidateLookupInput,
+  ): Promise<ATSProviderCandidate | null>;
   writeback(input: ATSWritebackAction): Promise<ATSWritebackResult>;
 };
 ```
@@ -260,6 +262,10 @@ Use OAuth where possible. For the first demo, support `env_token` mode:
 The admin screen can display connection status and masked credentials, but the
 first implementation does not need a full OAuth install wizard.
 
+For demo readiness, `npm run test:smoke:zoho` runs a non-destructive live
+check when Zoho credentials are present. It validates the connection and reads
+jobs/applications; it skips automatically without credentials.
+
 ### Sync Surface
 
 Minimum Zoho sync:
@@ -277,8 +283,9 @@ assume that every provider has a native per-job stage pipeline.
 
 Minimum writebacks:
 
-- Add a candidate note or update a configured report field with the Breathe
-  interview summary.
+- Add a candidate note through `POST /recruit/v2/Notes` using `Parent_Id` and
+  `se_module: "Candidates"`, or update a configured report field with the
+  Breathe interview summary.
 - Change candidate/application status through Zoho's status endpoint.
 - Store writeback attempts and responses for auditability.
 

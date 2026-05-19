@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:smoke": "vitest run src/test/smoke",
+    "test:smoke:zoho": "vitest run src/test/smoke/zoho-recruit-ats.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
     "format": "prettier --check .",

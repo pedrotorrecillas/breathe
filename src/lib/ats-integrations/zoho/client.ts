@@ -13,6 +13,13 @@ export type ZohoRecruitClient = {
   request<TResponse>(path: string, init?: RequestInit): Promise<TResponse>;
 };
 
+type ZohoRefreshTokenResponse = {
+  access_token?: string;
+  expires_in?: number;
+  api_domain?: string;
+  token_type?: string;
+};
+
 export function getZohoRecruitConfigFromEnv(): ZohoRecruitConfig {
   return {
     accessToken: process.env.ZOHO_RECRUIT_ACCESS_TOKEN?.trim() || null,
@@ -33,24 +40,65 @@ function joinUrl(baseUrl: string, path: string) {
 }
 
 function sanitizedBody(value: string) {
-  return value.replace(/Zoho-oauthtoken\s+[A-Za-z0-9._-]+/g, "Zoho-oauthtoken [redacted]");
+  return value.replace(
+    /Zoho-oauthtoken\s+[A-Za-z0-9._-]+/g,
+    "Zoho-oauthtoken [redacted]",
+  );
+}
+
+async function refreshZohoRecruitAccessToken(config: ZohoRecruitConfig) {
+  if (!config.refreshToken || !config.clientId || !config.clientSecret) {
+    throw new Error(
+      "ZOHO_RECRUIT_ACCESS_TOKEN is required unless refresh token, client ID, and client secret are configured.",
+    );
+  }
+
+  const params = new URLSearchParams({
+    refresh_token: config.refreshToken,
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
+    grant_type: "refresh_token",
+  });
+  const response = await fetch(
+    joinUrl(config.accountsBaseUrl, `/oauth/v2/token?${params.toString()}`),
+    { method: "POST" },
+  );
+  const text = await response.text();
+  const body = text ? JSON.parse(text) : {};
+
+  if (!response.ok) {
+    throw new Error(
+      `Zoho Recruit token refresh failed with ${response.status}. ${sanitizedBody(
+        JSON.stringify(body),
+      )}`,
+    );
+  }
+
+  const tokenResponse = body as ZohoRefreshTokenResponse;
+  if (!tokenResponse.access_token) {
+    throw new Error(
+      "Zoho Recruit token refresh did not return an access token.",
+    );
+  }
+
+  return tokenResponse.access_token;
 }
 
 export function createZohoRecruitClient(
   _connection: ATSConnection,
   config = getZohoRecruitConfigFromEnv(),
 ): ZohoRecruitClient {
-  if (!config.accessToken) {
-    throw new Error("ZOHO_RECRUIT_ACCESS_TOKEN is required for Zoho Recruit sync.");
-  }
+  let accessToken = config.accessToken;
 
   return {
     async request<TResponse>(path: string, init?: RequestInit) {
+      accessToken ??= await refreshZohoRecruitAccessToken(config);
+
       const response = await fetch(joinUrl(config.apiBaseUrl, path), {
         ...init,
         headers: {
           Accept: "application/json",
-          Authorization: `Zoho-oauthtoken ${config.accessToken}`,
+          Authorization: `Zoho-oauthtoken ${accessToken}`,
           "Content-Type": "application/json",
           ...init?.headers,
         },
