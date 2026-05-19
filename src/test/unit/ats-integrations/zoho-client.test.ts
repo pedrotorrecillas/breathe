@@ -81,6 +81,86 @@ describe("Zoho Recruit client", () => {
     );
   });
 
+  it("refreshes and retries once when a configured access token has expired", async () => {
+    const fetchMock = vi.fn(async (url: string | URL, init?: RequestInit) => {
+      const href = String(url);
+
+      if (href === "https://recruit.zoho.com/recruit/v2/Job_Openings?per_page=1") {
+        const authorization = String(
+          (init?.headers as Record<string, string> | undefined)
+            ?.Authorization ?? "",
+        );
+
+        if (authorization === "Zoho-oauthtoken stale_access_token") {
+          return new Response(
+            JSON.stringify({
+              code: "INVALID_TOKEN",
+              message: "invalid oauth token",
+            }),
+            { status: 401 },
+          );
+        }
+
+        return new Response(JSON.stringify({ data: [] }), { status: 200 });
+      }
+
+      if (href.startsWith("https://accounts.zoho.eu/oauth/v2/token")) {
+        return new Response(
+          JSON.stringify({
+            access_token: "fresh_access_token",
+            api_domain: "https://recruit.zoho.com",
+            expires_in: 3600,
+            token_type: "Bearer",
+          }),
+          { status: 200 },
+        );
+      }
+
+      return new Response(JSON.stringify({ data: [] }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = createZohoRecruitClient(zohoConnection, {
+      accessToken: "stale_access_token",
+      refreshToken: "refresh_token",
+      clientId: "client_id",
+      clientSecret: "client_secret",
+      accountsBaseUrl: "https://accounts.zoho.eu",
+      apiBaseUrl: "https://recruit.zoho.com",
+    });
+
+    await expect(
+      client.request("/recruit/v2/Job_Openings?per_page=1", {
+        method: "GET",
+      }),
+    ).resolves.toEqual({ data: [] });
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "https://recruit.zoho.com/recruit/v2/Job_Openings?per_page=1",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Zoho-oauthtoken stale_access_token",
+        }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://accounts.zoho.eu/oauth/v2/token?refresh_token=refresh_token&client_id=client_id&client_secret=client_secret&grant_type=refresh_token",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      "https://recruit.zoho.com/recruit/v2/Job_Openings?per_page=1",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Zoho-oauthtoken fresh_access_token",
+        }),
+      }),
+    );
+  });
+
   it("creates candidate notes through the Zoho Notes module with the related candidate id", async () => {
     vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "access_token");
     const fetchMock = vi.fn(

@@ -94,23 +94,48 @@ export function createZohoRecruitClient(
   let accessToken = config.accessToken;
   let apiBaseUrl = config.apiBaseUrl;
 
+  async function ensureAccessToken() {
+    if (accessToken) {
+      return;
+    }
+
+    const refreshedToken = await refreshZohoRecruitAccessToken(config);
+    accessToken = refreshedToken.accessToken;
+    apiBaseUrl = refreshedToken.apiBaseUrl;
+  }
+
+  async function forceRefreshAccessToken() {
+    const refreshedToken = await refreshZohoRecruitAccessToken(config);
+    accessToken = refreshedToken.accessToken;
+    apiBaseUrl = refreshedToken.apiBaseUrl;
+  }
+
+  async function sendRequest(path: string, init?: RequestInit) {
+    await ensureAccessToken();
+
+    return fetch(joinUrl(apiBaseUrl, path), {
+      ...init,
+      headers: {
+        Accept: "application/json",
+        Authorization: `Zoho-oauthtoken ${accessToken}`,
+        "Content-Type": "application/json",
+        ...init?.headers,
+      },
+    });
+  }
+
   return {
     async request<TResponse>(path: string, init?: RequestInit) {
-      if (!accessToken) {
-        const refreshedToken = await refreshZohoRecruitAccessToken(config);
-        accessToken = refreshedToken.accessToken;
-        apiBaseUrl = refreshedToken.apiBaseUrl;
+      let response = await sendRequest(path, init);
+      if (
+        response.status === 401 &&
+        config.refreshToken &&
+        config.clientId &&
+        config.clientSecret
+      ) {
+        await forceRefreshAccessToken();
+        response = await sendRequest(path, init);
       }
-
-      const response = await fetch(joinUrl(apiBaseUrl, path), {
-        ...init,
-        headers: {
-          Accept: "application/json",
-          Authorization: `Zoho-oauthtoken ${accessToken}`,
-          "Content-Type": "application/json",
-          ...init?.headers,
-        },
-      });
 
       const text = await response.text();
       const body = text ? JSON.parse(text) : {};
