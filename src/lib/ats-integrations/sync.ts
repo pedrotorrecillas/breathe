@@ -4,6 +4,7 @@ import type {
   ATSCanonicalJob,
   ATSCanonicalStage,
   ATSSyncEvent,
+  ATSSyncResource,
 } from "@/domain/ats-integrations/types";
 import { getATSAdapter } from "@/lib/ats-integrations/registry";
 import type {
@@ -65,6 +66,60 @@ function upsertById<TRecord extends { id: string }>(
 
   records.push(record);
   return true;
+}
+
+function syncCursorId(input: { connectionId: string; resource: ATSSyncResource }) {
+  return `ats_cursor_${sanitizeIdPart(input.connectionId)}_${input.resource}`;
+}
+
+function getStoredSyncCursor(input: {
+  state: RuntimeStoreState;
+  companyId: string;
+  connectionId: string;
+  resource: ATSSyncResource;
+}) {
+  return (
+    input.state.atsSyncCursors.find(
+      (cursor) =>
+        cursor.companyId === input.companyId &&
+        cursor.connectionId === input.connectionId &&
+        cursor.resource === input.resource,
+    )?.cursor ?? null
+  );
+}
+
+function upsertSyncCursor(input: {
+  state: RuntimeStoreState;
+  companyId: string;
+  connectionId: string;
+  provider: ATSSyncEvent["provider"];
+  resource: ATSSyncResource;
+  cursor: string | null;
+  now: string;
+}) {
+  const id = syncCursorId({
+    connectionId: input.connectionId,
+    resource: input.resource,
+  });
+  const nextCursor = {
+    id,
+    companyId: input.companyId,
+    connectionId: input.connectionId,
+    provider: input.provider,
+    resource: input.resource,
+    cursor: input.cursor,
+    syncedUntil: input.now,
+    updatedAt: input.now,
+  };
+  const existingIndex = input.state.atsSyncCursors.findIndex(
+    (cursor) => cursor.id === id,
+  );
+
+  if (existingIndex >= 0) {
+    input.state.atsSyncCursors[existingIndex] = nextCursor;
+  } else {
+    input.state.atsSyncCursors.push(nextCursor);
+  }
 }
 
 function eventIdempotencyKey(input: {
@@ -370,7 +425,12 @@ export async function runATSSync(
       createdWorkflowRequests: 0,
     };
 
-    let jobsCursor: string | null = null;
+    let jobsCursor: string | null = getStoredSyncCursor({
+      state,
+      companyId: input.companyId,
+      connectionId: connection.id,
+      resource: "jobs",
+    });
     let hasMoreJobs = true;
 
     while (hasMoreJobs) {
@@ -439,7 +499,22 @@ export async function runATSSync(
       hasMoreJobs = jobsPage.hasMore && Boolean(jobsCursor);
     }
 
-    let applicationsCursor: string | null = null;
+    upsertSyncCursor({
+      state,
+      companyId: input.companyId,
+      connectionId: connection.id,
+      provider: connection.provider,
+      resource: "jobs",
+      cursor: jobsCursor,
+      now: input.now,
+    });
+
+    let applicationsCursor: string | null = getStoredSyncCursor({
+      state,
+      companyId: input.companyId,
+      connectionId: connection.id,
+      resource: "applications",
+    });
     let hasMoreApplications = true;
 
     while (hasMoreApplications) {
@@ -584,6 +659,16 @@ export async function runATSSync(
       hasMoreApplications =
         applicationsPage.hasMore && Boolean(applicationsCursor);
     }
+
+    upsertSyncCursor({
+      state,
+      companyId: input.companyId,
+      connectionId: connection.id,
+      provider: connection.provider,
+      resource: "applications",
+      cursor: applicationsCursor,
+      now: input.now,
+    });
 
     state.atsConnections = state.atsConnections.map((item) =>
       item.id === connection.id

@@ -163,4 +163,75 @@ describe("ATS sync pagination", () => {
       ),
     ).toEqual(["app_1", "app_2"]);
   });
+
+  it("starts sync from persisted cursors and stores the next checkpoint", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsSyncCursors.push(
+      {
+        id: "ats_cursor_ats_conn_1_jobs",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        resource: "jobs",
+        cursor: "jobs_checkpoint_1",
+        syncedUntil: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+      {
+        id: "ats_cursor_ats_conn_1_applications",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        resource: "applications",
+        cursor: "applications_checkpoint_1",
+        syncedUntil: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+    );
+    await saveRuntimeStoreState(state);
+
+    listJobs.mockResolvedValue({
+      records: [],
+      nextCursor: "jobs_checkpoint_2",
+      hasMore: false,
+    });
+    listStages.mockResolvedValue([]);
+    listApplications.mockResolvedValue({
+      records: [],
+      nextCursor: "applications_checkpoint_2",
+      hasMore: false,
+    });
+
+    await runATSSync({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      now: "2026-05-19T11:00:00.000Z",
+    });
+
+    expect(listJobs).toHaveBeenCalledWith(
+      expect.objectContaining({ cursor: "jobs_checkpoint_1" }),
+    );
+    expect(listApplications).toHaveBeenCalledWith(
+      expect.objectContaining({ cursor: "applications_checkpoint_1" }),
+    );
+    const afterSync = await loadRuntimeStoreState();
+    expect(afterSync.atsSyncCursors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "ats_cursor_ats_conn_1_jobs",
+          resource: "jobs",
+          cursor: "jobs_checkpoint_2",
+          syncedUntil: "2026-05-19T11:00:00.000Z",
+          updatedAt: "2026-05-19T11:00:00.000Z",
+        }),
+        expect.objectContaining({
+          id: "ats_cursor_ats_conn_1_applications",
+          resource: "applications",
+          cursor: "applications_checkpoint_2",
+          syncedUntil: "2026-05-19T11:00:00.000Z",
+          updatedAt: "2026-05-19T11:00:00.000Z",
+        }),
+      ]),
+    );
+  });
 });
