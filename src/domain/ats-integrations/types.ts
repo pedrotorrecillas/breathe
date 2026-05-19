@@ -37,6 +37,7 @@ export type ATSConnection = {
   lastError: string | null;
   createdAt: ISODateTimeString;
   updatedAt: ISODateTimeString;
+  writebackPolicy?: ATSWritebackPolicy;
 };
 
 export type ATSExternalRecordStatus =
@@ -215,6 +216,12 @@ export type ATSWritebackAction = {
   payload: ATSRawSnapshot;
   createdAt: ISODateTimeString;
   updatedAt: ISODateTimeString;
+};
+
+export type ATSWritebackPolicy = {
+  reportMode: "candidate_note" | "status_comment" | "disabled";
+  moveToExternalStageId: string | null;
+  requiresRecruiterReview: boolean;
 };
 
 export type ATSWritebackAttempt = {

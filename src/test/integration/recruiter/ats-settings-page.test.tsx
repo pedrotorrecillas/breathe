@@ -60,7 +60,10 @@ describe("ATS settings page", () => {
     expect(
       screen.getByRole("heading", { name: /ATS integrations/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Zoho Recruit/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Zoho Recruit/i).length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("button", { name: /Add Zoho Recruit/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Stage triggers/i)).toBeInTheDocument();
     expect(screen.getByText(/Writeback policy/i)).toBeInTheDocument();
   });
