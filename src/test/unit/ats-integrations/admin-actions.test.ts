@@ -360,6 +360,38 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("rejects trigger stages that are archived in the selected ATS connection", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsExternalStages = [
+      {
+        id: "ats_stage_archived",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalJobId: "mock_job_1",
+        externalId: "mock_stage_archived",
+        name: "Archived Screen",
+        category: "screening",
+        position: 1,
+        status: "archived_external",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { saveATSTriggerRuleAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("externalStageId", "mock_stage_archived");
+    formData.append("actions", "prepare_interview");
+
+    await expect(saveATSTriggerRuleAction(formData)).rejects.toThrow(
+      "Choose an active trigger stage from the selected ATS connection.",
+    );
+    expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
+  });
+
   it("backfills workflow requests for imported applications that already match a saved trigger", async () => {
     const state = await mockLoadRuntimeStoreState();
     state.atsWorkflowRequests = [];
@@ -603,7 +635,7 @@ describe("ATS admin actions", () => {
     formData.append("actions", "queue_interview");
 
     await expect(saveATSTriggerRuleAction(formData)).rejects.toThrow(
-      "Choose a trigger stage from the selected ATS connection.",
+      "Choose an active trigger stage from the selected ATS connection.",
     );
     expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
   });
@@ -1096,7 +1128,39 @@ describe("ATS admin actions", () => {
     formData.set("moveToExternalStageId", "mock_stage_hired");
 
     await expect(saveATSWritebackPolicyAction(formData)).rejects.toThrow(
-      "Choose a writeback target stage from the selected ATS connection.",
+      "Choose an active writeback target stage from the selected ATS connection.",
+    );
+    expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
+  });
+
+  it("rejects archived writeback target stages from the selected ATS connection", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsExternalStages = [
+      {
+        id: "ats_stage_archived",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalJobId: "mock_job_1",
+        externalId: "mock_stage_archived",
+        name: "Archived Shortlist",
+        category: "evaluation",
+        position: 3,
+        status: "archived_external",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { saveATSWritebackPolicyAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("reportMode", "candidate_note");
+    formData.set("moveToExternalStageId", "mock_stage_archived");
+
+    await expect(saveATSWritebackPolicyAction(formData)).rejects.toThrow(
+      "Choose an active writeback target stage from the selected ATS connection.",
     );
     expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
   });

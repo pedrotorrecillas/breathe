@@ -320,6 +320,31 @@ describe("ATS settings page", () => {
     );
   });
 
+  it("does not offer archived ATS stages in trigger or writeback selectors", async () => {
+    const snapshot = buildATSSnapshot();
+    snapshot.externalStages.push({
+      id: "ats_stage_archived",
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      externalJobId: "mock_job_store_associate",
+      externalId: "mock_stage_archived",
+      name: "Archived Screen",
+      category: "screening",
+      position: 6,
+      status: "archived_external",
+      lastSeenAt: "2026-05-19T10:00:00.000Z",
+      rawSnapshot: {},
+    });
+    atsSnapshotState.snapshot = snapshot;
+
+    render(await ATSSettingsPage());
+
+    expect(
+      screen.queryByRole("option", { name: /Archived Screen/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it("does not offer webhook sync for providers without webhook support", async () => {
     const snapshot = buildATSSnapshot();
     snapshot.connections[0] = {

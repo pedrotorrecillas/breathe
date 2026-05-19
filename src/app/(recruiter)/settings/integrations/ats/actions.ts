@@ -685,6 +685,9 @@ export async function saveATSTriggerRuleAction(
         stage.companyId === recruiter.company.id &&
         stage.connectionId === connection.id,
     );
+    const activeConnectionStages = connectionStages.filter(
+      (stage) => stage.status === "active",
+    );
     const connectionJobs = (state.atsExternalJobs ?? []).filter(
       (job) =>
         job.companyId === recruiter.company.id &&
@@ -693,10 +696,12 @@ export async function saveATSTriggerRuleAction(
 
     if (
       connectionStages.length > 0 &&
-      !connectionStages.some((stage) => stage.externalId === externalStageId)
+      !activeConnectionStages.some(
+        (stage) => stage.externalId === externalStageId,
+      )
     ) {
       throw new Error(
-        "Choose a trigger stage from the selected ATS connection.",
+        "Choose an active trigger stage from the selected ATS connection.",
       );
     }
 
@@ -1024,17 +1029,20 @@ export async function saveATSWritebackPolicyAction(
         stage.companyId === recruiter.company.id &&
         stage.connectionId === connection.id,
     );
+    const activeConnectionStages = connectionStages.filter(
+      (stage) => stage.status === "active",
+    );
 
     if (
       moveToExternalStageId &&
       connectionStages.length > 0 &&
       !stageMappingValueExistsInStages({
         mappingValue: moveToExternalStageId,
-        stages: connectionStages,
+        stages: activeConnectionStages,
       })
     ) {
       throw new Error(
-        "Choose a writeback target stage from the selected ATS connection.",
+        "Choose an active writeback target stage from the selected ATS connection.",
       );
     }
 
@@ -1044,12 +1052,12 @@ export async function saveATSWritebackPolicyAction(
       !mappedExternalStageIds.every((mappingValue) =>
         stageMappingValueExistsInStages({
           mappingValue,
-          stages: connectionStages,
+          stages: activeConnectionStages,
         }),
       )
     ) {
       throw new Error(
-        "Choose manual stage mappings from the selected ATS connection.",
+        "Choose active manual stage mappings from the selected ATS connection.",
       );
     }
 

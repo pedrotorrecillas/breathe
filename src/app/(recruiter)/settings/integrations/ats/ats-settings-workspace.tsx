@@ -233,14 +233,18 @@ export function ATSSettingsWorkspace({
   const triggerStages = useMemo(
     () =>
       snapshot.externalStages.filter(
-        (stage) => stage.connectionId === triggerConnectionId,
+        (stage) =>
+          stage.connectionId === triggerConnectionId &&
+          stage.status === "active",
       ),
     [snapshot.externalStages, triggerConnectionId],
   );
   const writebackStages = useMemo(
     () =>
       snapshot.externalStages.filter(
-        (stage) => stage.connectionId === writebackConnectionId,
+        (stage) =>
+          stage.connectionId === writebackConnectionId &&
+          stage.status === "active",
       ),
     [snapshot.externalStages, writebackConnectionId],
   );
