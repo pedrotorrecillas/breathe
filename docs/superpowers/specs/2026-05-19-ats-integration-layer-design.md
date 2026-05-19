@@ -338,7 +338,8 @@ Admin actions must be audited using the existing audit log pattern.
 6. System stores external candidates/applications and links to internal records
    when deterministic matches exist.
 7. System creates `ats_sync_events` for newly seen or changed applications.
-8. Trigger rules evaluate the events.
+8. Trigger rules evaluate application events and create idempotent
+   `ats_workflow_requests` for matching external stages/statuses.
 
 ### Incremental Sync
 

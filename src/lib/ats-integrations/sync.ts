@@ -17,6 +17,8 @@ import {
   saveRuntimeStoreState,
   type RuntimeStoreState,
 } from "@/lib/db/runtime-store";
+import { evaluateATSTriggerRules } from "@/lib/ats-integrations/triggers";
+import { buildATSWorkflowRequestsForEvent } from "@/lib/ats-integrations/workflow-requests";
 
 export type RunATSSyncResult = {
   importedJobs: number;
@@ -24,6 +26,7 @@ export type RunATSSyncResult = {
   importedApplications: number;
   importedStages: number;
   createdEvents: number;
+  createdWorkflowRequests: number;
 };
 
 type RunATSSyncInput = {
@@ -41,7 +44,11 @@ function sanitizeIdPart(value: string) {
   return value.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 }
 
-function canonicalRecordId(prefix: string, connectionId: string, externalId: string) {
+function canonicalRecordId(
+  prefix: string,
+  connectionId: string,
+  externalId: string,
+) {
   return `${prefix}_${sanitizeIdPart(connectionId)}_${sanitizeIdPart(externalId)}`;
 }
 
@@ -89,6 +96,54 @@ function appendSyncEventOnce(state: RuntimeStoreState, event: ATSSyncEvent) {
   return true;
 }
 
+function appendWorkflowRequestsForEvent(input: {
+  state: RuntimeStoreState;
+  event: ATSSyncEvent;
+  now: string;
+}) {
+  if (input.event.externalObjectType !== "application") {
+    return 0;
+  }
+
+  const matches = evaluateATSTriggerRules({
+    rules: input.state.atsTriggerRules,
+    event: input.event,
+  });
+
+  if (matches.length === 0) {
+    return 0;
+  }
+
+  const requests = buildATSWorkflowRequestsForEvent({
+    event: input.event,
+    matches,
+    now: input.now,
+  });
+  let createdCount = 0;
+
+  for (const request of requests) {
+    if (
+      input.state.atsWorkflowRequests.some((item) => item.id === request.id)
+    ) {
+      continue;
+    }
+
+    input.state.atsWorkflowRequests.push(request);
+    createdCount += 1;
+  }
+
+  input.state.atsSyncEvents = input.state.atsSyncEvents.map((item) =>
+    item.id === input.event.id
+      ? {
+          ...item,
+          processedAt: input.now,
+        }
+      : item,
+  );
+
+  return createdCount;
+}
+
 function canonicalJob(input: {
   companyId: string;
   connectionId: string;
@@ -97,7 +152,11 @@ function canonicalJob(input: {
   record: ATSProviderJob;
 }): ATSCanonicalJob {
   return {
-    id: canonicalRecordId("ats_job", input.connectionId, input.record.externalId),
+    id: canonicalRecordId(
+      "ats_job",
+      input.connectionId,
+      input.record.externalId,
+    ),
     companyId: input.companyId,
     connectionId: input.connectionId,
     provider: input.provider,
@@ -147,7 +206,11 @@ function canonicalStage(input: {
   record: ATSProviderStage;
 }): ATSCanonicalStage {
   return {
-    id: canonicalRecordId("ats_stage", input.connectionId, input.record.externalId),
+    id: canonicalRecordId(
+      "ats_stage",
+      input.connectionId,
+      input.record.externalId,
+    ),
     companyId: input.companyId,
     connectionId: input.connectionId,
     provider: input.provider,
@@ -248,7 +311,8 @@ export async function runATSSync(
 ): Promise<RunATSSyncResult> {
   const state = await loadRuntimeStoreState();
   const connection = state.atsConnections.find(
-    (item) => item.id === input.connectionId && item.companyId === input.companyId,
+    (item) =>
+      item.id === input.connectionId && item.companyId === input.companyId,
   );
 
   if (!connection) {
@@ -266,9 +330,14 @@ export async function runATSSync(
     importedApplications: 0,
     importedStages: 0,
     createdEvents: 0,
+    createdWorkflowRequests: 0,
   };
 
-  const jobsPage = await adapter.listJobs({ connection, cursor: null, limit: 200 });
+  const jobsPage = await adapter.listJobs({
+    connection,
+    cursor: null,
+    limit: 200,
+  });
   for (const job of jobsPage.records) {
     const record = canonicalJob({
       companyId: input.companyId,
@@ -281,26 +350,28 @@ export async function runATSSync(
       result.importedJobs += 1;
     }
 
-    if (
-      appendSyncEventOnce(
-        state,
-        buildEvent({
-          companyId: input.companyId,
-          connectionId: connection.id,
-          provider: connection.provider,
-          eventType: "job_seen",
-          externalObjectType: "job",
-          externalObjectId: job.externalId,
-          externalJobId: job.externalId,
-          externalCandidateId: null,
-          externalStageId: null,
-          occurredAt: input.now,
-          externalUpdatedAt: eventUpdatedAt(job),
-          payload: job.raw,
-        }),
-      )
-    ) {
+    const jobEvent = buildEvent({
+      companyId: input.companyId,
+      connectionId: connection.id,
+      provider: connection.provider,
+      eventType: "job_seen",
+      externalObjectType: "job",
+      externalObjectId: job.externalId,
+      externalJobId: job.externalId,
+      externalCandidateId: null,
+      externalStageId: null,
+      occurredAt: input.now,
+      externalUpdatedAt: eventUpdatedAt(job),
+      payload: job.raw,
+    });
+
+    if (appendSyncEventOnce(state, jobEvent)) {
       result.createdEvents += 1;
+      result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
+        state,
+        event: jobEvent,
+        now: input.now,
+      });
     }
 
     const stages = await adapter.listStages({
@@ -346,26 +417,28 @@ export async function runATSSync(
         result.importedCandidates += 1;
       }
 
-      if (
-        appendSyncEventOnce(
-          state,
-          buildEvent({
-            companyId: input.companyId,
-            connectionId: connection.id,
-            provider: connection.provider,
-            eventType: "candidate_seen",
-            externalObjectType: "candidate",
-            externalObjectId: candidate.externalId,
-            externalJobId: application.externalJobId,
-            externalCandidateId: candidate.externalId,
-            externalStageId: application.externalStageId,
-            occurredAt: input.now,
-            externalUpdatedAt: eventUpdatedAt(candidate),
-            payload: candidate.raw,
-          }),
-        )
-      ) {
+      const candidateEvent = buildEvent({
+        companyId: input.companyId,
+        connectionId: connection.id,
+        provider: connection.provider,
+        eventType: "candidate_seen",
+        externalObjectType: "candidate",
+        externalObjectId: candidate.externalId,
+        externalJobId: application.externalJobId,
+        externalCandidateId: candidate.externalId,
+        externalStageId: application.externalStageId,
+        occurredAt: input.now,
+        externalUpdatedAt: eventUpdatedAt(candidate),
+        payload: candidate.raw,
+      });
+
+      if (appendSyncEventOnce(state, candidateEvent)) {
         result.createdEvents += 1;
+        result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
+          state,
+          event: candidateEvent,
+          now: input.now,
+        });
       }
     }
 
@@ -380,26 +453,28 @@ export async function runATSSync(
       result.importedApplications += 1;
     }
 
-    if (
-      appendSyncEventOnce(
-        state,
-        buildEvent({
-          companyId: input.companyId,
-          connectionId: connection.id,
-          provider: connection.provider,
-          eventType: "application_seen",
-          externalObjectType: "application",
-          externalObjectId: application.externalId,
-          externalJobId: application.externalJobId,
-          externalCandidateId: application.externalCandidateId,
-          externalStageId: application.externalStageId,
-          occurredAt: input.now,
-          externalUpdatedAt: eventUpdatedAt(application),
-          payload: application.raw,
-        }),
-      )
-    ) {
+    const applicationEvent = buildEvent({
+      companyId: input.companyId,
+      connectionId: connection.id,
+      provider: connection.provider,
+      eventType: "application_seen",
+      externalObjectType: "application",
+      externalObjectId: application.externalId,
+      externalJobId: application.externalJobId,
+      externalCandidateId: application.externalCandidateId,
+      externalStageId: application.externalStageId,
+      occurredAt: input.now,
+      externalUpdatedAt: eventUpdatedAt(application),
+      payload: application.raw,
+    });
+
+    if (appendSyncEventOnce(state, applicationEvent)) {
       result.createdEvents += 1;
+      result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
+        state,
+        event: applicationEvent,
+        now: input.now,
+      });
     }
   }
 

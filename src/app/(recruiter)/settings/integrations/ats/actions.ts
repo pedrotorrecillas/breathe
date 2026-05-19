@@ -144,6 +144,7 @@ export async function runManualATSSyncAction(
       metadata: {
         importedApplications: String(result.importedApplications),
         createdEvents: String(result.createdEvents),
+        createdWorkflowRequests: String(result.createdWorkflowRequests),
       },
     });
     await saveRuntimeStoreState(state);
