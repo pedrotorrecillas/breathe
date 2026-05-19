@@ -135,6 +135,22 @@ function hasZohoRecruitCredentials() {
   );
 }
 
+function zohoRecruitSecretRef() {
+  if (process.env.ZOHO_RECRUIT_ACCESS_TOKEN?.trim()) {
+    return "env:ZOHO_RECRUIT_ACCESS_TOKEN";
+  }
+
+  if (
+    process.env.ZOHO_RECRUIT_REFRESH_TOKEN?.trim() &&
+    process.env.ZOHO_RECRUIT_CLIENT_ID?.trim() &&
+    process.env.ZOHO_RECRUIT_CLIENT_SECRET?.trim()
+  ) {
+    return "env:ZOHO_RECRUIT_REFRESH_TOKEN";
+  }
+
+  return "env:ZOHO_RECRUIT_ACCESS_TOKEN";
+}
+
 export function buildDefaultZohoDemoConnection(input: {
   companyId: string;
   now: string;
@@ -149,7 +165,7 @@ export function buildDefaultZohoDemoConnection(input: {
     syncMode: "manual",
     displayName: "Zoho Recruit demo",
     authMode: "env_token",
-    secretRef: "env:ZOHO_RECRUIT_ACCESS_TOKEN",
+    secretRef: zohoRecruitSecretRef(),
     externalAccountId: null,
     lastSyncAt: null,
     lastError: hasCredentials

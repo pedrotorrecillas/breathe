@@ -1,6 +1,9 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getATSAdminSnapshot } from "@/lib/ats-integrations/connections";
+import {
+  buildDefaultZohoDemoConnection,
+  getATSAdminSnapshot,
+} from "@/lib/ats-integrations/connections";
 import {
   loadRuntimeStoreState,
   resetRuntimeStoreState,
@@ -14,8 +17,31 @@ const recruiter = {
 } as Parameters<typeof getATSAdminSnapshot>[0];
 
 describe("ATS admin snapshot", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   beforeEach(async () => {
     await resetRuntimeStoreState();
+  });
+
+  it("points Zoho demo connections at the configured credential source", () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "");
+    vi.stubEnv("ZOHO_RECRUIT_REFRESH_TOKEN", "refresh_token");
+    vi.stubEnv("ZOHO_RECRUIT_CLIENT_ID", "client_id");
+    vi.stubEnv("ZOHO_RECRUIT_CLIENT_SECRET", "client_secret");
+
+    const connection = buildDefaultZohoDemoConnection({
+      companyId: "company_1",
+      now: "2026-05-19T10:00:00.000Z",
+    });
+
+    expect(connection).toMatchObject({
+      provider: "zoho_recruit",
+      status: "active",
+      secretRef: "env:ZOHO_RECRUIT_REFRESH_TOKEN",
+      lastError: null,
+    });
   });
 
   it("includes imported jobs and stages for admin trigger configuration", async () => {
