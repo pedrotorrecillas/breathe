@@ -389,10 +389,14 @@ export async function processATSWorkflowRequest(input: {
     };
   }
 
+  const syncEvent =
+    state.atsSyncEvents.find((item) => item.id === request.atsSyncEventId) ??
+    null;
   const atsApplication = state.atsExternalApplications.find(
     (item) =>
       item.companyId === request.companyId &&
-      item.externalId === request.externalApplicationId,
+      item.externalId === request.externalApplicationId &&
+      (!syncEvent || item.connectionId === syncEvent.connectionId),
   );
 
   if (!atsApplication) {

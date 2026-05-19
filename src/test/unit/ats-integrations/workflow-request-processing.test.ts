@@ -126,6 +126,64 @@ describe("ATS workflow request processing", () => {
     });
   });
 
+  it("imports the ATS application from the connection that produced the sync event", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsExternalApplications.unshift({
+      ...state.atsExternalApplications[0],
+      id: "ats_app_other_connection",
+      connectionId: "ats_conn_other",
+      externalCandidateId: "mock_candidate_wrong",
+      candidateName: "Wrong Candidate",
+      candidateEmail: "wrong@example.com",
+      candidatePhone: "+34 611 111 111",
+    });
+    state.atsSyncEvents.push({
+      id: "ats_evt_1",
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      eventType: "application_seen",
+      externalObjectType: "application",
+      externalObjectId: "mock_app_ana_store_associate",
+      externalJobId: "mock_job_store_associate",
+      externalCandidateId: "mock_candidate_ana",
+      externalStageId: "mock_stage_breathe_screen",
+      occurredAt: "2026-05-19T10:01:00.000Z",
+      processedAt: "2026-05-19T10:01:00.000Z",
+      idempotencyKey: "ats_conn_1:application_seen:mock_app_ana_store_associate",
+      payload: {},
+    });
+    await saveRuntimeStoreState(state);
+
+    const result = await processATSWorkflowRequest({
+      workflowRequestId: "ats_workflow_1",
+      now: "2026-05-19T10:03:00.000Z",
+      approved: true,
+    });
+
+    expect(result.status).toBe("completed");
+    const after = await loadRuntimeStoreState();
+    expect(after.candidates).toHaveLength(1);
+    expect(after.candidates[0]).toMatchObject({
+      fullName: "Ana Martin",
+      normalizedEmail: "ana@example.com",
+    });
+    expect(
+      after.atsExternalApplications.find((item) => item.id === "ats_app_1"),
+    ).toMatchObject({
+      internalCandidateId: after.candidates[0].id,
+      internalApplicationId: after.applications[0].id,
+    });
+    expect(
+      after.atsExternalApplications.find(
+        (item) => item.id === "ats_app_other_connection",
+      ),
+    ).toMatchObject({
+      internalCandidateId: null,
+      internalApplicationId: null,
+    });
+  });
+
   it("prepares and queues an interview when requested by the ATS trigger", async () => {
     const state = await loadRuntimeStoreState();
     state.atsWorkflowRequests[0] = {
