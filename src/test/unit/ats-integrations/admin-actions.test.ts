@@ -253,6 +253,36 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("rejects workflow approvals outside the recruiter's company", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsWorkflowRequests = [
+      {
+        id: "ats_workflow_other",
+        companyId: "company_2",
+        atsSyncEventId: "ats_evt_other",
+        atsTriggerRuleId: "ats_rule_other",
+        externalApplicationId: "mock_app_other",
+        internalCandidateId: null,
+        internalApplicationId: null,
+        requestedActions: ["import_candidate"],
+        requiresRecruiterApproval: true,
+        status: "queued",
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { approveATSWorkflowRequestAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("workflowRequestId", "ats_workflow_other");
+
+    await expect(approveATSWorkflowRequestAction(formData)).rejects.toThrow(
+      "ATS workflow request not found.",
+    );
+    expect(mockProcessATSWorkflowRequest).not.toHaveBeenCalled();
+  });
+
   it("dispatches queued ATS writeback actions", async () => {
     const { processATSWritebackActionAction } =
       await import("@/app/(recruiter)/settings/integrations/ats/actions");
@@ -274,6 +304,40 @@ describe("ATS admin actions", () => {
     expect(mockRevalidatePath).toHaveBeenCalledWith(
       "/settings/integrations/ats",
     );
+  });
+
+  it("rejects writeback dispatch outside the recruiter's company", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsWritebackActions = [
+      {
+        id: "ats_writeback_other",
+        companyId: "company_2",
+        connectionId: "ats_conn_other",
+        provider: "mock_ats",
+        actionType: "candidate_note",
+        targetExternalCandidateId: "mock_candidate_other",
+        targetExternalApplicationId: "mock_app_other",
+        targetExternalJobId: "mock_job_other",
+        targetExternalStageId: null,
+        sourceObjectType: "evaluation",
+        sourceObjectId: "eval_other",
+        status: "queued",
+        idempotencyKey: "other_key",
+        payload: { summary: "Other" },
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { processATSWritebackActionAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("writebackActionId", "ats_writeback_other");
+
+    await expect(processATSWritebackActionAction(formData)).rejects.toThrow(
+      "ATS writeback action not found.",
+    );
+    expect(mockProcessATSWritebackAction).not.toHaveBeenCalled();
   });
 
   it("tests an ATS connection and stores the provider health result", async () => {

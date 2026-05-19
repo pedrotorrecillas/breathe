@@ -59,6 +59,38 @@ function buildTriggerRuleId(input: {
   )}_${sanitizeATSRulePart(input.externalStageId)}`;
 }
 
+async function requireOwnedWorkflowRequest(input: {
+  workflowRequestId: string;
+  companyId: string;
+}) {
+  const state = await loadRuntimeStoreState();
+  const request = state.atsWorkflowRequests.find(
+    (item) =>
+      item.id === input.workflowRequestId &&
+      item.companyId === input.companyId,
+  );
+
+  if (!request) {
+    throw new Error("ATS workflow request not found.");
+  }
+}
+
+async function requireOwnedWritebackAction(input: {
+  writebackActionId: string;
+  companyId: string;
+}) {
+  const state = await loadRuntimeStoreState();
+  const action = state.atsWritebackActions.find(
+    (item) =>
+      item.id === input.writebackActionId &&
+      item.companyId === input.companyId,
+  );
+
+  if (!action) {
+    throw new Error("ATS writeback action not found.");
+  }
+}
+
 export async function createMockATSConnectionAction(
   formData: FormData,
 ): Promise<void> {
@@ -350,6 +382,11 @@ export async function approveATSWorkflowRequestAction(
       throw new Error("Choose an ATS workflow request to approve.");
     }
 
+    await requireOwnedWorkflowRequest({
+      workflowRequestId,
+      companyId: recruiter.company.id,
+    });
+
     const processed = await processATSWorkflowRequest({
       workflowRequestId,
       now: new Date().toISOString(),
@@ -392,6 +429,11 @@ export async function processATSWritebackActionAction(
     if (!writebackActionId) {
       throw new Error("Choose an ATS writeback action to process.");
     }
+
+    await requireOwnedWritebackAction({
+      writebackActionId,
+      companyId: recruiter.company.id,
+    });
 
     const processed = await processATSWritebackAction({
       writebackActionId,
