@@ -230,6 +230,42 @@ describe("Zoho Recruit client", () => {
     });
   });
 
+  it("marks Zoho writebacks as retryable when the provider returns no result entries", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "access_token");
+    const fetchMock = vi.fn(
+      async () => new Response(JSON.stringify({ data: [] }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await zohoRecruitAdapter.writeback({
+      connection: zohoConnection,
+      action: {
+        id: "ats_writeback_empty_result",
+        companyId: "company_1",
+        connectionId: "ats_conn_zoho",
+        provider: "zoho_recruit",
+        actionType: "candidate_note",
+        targetExternalCandidateId: "58431000000054321",
+        targetExternalApplicationId: "58431000000054321",
+        targetExternalJobId: null,
+        targetExternalStageId: null,
+        sourceObjectType: "evaluation",
+        sourceObjectId: "eval_1",
+        status: "queued",
+        idempotencyKey: "empty_result",
+        payload: { body: "Breathe interview summary" },
+        createdAt: "2026-05-19T12:00:00.000Z",
+        updatedAt: "2026-05-19T12:00:00.000Z",
+      },
+    });
+
+    expect(result).toMatchObject({
+      status: "retryable_error",
+      providerStatusCode: 200,
+      errorMessage: "Zoho Recruit writeback returned no result entries.",
+    });
+  });
+
   it("returns terminal errors without calling Zoho when writeback targets are missing", async () => {
     vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "access_token");
     const fetchMock = vi.fn(

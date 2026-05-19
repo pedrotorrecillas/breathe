@@ -122,7 +122,18 @@ function mapAssociatedZohoCandidateToProviderApplication(input: {
 function resultFromZohoWritebackResponse(
   response: Record<string, unknown>,
 ): ATSWritebackResult {
-  const failedEntry = flattenZohoDataEntries(response.data).find((entry) => {
+  const entries = flattenZohoDataEntries(response.data);
+
+  if (entries.length === 0) {
+    return {
+      status: "retryable_error",
+      providerStatusCode: 200,
+      providerResponse: response,
+      errorMessage: "Zoho Recruit writeback returned no result entries.",
+    };
+  }
+
+  const failedEntry = entries.find((entry) => {
     const status = typeof entry.status === "string" ? entry.status : null;
     const code = typeof entry.code === "string" ? entry.code : null;
 
