@@ -148,6 +148,11 @@ describe("ATS settings page", () => {
     expect(
       screen.getAllByRole("option", { name: /Breathe Screen/i }).length,
     ).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("checkbox", {
+        name: /Review writebacks before sending/i,
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Test$/i })).toBeInTheDocument();
   });
 });

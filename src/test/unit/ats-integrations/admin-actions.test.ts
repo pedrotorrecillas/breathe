@@ -45,8 +45,7 @@ vi.mock("@/lib/ats-integrations/writeback", () => ({
 
 vi.mock("@/lib/ats-integrations/registry", () => ({
   getATSAdapter: () => ({
-    validateConnection: (...args: unknown[]) =>
-      mockValidateConnection(...args),
+    validateConnection: (...args: unknown[]) => mockValidateConnection(...args),
   }),
 }));
 
@@ -292,6 +291,32 @@ describe("ATS admin actions", () => {
     );
     expect(mockRevalidatePath).toHaveBeenCalledWith(
       "/settings/integrations/ats",
+    );
+  });
+
+  it("saves writeback policy review settings from admin", async () => {
+    const { saveATSWritebackPolicyAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("reportMode", "status_comment");
+    formData.set("moveToExternalStageId", "mock_stage_shortlisted");
+
+    await saveATSWritebackPolicyAction(formData);
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsConnections[0].writebackPolicy).toEqual({
+      reportMode: "status_comment",
+      moveToExternalStageId: "mock_stage_shortlisted",
+      requiresRecruiterReview: false,
+    });
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ats.writeback_policy_saved",
+        metadata: expect.objectContaining({
+          requiresRecruiterReview: false,
+        }),
+      }),
     );
   });
 });

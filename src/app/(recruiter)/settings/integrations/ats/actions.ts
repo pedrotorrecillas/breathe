@@ -224,9 +224,7 @@ export async function testATSConnectionAction(
     revalidatePath("/settings/integrations/ats");
   } catch (error) {
     throw new Error(
-      error instanceof Error
-        ? error.message
-        : "Could not test ATS connection.",
+      error instanceof Error ? error.message : "Could not test ATS connection.",
     );
   }
 }
@@ -415,6 +413,8 @@ export async function saveATSWritebackPolicyAction(
     const reportModeValue = String(formData.get("reportMode") ?? "");
     const moveToExternalStageId =
       String(formData.get("moveToExternalStageId") ?? "").trim() || null;
+    const requiresRecruiterReview =
+      formData.get("requiresRecruiterReview") === "on";
     const reportMode: ATSWritebackPolicy["reportMode"] =
       reportModeValue === "status_comment" || reportModeValue === "disabled"
         ? reportModeValue
@@ -437,7 +437,7 @@ export async function saveATSWritebackPolicyAction(
     const policy: ATSWritebackPolicy = {
       reportMode,
       moveToExternalStageId,
-      requiresRecruiterReview: true,
+      requiresRecruiterReview,
     };
 
     state.atsConnections = state.atsConnections.map((item) =>
@@ -461,6 +461,7 @@ export async function saveATSWritebackPolicyAction(
         provider: connection.provider,
         reportMode,
         moveToExternalStageId,
+        requiresRecruiterReview,
       },
     });
     await saveRuntimeStoreState(state);

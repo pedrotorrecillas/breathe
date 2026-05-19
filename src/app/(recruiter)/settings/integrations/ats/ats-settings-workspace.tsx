@@ -376,6 +376,15 @@ export function ATSSettingsWorkspace({
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm"
               />
             )}
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                name="requiresRecruiterReview"
+                defaultChecked
+                className="size-4 rounded border-slate-300"
+              />
+              Review writebacks before sending
+            </label>
             <button
               type="submit"
               className="w-fit rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700"
