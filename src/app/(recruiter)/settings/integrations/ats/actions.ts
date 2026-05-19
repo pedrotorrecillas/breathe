@@ -602,6 +602,12 @@ export async function saveATSWritebackPolicyAction(
       throw new Error("ATS connection not found.");
     }
 
+    if (reportMode === "status_comment" && !moveToExternalStageId) {
+      throw new Error(
+        "Choose a writeback target stage before writing reports as status comments.",
+      );
+    }
+
     const adapter = getATSAdapter(connection.provider);
     if (
       reportMode === "candidate_note" &&

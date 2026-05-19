@@ -308,8 +308,15 @@ export function enqueueATSWritebacksForEvaluation(input: {
       const policy = connection?.writebackPolicy ?? defaultWritebackPolicy;
       const actionTypes: ATSWritebackActionType[] = [];
 
-      if (policy.reportMode !== "disabled") {
-        actionTypes.push(policy.reportMode);
+      if (policy.reportMode === "candidate_note") {
+        actionTypes.push("candidate_note");
+      }
+
+      if (
+        policy.reportMode === "status_comment" &&
+        !policy.moveToExternalStageId
+      ) {
+        actionTypes.push("status_comment");
       }
 
       if (policy.moveToExternalStageId) {

@@ -314,7 +314,7 @@ describe("ATS workflow requests", () => {
     expect(actions[0].payload.body).toContain("- Team communication (Low)");
   });
 
-  it("honors the admin writeback policy for report mode and stage movement", () => {
+  it("uses status comment report mode as the stage move comment payload", () => {
     const actions = enqueueATSWritebacksForEvaluation({
       evaluation,
       interviewRun,
@@ -332,16 +332,14 @@ describe("ATS workflow requests", () => {
       now: "2026-05-19T11:01:00.000Z",
     });
 
-    expect(actions).toHaveLength(2);
-    expect(actions.map((action) => action.actionType)).toEqual([
-      "status_comment",
-      "application_stage_move",
-    ]);
-    expect(actions[1]).toMatchObject({
+    expect(actions).toHaveLength(1);
+    expect(actions[0]).toMatchObject({
+      actionType: "application_stage_move",
       targetExternalCandidateId: "mock_candidate_ana",
       targetExternalApplicationId: "mock_app_1",
       targetExternalStageId: "mock_stage_interview_completed",
     });
+    expect(actions[0].payload.body).toContain("Breathe interview report");
   });
 
   it("does not enqueue report writeback when the admin policy disables reports", () => {

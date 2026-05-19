@@ -89,7 +89,7 @@ function stageMovePayload(action: ATSWritebackAction) {
       ? { jobids: [action.targetExternalJobId] }
       : {}),
     Candidate_Status: action.targetExternalStageId,
-    comments: "Updated by Breathe.",
+    comments: bodyFromWriteback(action),
   };
 }
 
