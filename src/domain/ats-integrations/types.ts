@@ -148,6 +148,7 @@ export type ATSSyncEventType =
   | "candidate_seen"
   | "application_seen"
   | "application_stage_changed"
+  | "provider_webhook_received"
   | "external_record_archived";
 
 export type ATSSyncEvent = {
@@ -156,7 +157,12 @@ export type ATSSyncEvent = {
   connectionId: EntityId;
   provider: ATSProviderKey;
   eventType: ATSSyncEventType;
-  externalObjectType: "job" | "candidate" | "application" | "stage";
+  externalObjectType:
+    | "job"
+    | "candidate"
+    | "application"
+    | "stage"
+    | "provider_webhook";
   externalObjectId: string;
   externalJobId: string | null;
   externalCandidateId: string | null;

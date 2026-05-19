@@ -1,11 +1,136 @@
+import { createHash } from "node:crypto";
+
 import { NextResponse } from "next/server";
 
-import { isATSProviderKey } from "@/domain/ats-integrations/types";
+import {
+  isATSProviderKey,
+  type ATSProviderKey,
+  type ATSSyncEvent,
+} from "@/domain/ats-integrations/types";
 import { getATSAdapter } from "@/lib/ats-integrations/registry";
+import {
+  loadRuntimeStoreState,
+  saveRuntimeStoreState,
+  type RuntimeStoreState,
+} from "@/lib/db/runtime-store";
 
 type ATSWebhookRouteContext = {
   params: Promise<{ provider: string }>;
 };
+
+function sanitizeIdPart(value: string) {
+  return value.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function stringField(payload: Record<string, unknown>, key: string) {
+  const value = payload[key];
+
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function webhookObjectType(
+  payload: Record<string, unknown>,
+): ATSSyncEvent["externalObjectType"] {
+  const value = stringField(payload, "objectType");
+
+  return value === "job" ||
+    value === "candidate" ||
+    value === "application" ||
+    value === "stage"
+    ? value
+    : "provider_webhook";
+}
+
+function webhookBodyHash(body: string) {
+  return createHash("sha256").update(body).digest("hex");
+}
+
+function webhookEventId(payload: Record<string, unknown>, body: string) {
+  return (
+    stringField(payload, "id") ??
+    stringField(payload, "eventId") ??
+    stringField(payload, "webhookEventId") ??
+    webhookBodyHash(body)
+  );
+}
+
+function findWebhookConnection(input: {
+  state: RuntimeStoreState;
+  provider: ATSProviderKey;
+  payload: Record<string, unknown>;
+}) {
+  const payloadConnectionId = stringField(input.payload, "connectionId");
+  const activeConnections = input.state.atsConnections.filter(
+    (connection) =>
+      connection.provider === input.provider && connection.status === "active",
+  );
+
+  if (payloadConnectionId) {
+    return activeConnections.find(
+      (connection) => connection.id === payloadConnectionId,
+    );
+  }
+
+  return activeConnections.length === 1 ? activeConnections[0] : null;
+}
+
+async function persistWebhookEvent(input: {
+  provider: ATSProviderKey;
+  payload: Record<string, unknown>;
+  body: string;
+}) {
+  const state = await loadRuntimeStoreState();
+  const connection = findWebhookConnection({
+    state,
+    provider: input.provider,
+    payload: input.payload,
+  });
+
+  if (!connection) {
+    return { persisted: false, duplicate: false };
+  }
+
+  const eventId = webhookEventId(input.payload, input.body);
+  const objectType = webhookObjectType(input.payload);
+  const externalObjectId =
+    stringField(input.payload, "objectId") ??
+    stringField(input.payload, "externalObjectId") ??
+    eventId;
+  const idempotencyKey = [
+    connection.id,
+    "provider_webhook_received",
+    input.provider,
+    eventId,
+  ].join(":");
+  const duplicate = state.atsSyncEvents.some(
+    (event) => event.idempotencyKey === idempotencyKey,
+  );
+
+  if (duplicate) {
+    return { persisted: true, duplicate: true };
+  }
+
+  state.atsSyncEvents.push({
+    id: `ats_evt_webhook_${sanitizeIdPart(idempotencyKey)}`,
+    companyId: connection.companyId,
+    connectionId: connection.id,
+    provider: input.provider,
+    eventType: "provider_webhook_received",
+    externalObjectType: objectType,
+    externalObjectId,
+    externalJobId: stringField(input.payload, "externalJobId"),
+    externalCandidateId: stringField(input.payload, "externalCandidateId"),
+    externalStageId: stringField(input.payload, "externalStageId"),
+    occurredAt: new Date().toISOString(),
+    processedAt: null,
+    idempotencyKey,
+    payload: input.payload,
+  });
+
+  await saveRuntimeStoreState(state);
+
+  return { persisted: true, duplicate: false };
+}
 
 export async function POST(request: Request, context: ATSWebhookRouteContext) {
   const { provider } = await context.params;
@@ -17,7 +142,14 @@ export async function POST(request: Request, context: ATSWebhookRouteContext) {
     );
   }
 
-  const payload = await request.json().catch(() => null);
+  const body = await request.text();
+  const payload = (() => {
+    try {
+      return JSON.parse(body) as unknown;
+    } catch {
+      return null;
+    }
+  })();
 
   if (!payload || typeof payload !== "object") {
     return NextResponse.json(
@@ -25,6 +157,7 @@ export async function POST(request: Request, context: ATSWebhookRouteContext) {
       { status: 400 },
     );
   }
+  const webhookPayload = payload as Record<string, unknown>;
 
   let adapter;
   try {
@@ -48,10 +181,17 @@ export async function POST(request: Request, context: ATSWebhookRouteContext) {
     );
   }
 
+  const persistence = await persistWebhookEvent({
+    provider,
+    payload: webhookPayload,
+    body,
+  });
+
   return NextResponse.json(
     {
       status: "accepted",
       provider,
+      ...persistence,
     },
     { status: 202 },
   );
