@@ -24,6 +24,14 @@ describe("Zoho Recruit client", () => {
     vi.unstubAllEnvs();
   });
 
+  it("only advertises writeback capabilities implemented by the Zoho adapter", () => {
+    expect(zohoRecruitAdapter.capabilities).toMatchObject({
+      supportsCandidateNotes: true,
+      supportsStageMove: true,
+      supportsCustomFields: false,
+    });
+  });
+
   it("refreshes an access token before calling Recruit when only refresh credentials are configured", async () => {
     const fetchMock = vi.fn(async (url: string | URL) => {
       const href = String(url);

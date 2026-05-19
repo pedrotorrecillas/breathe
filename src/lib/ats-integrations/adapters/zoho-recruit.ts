@@ -161,7 +161,7 @@ export const zohoRecruitAdapter: ATSAdapter = {
     supportsCandidateNotes: true,
     supportsReportLinks: false,
     supportsStageMove: true,
-    supportsCustomFields: true,
+    supportsCustomFields: false,
     supportsAttachments: false,
   },
   async validateConnection(input) {
