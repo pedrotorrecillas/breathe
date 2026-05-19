@@ -123,6 +123,56 @@ describe("Zoho Recruit client", () => {
     );
   });
 
+  it("moves Zoho candidate status for the associated job opening when available", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "access_token");
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ data: [[{ status: "success" }]] }), {
+          status: 200,
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await zohoRecruitAdapter.writeback({
+      connection: zohoConnection,
+      action: {
+        id: "ats_writeback_stage_1",
+        companyId: "company_1",
+        connectionId: "ats_conn_zoho",
+        provider: "zoho_recruit",
+        actionType: "application_stage_move",
+        targetExternalCandidateId: "58431000000054321",
+        targetExternalApplicationId: "58431000000054321:58431000000012345",
+        targetExternalJobId: "58431000000012345",
+        targetExternalStageId: "Interview Completed",
+        sourceObjectType: "evaluation",
+        sourceObjectId: "eval_1",
+        status: "queued",
+        idempotencyKey: "key",
+        payload: { summary: "Great: 86" },
+        createdAt: "2026-05-19T12:00:00.000Z",
+        updatedAt: "2026-05-19T12:00:00.000Z",
+      },
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://recruit.zoho.com/recruit/v2/Candidates/status",
+      expect.objectContaining({
+        method: "PUT",
+        body: JSON.stringify({
+          data: [
+            {
+              ids: ["58431000000054321"],
+              jobids: ["58431000000012345"],
+              Candidate_Status: "Interview Completed",
+              comments: "Updated by Breathe.",
+            },
+          ],
+        }),
+      }),
+    );
+  });
+
   it("maps adapter cursors to Zoho list record pages", async () => {
     vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "access_token");
     const fetchMock = vi.fn(async (url: string | URL) => {

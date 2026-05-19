@@ -79,6 +79,17 @@ function nextZohoCursor(input: {
   return String((input.response.info.page ?? input.currentPage) + 1);
 }
 
+function stageMovePayload(action: ATSWritebackAction) {
+  return {
+    ids: [action.targetExternalCandidateId],
+    ...(action.targetExternalJobId
+      ? { jobids: [action.targetExternalJobId] }
+      : {}),
+    Candidate_Status: action.targetExternalStageId,
+    comments: "Updated by Breathe.",
+  };
+}
+
 export const zohoRecruitAdapter: ATSAdapter = {
   provider: "zoho_recruit",
   capabilities: {
@@ -217,13 +228,7 @@ export const zohoRecruitAdapter: ATSAdapter = {
         {
           method: "PUT",
           body: JSON.stringify({
-            data: [
-              {
-                ids: [action.targetExternalCandidateId],
-                Candidate_Status: action.targetExternalStageId,
-                comments: "Updated by Breathe.",
-              },
-            ],
+            data: [stageMovePayload(action)],
           }),
         },
       );
