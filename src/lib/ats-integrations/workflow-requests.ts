@@ -265,6 +265,8 @@ export function buildATSWorkflowRequestsForEvent(input: {
   return input.matches.map((match) => ({
     id: `ats_workflow_${input.event.id}_${match.ruleId}`,
     companyId: input.event.companyId,
+    connectionId: input.event.connectionId,
+    provider: input.event.provider,
     atsSyncEventId: input.event.id,
     atsTriggerRuleId: match.ruleId,
     externalApplicationId: input.event.externalObjectId,
@@ -394,11 +396,12 @@ export async function processATSWorkflowRequest(input: {
   const syncEvent =
     state.atsSyncEvents.find((item) => item.id === request.atsSyncEventId) ??
     null;
+  const requestConnectionId = request.connectionId ?? syncEvent?.connectionId;
   const atsApplication = state.atsExternalApplications.find(
     (item) =>
       item.companyId === request.companyId &&
       item.externalId === request.externalApplicationId &&
-      (!syncEvent || item.connectionId === syncEvent.connectionId),
+      (!requestConnectionId || item.connectionId === requestConnectionId),
   );
 
   if (!atsApplication) {

@@ -244,6 +244,8 @@ export type ATSWritebackResult = {
 export type ATSWorkflowRequest = {
   id: EntityId;
   companyId: EntityId;
+  connectionId: EntityId;
+  provider: ATSProviderKey;
   atsSyncEventId: EntityId;
   atsTriggerRuleId: EntityId;
   externalApplicationId: string;

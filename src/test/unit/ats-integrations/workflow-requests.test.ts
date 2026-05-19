@@ -153,6 +153,8 @@ describe("ATS workflow requests", () => {
       {
         id: "ats_workflow_ats_evt_1_rule_1",
         companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
         atsSyncEventId: "ats_evt_1",
         atsTriggerRuleId: "rule_1",
         externalApplicationId: "mock_app_1",

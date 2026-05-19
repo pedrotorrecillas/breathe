@@ -188,6 +188,7 @@ function appendWorkflowRequestsForEvent(input: {
         (item) =>
           item.id === request.id ||
           (item.atsTriggerRuleId === request.atsTriggerRuleId &&
+            item.connectionId === request.connectionId &&
             item.externalApplicationId === request.externalApplicationId),
       )
     ) {

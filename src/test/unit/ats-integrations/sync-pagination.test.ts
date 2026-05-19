@@ -237,6 +237,129 @@ describe("ATS sync pagination", () => {
     );
   });
 
+  it("creates workflow requests for reused external application ids on different connections", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsConnections.push({
+      id: "ats_conn_2",
+      companyId: "company_1",
+      provider: "mock_ats",
+      status: "active",
+      displayName: "Second Mock ATS",
+      authMode: "mock",
+      secretRef: null,
+      externalAccountId: "mock_account_2",
+      lastSyncAt: null,
+      lastError: null,
+      createdAt: "2026-05-19T10:00:00.000Z",
+      updatedAt: "2026-05-19T10:00:00.000Z",
+    });
+    state.atsTriggerRules.push(
+      {
+        id: "legacy_rule_shared",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        name: "Shared legacy rule",
+        enabled: true,
+        externalJobId: "job_shared",
+        externalStageId: "screening",
+        actions: ["import_candidate"],
+        requiresRecruiterApproval: true,
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+      {
+        id: "legacy_rule_shared",
+        companyId: "company_1",
+        connectionId: "ats_conn_2",
+        provider: "mock_ats",
+        name: "Shared legacy rule",
+        enabled: true,
+        externalJobId: "job_shared",
+        externalStageId: "screening",
+        actions: ["import_candidate"],
+        requiresRecruiterApproval: true,
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+    );
+    await saveRuntimeStoreState(state);
+
+    const syncPayload = {
+      jobs: {
+        records: [
+          {
+            externalId: "job_shared",
+            externalUrl: null,
+            title: "Shared Job",
+            status: "active",
+            externalUpdatedAt: "2026-05-19T10:00:00.000Z",
+            raw: {},
+          },
+        ],
+        nextCursor: null,
+        hasMore: false,
+      },
+      applications: {
+        records: [
+          {
+            externalId: "app_shared",
+            externalCandidateId: "candidate_shared",
+            externalJobId: "job_shared",
+            externalStageId: "screening",
+            externalUrl: null,
+            candidateName: "Ana Martin",
+            candidateEmail: "ana@example.com",
+            candidatePhone: null,
+            jobTitle: "Shared Job",
+            stageName: "Screening",
+            stageCategory: "screening",
+            status: "active",
+            externalUpdatedAt: "2026-05-19T10:00:00.000Z",
+            raw: {},
+          },
+        ],
+        nextCursor: null,
+        hasMore: false,
+      },
+    };
+    listStages.mockResolvedValue([]);
+    getCandidate.mockResolvedValue(null);
+
+    listJobs.mockResolvedValueOnce(syncPayload.jobs);
+    listApplications.mockResolvedValueOnce(syncPayload.applications);
+    const first = await runATSSync({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      now: "2026-05-19T11:00:00.000Z",
+    });
+
+    listJobs.mockResolvedValueOnce(syncPayload.jobs);
+    listApplications.mockResolvedValueOnce(syncPayload.applications);
+    const second = await runATSSync({
+      companyId: "company_1",
+      connectionId: "ats_conn_2",
+      now: "2026-05-19T11:01:00.000Z",
+    });
+
+    expect(first.createdWorkflowRequests).toBe(1);
+    expect(second.createdWorkflowRequests).toBe(1);
+    const afterSync = await loadRuntimeStoreState();
+    expect(afterSync.atsWorkflowRequests).toHaveLength(2);
+    expect(afterSync.atsWorkflowRequests).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          connectionId: "ats_conn_1",
+          externalApplicationId: "app_shared",
+        }),
+        expect.objectContaining({
+          connectionId: "ats_conn_2",
+          externalApplicationId: "app_shared",
+        }),
+      ]),
+    );
+  });
+
   it("starts sync from persisted cursors and stores the next checkpoint", async () => {
     const state = await loadRuntimeStoreState();
     state.atsSyncCursors.push(
