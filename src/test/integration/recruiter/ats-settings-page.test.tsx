@@ -1,49 +1,14 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ATSSettingsPage from "@/app/(recruiter)/settings/integrations/ats/page";
 
-vi.mock("@/lib/auth/server", () => ({
-  requireAuthenticatedRecruiter: vi.fn(async () => ({
-    user: {
-      id: "user_1",
-      displayName: "Recruiter Admin",
-      email: "admin@example.com",
-      authProvider: "password",
-    },
-    company: {
-      id: "company_1",
-      slug: "nacar",
-      name: "Nacar",
-      defaultWorkspaceKey: null,
-    },
-    membership: {
-      id: "membership_1",
-      companyId: "company_1",
-      userId: "user_1",
-      role: "owner",
-      workspaceKey: null,
-    },
-    session: {
-      id: "session_1",
-      userId: "user_1",
-      companyId: "company_1",
-      membershipId: "membership_1",
-      tokenHash: "hash",
-      activeWorkspaceKey: null,
-      expiresAt: "2026-05-20T10:00:00.000Z",
-      createdAt: "2026-05-19T10:00:00.000Z",
-      lastSeenAt: "2026-05-19T10:00:00.000Z",
-    },
-  })),
+const atsSnapshotState = vi.hoisted(() => ({
+  snapshot: null as unknown,
 }));
 
-vi.mock("@/lib/team-access", () => ({
-  recruiterCanManageTeams: vi.fn(() => true),
-}));
-
-vi.mock("@/lib/ats-integrations/connections", () => ({
-  getATSAdminSnapshot: vi.fn(async () => ({
+function buildATSSnapshot() {
+  return {
     connections: [
       {
         id: "ats_conn_1",
@@ -130,13 +95,87 @@ vi.mock("@/lib/ats-integrations/connections", () => ({
       },
     ],
     availableProviders: [
-      { provider: "mock_ats", label: "Mock ATS", implemented: true },
-      { provider: "zoho_recruit", label: "Zoho Recruit", implemented: true },
+      {
+        provider: "mock_ats",
+        label: "Mock ATS",
+        implemented: true,
+        capabilities: {
+          supportsWebhooks: true,
+          supportsPolling: true,
+          supportsCandidateNotes: true,
+          supportsReportLinks: true,
+          supportsStageMove: true,
+          supportsCustomFields: true,
+          supportsAttachments: false,
+        },
+      },
+      {
+        provider: "zoho_recruit",
+        label: "Zoho Recruit",
+        implemented: true,
+        capabilities: {
+          supportsWebhooks: false,
+          supportsPolling: true,
+          supportsCandidateNotes: true,
+          supportsReportLinks: false,
+          supportsStageMove: true,
+          supportsCustomFields: true,
+          supportsAttachments: false,
+        },
+      },
     ],
+  };
+}
+
+vi.mock("@/lib/auth/server", () => ({
+  requireAuthenticatedRecruiter: vi.fn(async () => ({
+    user: {
+      id: "user_1",
+      displayName: "Recruiter Admin",
+      email: "admin@example.com",
+      authProvider: "password",
+    },
+    company: {
+      id: "company_1",
+      slug: "nacar",
+      name: "Nacar",
+      defaultWorkspaceKey: null,
+    },
+    membership: {
+      id: "membership_1",
+      companyId: "company_1",
+      userId: "user_1",
+      role: "owner",
+      workspaceKey: null,
+    },
+    session: {
+      id: "session_1",
+      userId: "user_1",
+      companyId: "company_1",
+      membershipId: "membership_1",
+      tokenHash: "hash",
+      activeWorkspaceKey: null,
+      expiresAt: "2026-05-20T10:00:00.000Z",
+      createdAt: "2026-05-19T10:00:00.000Z",
+      lastSeenAt: "2026-05-19T10:00:00.000Z",
+    },
   })),
 }));
 
+vi.mock("@/lib/team-access", () => ({
+  recruiterCanManageTeams: vi.fn(() => true),
+}));
+
+vi.mock("@/lib/ats-integrations/connections", () => ({
+  getATSAdminSnapshot: vi.fn(async () => atsSnapshotState.snapshot),
+}));
+
 describe("ATS settings page", () => {
+  beforeEach(() => {
+    cleanup();
+    atsSnapshotState.snapshot = buildATSSnapshot();
+  });
+
   it("renders admin controls for ATS integrations", async () => {
     render(await ATSSettingsPage());
 
@@ -179,5 +218,25 @@ describe("ATS settings page", () => {
       "mock_stage_breathe_screen",
     );
     expect(screen.getByRole("button", { name: /^Test$/i })).toBeInTheDocument();
+  });
+
+  it("does not offer candidate note writeback when the selected provider does not support notes", async () => {
+    const snapshot = buildATSSnapshot();
+    snapshot.connections[0].writebackPolicy = {
+      reportMode: "disabled",
+      moveToExternalStageId: null,
+      requiresRecruiterReview: true,
+    };
+    snapshot.availableProviders[0].capabilities.supportsCandidateNotes = false;
+    atsSnapshotState.snapshot = snapshot;
+
+    render(await ATSSettingsPage());
+
+    expect(
+      screen.queryByRole("option", { name: "Candidate note" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Report writeback mode")).toHaveValue(
+      "disabled",
+    );
   });
 });

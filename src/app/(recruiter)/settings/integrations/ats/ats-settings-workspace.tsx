@@ -24,6 +24,13 @@ function providerLabel(providers: ATSAvailableProvider[], provider: string) {
   );
 }
 
+function providerCapabilities(
+  providers: ATSAvailableProvider[],
+  provider: string,
+) {
+  return providers.find((item) => item.provider === provider)?.capabilities;
+}
+
 function stageOptionLabel(input: {
   stage: ATSAdminSnapshot["externalStages"][number];
   jobs: ATSAdminSnapshot["externalJobs"];
@@ -76,6 +83,21 @@ export function ATSSettingsWorkspace({
     ) ?? null;
   const selectedWritebackPolicy =
     selectedWritebackConnection?.writebackPolicy ?? defaultWritebackPolicy;
+  const selectedWritebackCapabilities = selectedWritebackConnection
+    ? providerCapabilities(
+        snapshot.availableProviders,
+        selectedWritebackConnection.provider,
+      )
+    : null;
+  const canWriteCandidateNotes =
+    selectedWritebackCapabilities?.supportsCandidateNotes ?? true;
+  const canMoveStages =
+    selectedWritebackCapabilities?.supportsStageMove ?? true;
+  const reportModeValue =
+    selectedWritebackPolicy.reportMode === "candidate_note" &&
+    !canWriteCandidateNotes
+      ? "disabled"
+      : selectedWritebackPolicy.reportMode;
   const triggerJobs = useMemo(
     () =>
       snapshot.externalJobs.filter(
@@ -372,38 +394,48 @@ export function ATSSettingsWorkspace({
             </select>
             <select
               name="reportMode"
-              defaultValue={selectedWritebackPolicy.reportMode}
+              defaultValue={reportModeValue}
               className="rounded-md border border-slate-300 px-3 py-2 text-sm"
               aria-label="Report writeback mode"
             >
-              <option value="candidate_note">Candidate note</option>
+              {canWriteCandidateNotes ? (
+                <option value="candidate_note">Candidate note</option>
+              ) : null}
               <option value="status_comment">Status comment</option>
               <option value="disabled">Disabled</option>
             </select>
-            {writebackStages.length ? (
-              <select
-                name="moveToExternalStageId"
-                defaultValue={selectedWritebackPolicy.moveToExternalStageId ?? ""}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-                aria-label="Writeback target stage"
-              >
-                <option value="">Do not move stage</option>
-                {writebackStages.map((stage) => (
-                  <option key={stage.id} value={stage.externalId}>
-                    {stageOptionLabel({
-                      stage,
-                      jobs: snapshot.externalJobs,
-                    })}
-                  </option>
-                ))}
-              </select>
+            {canMoveStages ? (
+              writebackStages.length ? (
+                <select
+                  name="moveToExternalStageId"
+                  defaultValue={
+                    selectedWritebackPolicy.moveToExternalStageId ?? ""
+                  }
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  aria-label="Writeback target stage"
+                >
+                  <option value="">Do not move stage</option>
+                  {writebackStages.map((stage) => (
+                    <option key={stage.id} value={stage.externalId}>
+                      {stageOptionLabel({
+                        stage,
+                        jobs: snapshot.externalJobs,
+                      })}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  name="moveToExternalStageId"
+                  defaultValue={
+                    selectedWritebackPolicy.moveToExternalStageId ?? ""
+                  }
+                  placeholder="Move to external stage after evaluation"
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                />
+              )
             ) : (
-              <input
-                name="moveToExternalStageId"
-                defaultValue={selectedWritebackPolicy.moveToExternalStageId ?? ""}
-                placeholder="Move to external stage after evaluation"
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-              />
+              <input type="hidden" name="moveToExternalStageId" value="" />
             )}
             <label className="flex items-center gap-2 text-sm text-slate-700">
               <input

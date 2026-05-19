@@ -9,6 +9,15 @@ const mockRevalidatePath = vi.fn();
 const mockProcessATSWorkflowRequest = vi.fn();
 const mockProcessATSWritebackAction = vi.fn();
 const mockValidateConnection = vi.fn();
+let mockAdapterCapabilities = {
+  supportsWebhooks: true,
+  supportsPolling: true,
+  supportsCandidateNotes: true,
+  supportsReportLinks: true,
+  supportsStageMove: true,
+  supportsCustomFields: true,
+  supportsAttachments: false,
+};
 
 vi.mock("next/cache", () => ({
   revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args),
@@ -45,6 +54,7 @@ vi.mock("@/lib/ats-integrations/writeback", () => ({
 
 vi.mock("@/lib/ats-integrations/registry", () => ({
   getATSAdapter: () => ({
+    capabilities: mockAdapterCapabilities,
     validateConnection: (...args: unknown[]) => mockValidateConnection(...args),
   }),
 }));
@@ -61,6 +71,15 @@ const recruiterFixture = {
 describe("ATS admin actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAdapterCapabilities = {
+      supportsWebhooks: true,
+      supportsPolling: true,
+      supportsCandidateNotes: true,
+      supportsReportLinks: true,
+      supportsStageMove: true,
+      supportsCustomFields: true,
+      supportsAttachments: false,
+    };
     mockRequireAuthenticatedRecruiter.mockResolvedValue(recruiterFixture);
     mockRecruiterCanManageTeams.mockReturnValue(true);
     mockLoadRuntimeStoreState.mockResolvedValue({
@@ -564,6 +583,41 @@ describe("ATS admin actions", () => {
 
     await expect(saveATSWritebackPolicyAction(formData)).rejects.toThrow(
       "Choose a writeback target stage from the selected ATS connection.",
+    );
+    expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
+  });
+
+  it("rejects candidate note writeback policy when the adapter does not support notes", async () => {
+    mockAdapterCapabilities = {
+      ...mockAdapterCapabilities,
+      supportsCandidateNotes: false,
+    };
+    const { saveATSWritebackPolicyAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("reportMode", "candidate_note");
+
+    await expect(saveATSWritebackPolicyAction(formData)).rejects.toThrow(
+      "Selected ATS provider does not support candidate note writebacks.",
+    );
+    expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
+  });
+
+  it("rejects stage move writeback policy when the adapter does not support stage moves", async () => {
+    mockAdapterCapabilities = {
+      ...mockAdapterCapabilities,
+      supportsStageMove: false,
+    };
+    const { saveATSWritebackPolicyAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("reportMode", "disabled");
+    formData.set("moveToExternalStageId", "mock_stage_shortlisted");
+
+    await expect(saveATSWritebackPolicyAction(formData)).rejects.toThrow(
+      "Selected ATS provider does not support stage move writebacks.",
     );
     expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
   });

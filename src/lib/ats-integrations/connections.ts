@@ -10,6 +10,8 @@ import type {
   ATSWritebackAttempt,
   ATSWorkflowRequest,
 } from "@/domain/ats-integrations/types";
+import type { ATSAdapterCapabilities } from "@/lib/ats-integrations/adapters/types";
+import { getATSAdapter } from "@/lib/ats-integrations/registry";
 import type { AuthenticatedRecruiter } from "@/lib/auth/types";
 import { loadRuntimeStoreState } from "@/lib/db/runtime-store";
 
@@ -17,6 +19,7 @@ export type ATSAvailableProvider = {
   provider: ATSProviderKey;
   label: string;
   implemented: boolean;
+  capabilities: ATSAdapterCapabilities | null;
 };
 
 export type ATSAdminSnapshot = {
@@ -31,16 +34,34 @@ export type ATSAdminSnapshot = {
 };
 
 export function listATSAvailableProviders(): ATSAvailableProvider[] {
-  return [
-    { provider: "mock_ats", label: "Mock ATS", implemented: true },
-    { provider: "zoho_recruit", label: "Zoho Recruit", implemented: true },
-    { provider: "recruitee", label: "Recruitee", implemented: false },
-    { provider: "ashby", label: "Ashby", implemented: false },
-    { provider: "teamtailor", label: "Teamtailor", implemented: false },
-    { provider: "greenhouse", label: "Greenhouse", implemented: false },
-    { provider: "lever", label: "Lever", implemented: false },
-    { provider: "kombo", label: "Kombo", implemented: false },
+  const providers: Array<{ provider: ATSProviderKey; label: string }> = [
+    { provider: "mock_ats", label: "Mock ATS" },
+    { provider: "zoho_recruit", label: "Zoho Recruit" },
+    { provider: "recruitee", label: "Recruitee" },
+    { provider: "ashby", label: "Ashby" },
+    { provider: "teamtailor", label: "Teamtailor" },
+    { provider: "greenhouse", label: "Greenhouse" },
+    { provider: "lever", label: "Lever" },
+    { provider: "kombo", label: "Kombo" },
   ];
+
+  return providers.map((provider) => {
+    try {
+      const adapter = getATSAdapter(provider.provider);
+
+      return {
+        ...provider,
+        implemented: true,
+        capabilities: adapter.capabilities,
+      };
+    } catch {
+      return {
+        ...provider,
+        implemented: false,
+        capabilities: null,
+      };
+    }
+  });
 }
 
 export async function getATSAdminSnapshot(

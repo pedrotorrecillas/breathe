@@ -524,6 +524,22 @@ export async function saveATSWritebackPolicyAction(
       throw new Error("ATS connection not found.");
     }
 
+    const adapter = getATSAdapter(connection.provider);
+    if (
+      reportMode === "candidate_note" &&
+      !adapter.capabilities.supportsCandidateNotes
+    ) {
+      throw new Error(
+        "Selected ATS provider does not support candidate note writebacks.",
+      );
+    }
+
+    if (moveToExternalStageId && !adapter.capabilities.supportsStageMove) {
+      throw new Error(
+        "Selected ATS provider does not support stage move writebacks.",
+      );
+    }
+
     const connectionStages = (state.atsExternalStages ?? []).filter(
       (stage) =>
         stage.companyId === recruiter.company.id &&
