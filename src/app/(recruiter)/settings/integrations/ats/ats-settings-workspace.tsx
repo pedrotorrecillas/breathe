@@ -39,6 +39,12 @@ function stageOptionLabel(input: {
     : `${input.stage.name} · ${input.stage.externalId}`;
 }
 
+const defaultWritebackPolicy = {
+  reportMode: "candidate_note",
+  moveToExternalStageId: null,
+  requiresRecruiterReview: true,
+} as const;
+
 export function ATSSettingsWorkspace({
   snapshot,
   canManage,
@@ -51,6 +57,12 @@ export function ATSSettingsWorkspace({
     useState(firstConnectionId);
   const [writebackConnectionId, setWritebackConnectionId] =
     useState(firstConnectionId);
+  const selectedWritebackConnection =
+    snapshot.connections.find(
+      (connection) => connection.id === writebackConnectionId,
+    ) ?? null;
+  const selectedWritebackPolicy =
+    selectedWritebackConnection?.writebackPolicy ?? defaultWritebackPolicy;
   const triggerJobs = useMemo(
     () =>
       snapshot.externalJobs.filter(
@@ -325,6 +337,7 @@ export function ATSSettingsWorkspace({
         ) : null}
         {canManage && snapshot.connections.length ? (
           <form
+            key={writebackConnectionId}
             action={saveATSWritebackPolicyAction}
             className="mt-4 grid gap-3"
           >
@@ -346,6 +359,7 @@ export function ATSSettingsWorkspace({
             </select>
             <select
               name="reportMode"
+              defaultValue={selectedWritebackPolicy.reportMode}
               className="rounded-md border border-slate-300 px-3 py-2 text-sm"
               aria-label="Report writeback mode"
             >
@@ -356,6 +370,7 @@ export function ATSSettingsWorkspace({
             {writebackStages.length ? (
               <select
                 name="moveToExternalStageId"
+                defaultValue={selectedWritebackPolicy.moveToExternalStageId ?? ""}
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm"
                 aria-label="Writeback target stage"
               >
@@ -372,6 +387,7 @@ export function ATSSettingsWorkspace({
             ) : (
               <input
                 name="moveToExternalStageId"
+                defaultValue={selectedWritebackPolicy.moveToExternalStageId ?? ""}
                 placeholder="Move to external stage after evaluation"
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm"
               />
@@ -380,7 +396,7 @@ export function ATSSettingsWorkspace({
               <input
                 type="checkbox"
                 name="requiresRecruiterReview"
-                defaultChecked
+                defaultChecked={selectedWritebackPolicy.requiresRecruiterReview}
                 className="size-4 rounded border-slate-300"
               />
               Review writebacks before sending

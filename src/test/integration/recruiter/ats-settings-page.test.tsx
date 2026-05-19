@@ -58,6 +58,11 @@ vi.mock("@/lib/ats-integrations/connections", () => ({
         lastError: null,
         createdAt: "2026-05-19T10:00:00.000Z",
         updatedAt: "2026-05-19T10:00:00.000Z",
+        writebackPolicy: {
+          reportMode: "status_comment",
+          moveToExternalStageId: "mock_stage_breathe_screen",
+          requiresRecruiterReview: false,
+        },
       },
     ],
     triggerRules: [],
@@ -152,7 +157,13 @@ describe("ATS settings page", () => {
       screen.getByRole("checkbox", {
         name: /Review writebacks before sending/i,
       }),
-    ).toBeInTheDocument();
+    ).not.toBeChecked();
+    expect(screen.getByLabelText("Report writeback mode")).toHaveValue(
+      "status_comment",
+    );
+    expect(screen.getByLabelText("Writeback target stage")).toHaveValue(
+      "mock_stage_breathe_screen",
+    );
     expect(screen.getByRole("button", { name: /^Test$/i })).toBeInTheDocument();
   });
 });
