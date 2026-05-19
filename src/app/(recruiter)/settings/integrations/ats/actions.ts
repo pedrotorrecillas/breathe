@@ -16,23 +16,17 @@ import {
 } from "@/lib/db/runtime-store";
 import { recruiterCanManageTeams } from "@/lib/team-access";
 
-type ATSSettingsActionState = {
-  status: "idle" | "success" | "error";
-  message: string | null;
-};
-
-export const idleATSSettingsActionState: ATSSettingsActionState = {
-  status: "idle",
-  message: null,
-};
-
 function requireATSAdmin(canManage: boolean) {
   if (!canManage) {
     throw new Error("Only admins and owners can manage ATS integrations.");
   }
 }
 
-export async function createMockATSConnectionAction(): Promise<ATSSettingsActionState> {
+export async function createMockATSConnectionAction(
+  formData: FormData,
+): Promise<void> {
+  void formData;
+
   try {
     const recruiter = await requireAuthenticatedRecruiter();
     requireATSAdmin(recruiterCanManageTeams(recruiter));
@@ -56,18 +50,18 @@ export async function createMockATSConnectionAction(): Promise<ATSSettingsAction
     });
     await saveRuntimeStoreState(state);
     revalidatePath("/settings/integrations/ats");
-
-    return { status: "success", message: "Mock ATS connection created." };
   } catch (error) {
-    return {
-      status: "error",
-      message:
-        error instanceof Error ? error.message : "Could not create ATS connection.",
-    };
+    throw new Error(
+      error instanceof Error ? error.message : "Could not create ATS connection.",
+    );
   }
 }
 
-export async function createZohoEnvConnectionAction(): Promise<ATSSettingsActionState> {
+export async function createZohoEnvConnectionAction(
+  formData: FormData,
+): Promise<void> {
+  void formData;
+
   try {
     const recruiter = await requireAuthenticatedRecruiter();
     requireATSAdmin(recruiterCanManageTeams(recruiter));
@@ -91,20 +85,16 @@ export async function createZohoEnvConnectionAction(): Promise<ATSSettingsAction
     });
     await saveRuntimeStoreState(state);
     revalidatePath("/settings/integrations/ats");
-
-    return { status: "success", message: "Zoho Recruit connection created." };
   } catch (error) {
-    return {
-      status: "error",
-      message:
-        error instanceof Error ? error.message : "Could not create ATS connection.",
-    };
+    throw new Error(
+      error instanceof Error ? error.message : "Could not create ATS connection.",
+    );
   }
 }
 
 export async function runManualATSSyncAction(
   formData: FormData,
-): Promise<ATSSettingsActionState> {
+): Promise<void> {
   try {
     const recruiter = await requireAuthenticatedRecruiter();
     requireATSAdmin(recruiterCanManageTeams(recruiter));
@@ -134,19 +124,14 @@ export async function runManualATSSyncAction(
     });
     await saveRuntimeStoreState(state);
     revalidatePath("/settings/integrations/ats");
-
-    return { status: "success", message: "ATS sync completed." };
   } catch (error) {
-    return {
-      status: "error",
-      message: error instanceof Error ? error.message : "Could not sync ATS.",
-    };
+    throw new Error(error instanceof Error ? error.message : "Could not sync ATS.");
   }
 }
 
 export async function saveATSTriggerRuleAction(
   formData: FormData,
-): Promise<ATSSettingsActionState> {
+): Promise<void> {
   try {
     const recruiter = await requireAuthenticatedRecruiter();
     requireATSAdmin(recruiterCanManageTeams(recruiter));
@@ -218,20 +203,16 @@ export async function saveATSTriggerRuleAction(
     });
     await saveRuntimeStoreState(state);
     revalidatePath("/settings/integrations/ats");
-
-    return { status: "success", message: "ATS trigger rule saved." };
   } catch (error) {
-    return {
-      status: "error",
-      message:
-        error instanceof Error ? error.message : "Could not save trigger rule.",
-    };
+    throw new Error(
+      error instanceof Error ? error.message : "Could not save trigger rule.",
+    );
   }
 }
 
 export async function saveATSWritebackPolicyAction(
   formData: FormData,
-): Promise<ATSSettingsActionState> {
+): Promise<void> {
   try {
     const recruiter = await requireAuthenticatedRecruiter();
     requireATSAdmin(recruiterCanManageTeams(recruiter));
@@ -288,15 +269,9 @@ export async function saveATSWritebackPolicyAction(
     });
     await saveRuntimeStoreState(state);
     revalidatePath("/settings/integrations/ats");
-
-    return { status: "success", message: "ATS writeback policy saved." };
   } catch (error) {
-    return {
-      status: "error",
-      message:
-        error instanceof Error
-          ? error.message
-          : "Could not save writeback policy.",
-    };
+    throw new Error(
+      error instanceof Error ? error.message : "Could not save writeback policy.",
+    );
   }
 }
