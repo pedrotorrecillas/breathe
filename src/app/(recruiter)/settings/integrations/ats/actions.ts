@@ -446,12 +446,14 @@ export async function configureZohoDemoDefaultsAction(
       },
     });
     await saveRuntimeStoreState(state);
-    for (const workflowRequestId of autoProcessWorkflowRequestIds) {
-      await processATSWorkflowRequest({
-        workflowRequestId,
-        now,
-        approved: true,
-      });
+    if (connection.status === "active") {
+      for (const workflowRequestId of autoProcessWorkflowRequestIds) {
+        await processATSWorkflowRequest({
+          workflowRequestId,
+          now,
+          approved: true,
+        });
+      }
     }
     revalidatePath("/settings/integrations/ats");
   } catch (error) {
@@ -858,12 +860,14 @@ export async function saveATSTriggerRuleAction(
       },
     });
     await saveRuntimeStoreState(state);
-    for (const workflowRequestId of autoProcessWorkflowRequestIds) {
-      await processATSWorkflowRequest({
-        workflowRequestId,
-        now,
-        approved: true,
-      });
+    if (connection.status === "active") {
+      for (const workflowRequestId of autoProcessWorkflowRequestIds) {
+        await processATSWorkflowRequest({
+          workflowRequestId,
+          now,
+          approved: true,
+        });
+      }
     }
     revalidatePath("/settings/integrations/ats");
   } catch (error) {
