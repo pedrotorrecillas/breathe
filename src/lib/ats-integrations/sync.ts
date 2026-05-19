@@ -3,9 +3,11 @@ import type {
   ATSCanonicalCandidate,
   ATSCanonicalJob,
   ATSCanonicalStage,
+  ATSInternalStageKey,
   ATSSyncEvent,
   ATSSyncResource,
 } from "@/domain/ats-integrations/types";
+import type { CandidatePipelineStage } from "@/domain/candidates/types";
 import { getATSAdapter } from "@/lib/ats-integrations/registry";
 import type {
   ATSProviderApplication,
@@ -409,6 +411,64 @@ function applicationStageChanged(input: {
   return input.previous.externalStageId !== input.next.externalStageId;
 }
 
+const internalStageMappingOrder: ATSInternalStageKey[] = [
+  "applicant",
+  "interviewed",
+  "shortlisted",
+  "hired",
+  "rejected",
+  "needs_human",
+];
+
+function internalStageForExternalStage(input: {
+  connection: RunATSSyncConnection;
+  externalStageId: string | null;
+}): CandidatePipelineStage | null {
+  if (!input.externalStageId) {
+    return null;
+  }
+
+  const mappings = input.connection.writebackPolicy?.stageMoveMappings ?? {};
+  const matchingStage = internalStageMappingOrder.find(
+    (stage) => mappings[stage] === input.externalStageId,
+  );
+
+  return matchingStage ?? null;
+}
+
+type RunATSSyncConnection = RuntimeStoreState["atsConnections"][number];
+
+function applyMappedATSStageToLinkedApplication(input: {
+  state: RuntimeStoreState;
+  connection: RunATSSyncConnection;
+  atsApplication: ATSCanonicalApplication;
+  externalStageId: string | null;
+}) {
+  const internalStage = internalStageForExternalStage({
+    connection: input.connection,
+    externalStageId: input.externalStageId,
+  });
+
+  if (!internalStage || !input.atsApplication.internalApplicationId) {
+    return;
+  }
+
+  input.state.applications = input.state.applications.map((application) =>
+    application.id === input.atsApplication.internalApplicationId &&
+    application.companyId === input.atsApplication.companyId
+      ? {
+          ...application,
+          stage: internalStage,
+          needsHumanReviewAt:
+            internalStage === "needs_human"
+              ? (application.needsHumanReviewAt ??
+                input.atsApplication.lastSeenAt)
+              : application.needsHumanReviewAt,
+        }
+      : application,
+  );
+}
+
 export async function runATSSync(
   input: RunATSSyncInput,
 ): Promise<RunATSSyncResult> {
@@ -637,6 +697,12 @@ export async function runATSSync(
 
           if (appendSyncEventOnce(state, stageChangedEvent)) {
             result.createdEvents += 1;
+            applyMappedATSStageToLinkedApplication({
+              state,
+              connection,
+              atsApplication: applicationRecord,
+              externalStageId: application.externalStageId,
+            });
             result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
               state,
               event: stageChangedEvent,
