@@ -10,6 +10,10 @@ The baseline harness uses Vitest and React Testing Library.
   Runs the suite in watch mode for local iteration.
 - `npm run test:smoke`
   Runs only the smoke path under `src/test/smoke`.
+- `npm run test:smoke:zoho`
+  Runs the Zoho Recruit live smoke test. Without Zoho credentials it skips; with
+  credentials it validates auth and non-destructive reads. Set
+  `ZOHO_RECRUIT_SMOKE_ENABLE_WRITEBACK=true` only against throwaway Zoho data.
 
 ## Placement
 
@@ -26,3 +30,6 @@ The baseline harness uses Vitest and React Testing Library.
 
 - `src/test/smoke/root-page.test.tsx`
   Verifies the Clara landing shell renders and exposes the recruiter entry link.
+- `src/test/smoke/zoho-recruit-ats.test.ts`
+  Validates the Zoho Recruit adapter against a live account when
+  `ZOHO_RECRUIT_*` credentials are present. Writeback checks are opt-in.

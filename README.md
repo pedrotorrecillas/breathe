@@ -68,6 +68,21 @@ HAPPYROBOT_WORKFLOW_WEBHOOK_URL=https://workflows.platform.happyrobot.ai/hooks/y
 ANTHROPIC_API_KEY=your-anthropic-api-key
 ANTHROPIC_MODEL=claude-sonnet-4-20250514
 FAL_KEY=your-fal-api-key
+
+ATS_SYNC_SECRET=change-me
+CRON_SECRET=
+
+ZOHO_RECRUIT_ACCESS_TOKEN=
+ZOHO_RECRUIT_REFRESH_TOKEN=
+ZOHO_RECRUIT_CLIENT_ID=
+ZOHO_RECRUIT_CLIENT_SECRET=
+ZOHO_RECRUIT_ACCOUNTS_BASE_URL=https://accounts.zoho.eu
+ZOHO_RECRUIT_API_BASE_URL=https://recruit.zoho.eu
+
+ZOHO_RECRUIT_SMOKE_ENABLE_WRITEBACK=false
+ZOHO_RECRUIT_SMOKE_CANDIDATE_ID=
+ZOHO_RECRUIT_SMOKE_JOB_ID=
+ZOHO_RECRUIT_SMOKE_TARGET_STATUS=
 ```
 
 Notes:
@@ -76,6 +91,17 @@ Notes:
 - Google login is optional.
 - With `DATABASE_URL`, app state persists in Postgres.
 - Without `DATABASE_URL`, the app falls back to the in-memory runtime store used by tests.
+- `ATS_SYNC_SECRET` protects scheduled ATS sync and writeback endpoints.
+- `CRON_SECRET` is accepted as a fallback when the hosting scheduler already uses that name.
+- For the Zoho Recruit demo, prefer refresh-token auth with
+  `ZOHO_RECRUIT_REFRESH_TOKEN`, `ZOHO_RECRUIT_CLIENT_ID`, and
+  `ZOHO_RECRUIT_CLIENT_SECRET`; `ZOHO_RECRUIT_ACCESS_TOKEN` is supported for a
+  short-lived manual demo token.
+- Zoho region hosts must match the demo account. EU accounts use
+  `https://accounts.zoho.eu` and `https://recruit.zoho.eu`; US accounts use
+  `https://accounts.zoho.com` and `https://recruit.zoho.com`.
+- `ZOHO_RECRUIT_SMOKE_ENABLE_WRITEBACK=true` enables the destructive live smoke
+  writeback checks and requires a throwaway candidate/job/status.
 
 ## Commands
 
@@ -109,6 +135,8 @@ Recruiter routes:
   Candidate pipeline review, recruiter actions, notes, evaluation, and audio
 - `/settings`
   Recruiter account context, access visibility, and team/job access management
+- `/settings/integrations/ats`
+  Admin ATS connections, sync mode, trigger rules, writeback policy, and queues
 - `/teams`
   Redirects to `/settings`
 
@@ -142,6 +170,12 @@ API routes:
   Accept public candidate applications
 - `/api/happyrobot/webhook`
   Receive runtime callbacks from HappyRobot
+- `/api/ats/webhooks/[provider]`
+  Receive provider webhook payloads where the ATS adapter supports webhooks
+- `/api/ats/sync`
+  Run scheduled ATS polling sync for configured connections
+- `/api/ats/writebacks/process`
+  Process approval-free queued ATS writebacks
 
 ## Architecture
 
@@ -237,6 +271,8 @@ Currently persisted records include:
 - webhook records
 - runtime trace events
 - evaluations
+- ATS connections, canonical external records, sync events, workflow requests,
+  writeback actions, and writeback attempts
 
 The fallback in-memory runtime store mirrors the same product behavior closely enough for tests and local development without Postgres.
 
