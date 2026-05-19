@@ -70,6 +70,7 @@ ANTHROPIC_MODEL=claude-sonnet-4-20250514
 FAL_KEY=your-fal-api-key
 
 ATS_SYNC_SECRET=change-me
+ATS_WEBHOOK_SECRET=change-me
 CRON_SECRET=
 
 ZOHO_RECRUIT_ACCESS_TOKEN=
@@ -93,6 +94,7 @@ Notes:
 - With `DATABASE_URL`, app state persists in Postgres.
 - Without `DATABASE_URL`, the app falls back to the in-memory runtime store used by tests.
 - `ATS_SYNC_SECRET` protects scheduled ATS sync and writeback endpoints.
+- `ATS_WEBHOOK_SECRET` protects provider webhook ingestion endpoints.
 - `CRON_SECRET` is accepted as a fallback when the hosting scheduler already uses that name.
 - For the Zoho Recruit demo, prefer refresh-token auth with
   `ZOHO_RECRUIT_REFRESH_TOKEN`, `ZOHO_RECRUIT_CLIENT_ID`, and

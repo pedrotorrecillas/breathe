@@ -265,6 +265,9 @@ Use OAuth where possible. For the first demo, support `env_token` mode:
 - `ZOHO_RECRUIT_ACCOUNTS_BASE_URL`
 - `ZOHO_RECRUIT_API_BASE_URL`
 
+Provider webhook ingestion also requires `ATS_WEBHOOK_SECRET`; scheduled sync
+and writeback processing use `ATS_SYNC_SECRET` or `CRON_SECRET`.
+
 The admin screen can display connection status and masked credentials, but the
 first implementation does not need a full OAuth install wizard.
 
