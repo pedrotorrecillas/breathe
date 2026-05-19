@@ -33,6 +33,38 @@ describe("Zoho Recruit client", () => {
     });
   });
 
+  it("exposes every Zoho demo status used by default writeback mappings", async () => {
+    const stages = await zohoRecruitAdapter.listStages({
+      connection: zohoConnection,
+      externalJobId: "58431000000012345",
+    });
+
+    expect(stages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          externalId: "Breathe Screen",
+          category: "screening",
+        }),
+        expect.objectContaining({
+          externalId: "Interview Completed",
+          category: "interview",
+        }),
+        expect.objectContaining({
+          externalId: "Shortlisted",
+          category: "evaluation",
+        }),
+        expect.objectContaining({
+          externalId: "Hired",
+          category: "hired",
+        }),
+        expect.objectContaining({
+          externalId: "Rejected",
+          category: "rejected",
+        }),
+      ]),
+    );
+  });
+
   it("refreshes an access token before calling Recruit when only refresh credentials are configured", async () => {
     const fetchMock = vi.fn(async (url: string | URL) => {
       const href = String(url);

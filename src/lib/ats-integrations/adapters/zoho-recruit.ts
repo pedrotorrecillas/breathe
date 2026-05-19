@@ -225,6 +225,7 @@ export const zohoRecruitAdapter: ATSAdapter = {
       "Breathe Screen",
       "Interview Completed",
       "Shortlisted",
+      "Hired",
       "Rejected",
     ].map((status, index) => ({
       externalId: status,
@@ -237,9 +238,11 @@ export const zohoRecruitAdapter: ATSAdapter = {
             ? "interview"
             : status === "Shortlisted"
               ? "evaluation"
-              : status === "Rejected"
-                ? "rejected"
-                : "new",
+              : status === "Hired"
+                ? "hired"
+                : status === "Rejected"
+                  ? "rejected"
+                  : "new",
       position: index,
       raw: { providerStatus: status },
     }));
