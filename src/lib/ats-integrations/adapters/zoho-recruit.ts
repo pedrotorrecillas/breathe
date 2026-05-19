@@ -107,6 +107,18 @@ function flattenZohoDataEntries(value: unknown): ZohoRecord[] {
   });
 }
 
+function mapAssociatedZohoCandidateToProviderApplication(input: {
+  candidate: ZohoRecord;
+  fallbackJobId: string;
+  fallbackJobTitle: string;
+}) {
+  try {
+    return mapZohoCandidateToProviderApplication(input);
+  } catch {
+    return null;
+  }
+}
+
 function resultFromZohoWritebackResponse(
   response: Record<string, unknown>,
 ): ATSWritebackResult {
@@ -242,7 +254,8 @@ export const zohoRecruitAdapter: ATSAdapter = {
 
       const jobTitle =
         (typeof job.Posting_Title === "string" && job.Posting_Title.trim()) ||
-        (typeof job.Job_Opening_Name === "string" && job.Job_Opening_Name.trim()) ||
+        (typeof job.Job_Opening_Name === "string" &&
+          job.Job_Opening_Name.trim()) ||
         "Unknown Zoho Job";
       let associatedPage = 1;
       let hasMoreAssociatedRecords = true;
@@ -259,13 +272,18 @@ export const zohoRecruitAdapter: ATSAdapter = {
         );
 
         records.push(
-          ...(associatedResponse.data ?? []).map((candidate) =>
-            mapZohoCandidateToProviderApplication({
-              candidate,
-              fallbackJobId: jobId,
-              fallbackJobTitle: jobTitle,
-            }),
-          ),
+          ...(associatedResponse.data ?? [])
+            .map((candidate) =>
+              mapAssociatedZohoCandidateToProviderApplication({
+                candidate,
+                fallbackJobId: jobId,
+                fallbackJobTitle: jobTitle,
+              }),
+            )
+            .filter(
+              (application): application is ATSProviderApplication =>
+                application !== null,
+            ),
         );
         associatedPage += 1;
         hasMoreAssociatedRecords = Boolean(

@@ -287,8 +287,7 @@ describe("Zoho Recruit client", () => {
     });
     expect(stageResult).toMatchObject({
       status: "terminal_error",
-      errorMessage:
-        "Zoho Recruit stage move requires targetExternalStageId.",
+      errorMessage: "Zoho Recruit stage move requires targetExternalStageId.",
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -365,7 +364,9 @@ describe("Zoho Recruit client", () => {
     const fetchMock = vi.fn(async (url: string | URL) => {
       const href = String(url);
 
-      if (href.includes("/recruit/v2/Job_Openings/58431000000012345/associate")) {
+      if (
+        href.includes("/recruit/v2/Job_Openings/58431000000012345/associate")
+      ) {
         return new Response(
           JSON.stringify({
             data: [
@@ -530,5 +531,69 @@ describe("Zoho Recruit client", () => {
         "58431000000067890:58431000000012345",
       ],
     );
+  });
+
+  it("skips malformed associated Zoho candidate records without failing the page", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "access_token");
+    const fetchMock = vi.fn(async (url: string | URL) => {
+      const href = String(url);
+
+      if (
+        href.includes("/recruit/v2/Job_Openings/58431000000012345/associate")
+      ) {
+        return new Response(
+          JSON.stringify({
+            data: [
+              {
+                Full_Name: "Candidate Without Id",
+                Candidate_Status: "Breathe Screen",
+              },
+              {
+                id: "58431000000054321",
+                Full_Name: "Ana Martin",
+                Candidate_Status: "Breathe Screen",
+              },
+            ],
+            info: {
+              page: 1,
+              per_page: 25,
+              more_records: false,
+            },
+          }),
+          { status: 200 },
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          data: [
+            {
+              id: "58431000000012345",
+              Posting_Title: "Store Associate",
+              Job_Opening_Status: "In-progress",
+            },
+          ],
+          info: {
+            page: 1,
+            per_page: 25,
+            more_records: false,
+          },
+        }),
+        { status: 200 },
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const applicationsPage = await zohoRecruitAdapter.listApplications({
+      connection: zohoConnection,
+      cursor: null,
+      limit: 25,
+    });
+
+    expect(applicationsPage.records).toHaveLength(1);
+    expect(applicationsPage.records[0]).toMatchObject({
+      externalId: "58431000000054321:58431000000012345",
+      candidateName: "Ana Martin",
+    });
   });
 });
