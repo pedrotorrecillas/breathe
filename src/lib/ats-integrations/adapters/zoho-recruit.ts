@@ -121,6 +121,7 @@ function mapAssociatedZohoCandidateToProviderApplication(input: {
 
 function resultFromZohoWritebackResponse(
   response: Record<string, unknown>,
+  options: { notePermissionFallback?: boolean } = {},
 ): ATSWritebackResult {
   const entries = flattenZohoDataEntries(response.data);
 
@@ -150,6 +151,24 @@ function resultFromZohoWritebackResponse(
       typeof failedEntry.message === "string"
         ? failedEntry.message
         : "Provider returned an unsuccessful writeback result.";
+    const normalizedCode = code.toUpperCase();
+    const normalizedMessage = message.toLowerCase();
+
+    if (
+      options.notePermissionFallback &&
+      (normalizedCode === "NO_PERMISSION" ||
+        normalizedCode === "INVALID_MODULE" ||
+        normalizedMessage.includes("permission") ||
+        normalizedMessage.includes("notes module"))
+    ) {
+      return {
+        status: "skipped",
+        providerStatusCode: 200,
+        providerResponse: response,
+        errorMessage:
+          "Zoho Recruit note writeback skipped because the Notes module is not available for this account.",
+      };
+    }
 
     return {
       status: "terminal_error",
@@ -380,7 +399,9 @@ export const zohoRecruitAdapter: ATSAdapter = {
         },
       );
 
-      return resultFromZohoWritebackResponse(response);
+      return resultFromZohoWritebackResponse(response, {
+        notePermissionFallback: true,
+      });
     }
 
     return {
