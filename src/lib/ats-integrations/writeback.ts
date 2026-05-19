@@ -73,6 +73,27 @@ function writebackAttemptId(input: {
   )}_${input.index}`;
 }
 
+function isCredentialFailure(message: string | null) {
+  const normalized = message?.toLowerCase() ?? "";
+
+  return (
+    normalized.includes("401") ||
+    normalized.includes("unauthorized") ||
+    normalized.includes("access token") ||
+    normalized.includes("refresh token") ||
+    normalized.includes("invalid_token") ||
+    normalized.includes("invalid oauth")
+  );
+}
+
+function needsReauthMessage(message: string | null) {
+  const fallback = message || "ATS credentials need reauthorization.";
+
+  return fallback.startsWith("needs_reauth:")
+    ? fallback
+    : `needs_reauth: ${fallback}`;
+}
+
 function skippedWritebackForInactiveApplication(input: {
   state: RuntimeStoreState;
   action: ATSWritebackAction;
@@ -303,6 +324,22 @@ export async function processATSWritebackActionInState(input: {
         }
       : item,
   );
+
+  if (
+    providerResult.status === "retryable_error" &&
+    isCredentialFailure(providerResult.errorMessage)
+  ) {
+    state.atsConnections = state.atsConnections.map((item) =>
+      item.id === connection.id
+        ? {
+            ...item,
+            status: "paused",
+            lastError: needsReauthMessage(providerResult.errorMessage),
+            updatedAt: input.now,
+          }
+        : item,
+    );
+  }
 
   if (providerResult.status === "succeeded") {
     updateCanonicalApplicationAfterStageMove({

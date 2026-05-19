@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   enqueueATSWriteback,
@@ -11,6 +11,11 @@ import {
 } from "@/lib/db/runtime-store";
 
 describe("ATS writeback queue", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
   beforeEach(async () => {
     await resetRuntimeStoreState();
     const state = await loadRuntimeStoreState();
@@ -129,6 +134,61 @@ describe("ATS writeback queue", () => {
       updatedAt: "2026-05-19T12:02:00.000Z",
     });
     expect(afterFailure.atsWritebackAttempts).toHaveLength(1);
+  });
+
+  it("pauses the connection when provider writeback fails with a credential error", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "expired_access_token");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ code: "INVALID_TOKEN" }), {
+            status: 401,
+          }),
+      ),
+    );
+    const state = await loadRuntimeStoreState();
+    state.atsConnections = state.atsConnections.map((connection) => ({
+      ...connection,
+      provider: "zoho_recruit",
+      displayName: "Zoho Recruit",
+      authMode: "env_token",
+      secretRef: "env:ZOHO_RECRUIT_ACCESS_TOKEN",
+    }));
+    await saveRuntimeStoreState(state);
+
+    const queued = await enqueueATSWriteback({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "zoho_recruit",
+      actionType: "candidate_note",
+      targetExternalCandidateId: "58431000000054321",
+      targetExternalApplicationId: "58431000000054321",
+      targetExternalJobId: null,
+      targetExternalStageId: null,
+      sourceObjectType: "evaluation",
+      sourceObjectId: "eval_zoho_reauth",
+      payload: { body: "Breathe interview summary" },
+      now: "2026-05-19T12:00:00.000Z",
+    });
+
+    const processed = await processATSWritebackAction({
+      writebackActionId: queued.id,
+      now: "2026-05-19T12:02:00.000Z",
+    });
+
+    expect(processed.action.status).toBe("retryable_error");
+    expect(processed.attempt.errorMessage).toBe(
+      'Zoho Recruit request failed with 401. {"code":"INVALID_TOKEN"}',
+    );
+    const afterFailure = await loadRuntimeStoreState();
+    expect(afterFailure.atsConnections[0]).toMatchObject({
+      id: "ats_conn_1",
+      status: "paused",
+      lastError:
+        'needs_reauth: Zoho Recruit request failed with 401. {"code":"INVALID_TOKEN"}',
+      updatedAt: "2026-05-19T12:02:00.000Z",
+    });
   });
 
   it("skips queued writebacks when the target ATS application was archived before processing", async () => {
