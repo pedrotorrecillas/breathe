@@ -1034,6 +1034,35 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("saves the admin-selected connection status", async () => {
+    const { saveATSConnectionStatusAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("status", "paused");
+
+    await saveATSConnectionStatusAction(formData);
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsConnections[0]).toMatchObject({
+      id: "ats_conn_1",
+      status: "paused",
+    });
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ats.connection_status_saved",
+        targetId: "ats_conn_1",
+        metadata: expect.objectContaining({
+          provider: "mock_ats",
+          status: "paused",
+        }),
+      }),
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith(
+      "/settings/integrations/ats",
+    );
+  });
+
   it("rejects webhook sync mode when the adapter does not support webhooks", async () => {
     mockAdapterCapabilities = {
       ...mockAdapterCapabilities,

@@ -389,6 +389,28 @@ describe("ATS settings page", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders pause and resume controls for active and paused ATS connections", async () => {
+    const snapshot = buildATSSnapshot();
+    snapshot.connections.push({
+      ...snapshot.connections[0],
+      id: "ats_conn_zoho_paused",
+      provider: "zoho_recruit",
+      status: "paused",
+      displayName: "Paused Zoho Recruit",
+      authMode: "env_token",
+      externalAccountId: "zoho_account_paused",
+    });
+    atsSnapshotState.snapshot = snapshot;
+
+    render(await ATSSettingsPage());
+
+    expect(screen.getByRole("button", { name: /^Pause$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^Resume$/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("1 active")).toBeInTheDocument();
+  });
+
   it("renders Zoho demo readiness from the current admin configuration", async () => {
     const snapshot = buildATSSnapshot();
     snapshot.connections.push({

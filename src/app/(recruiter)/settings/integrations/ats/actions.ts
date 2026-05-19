@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { appendAuditEvent } from "@/lib/audit/log";
 import type {
+  ATSConnectionStatus,
   ATSSyncMode,
   ATSTriggerAction,
   ATSTriggerRule,
@@ -38,6 +39,11 @@ const atsSyncModes: ATSSyncMode[] = [
   "manual",
   "scheduled",
   "webhook_plus_polling",
+];
+
+const adminSettableConnectionStatuses: ATSConnectionStatus[] = [
+  "active",
+  "paused",
 ];
 
 const atsInternalStageKeys: ATSInternalStageKey[] = [
@@ -642,6 +648,72 @@ export async function saveATSSyncModeAction(
   } catch (error) {
     throw new Error(
       error instanceof Error ? error.message : "Could not save ATS sync mode.",
+    );
+  }
+}
+
+export async function saveATSConnectionStatusAction(
+  formData: FormData,
+): Promise<void> {
+  try {
+    const recruiter = await requireAuthenticatedRecruiter();
+    requireATSAdmin(recruiterCanManageTeams(recruiter));
+    const connectionId = String(formData.get("connectionId") ?? "");
+    const statusValue = String(formData.get("status") ?? "");
+
+    if (!connectionId) {
+      throw new Error("Choose an ATS connection for status change.");
+    }
+
+    if (
+      !adminSettableConnectionStatuses.includes(
+        statusValue as ATSConnectionStatus,
+      )
+    ) {
+      throw new Error("Choose a supported ATS connection status.");
+    }
+
+    const status = statusValue as ATSConnectionStatus;
+    const state = await loadRuntimeStoreState();
+    const connection = state.atsConnections.find(
+      (item) =>
+        item.id === connectionId && item.companyId === recruiter.company.id,
+    );
+
+    if (!connection) {
+      throw new Error("ATS connection not found.");
+    }
+
+    state.atsConnections = state.atsConnections.map((item) =>
+      item.id === connection.id
+        ? {
+            ...item,
+            status,
+            lastError: status === "paused" ? null : item.lastError,
+            updatedAt: new Date().toISOString(),
+          }
+        : item,
+    );
+
+    appendAuditEvent({
+      state,
+      recruiter,
+      action: "ats.connection_status_saved",
+      targetType: "ats_connection",
+      targetId: connection.id,
+      summary: "Saved ATS connection status.",
+      metadata: {
+        provider: connection.provider,
+        status,
+      },
+    });
+    await saveRuntimeStoreState(state);
+    revalidatePath("/settings/integrations/ats");
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Could not save ATS connection status.",
     );
   }
 }

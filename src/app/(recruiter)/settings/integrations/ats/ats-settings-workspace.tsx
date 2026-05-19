@@ -19,6 +19,7 @@ import {
   approveATSWorkflowRequestAction,
   processATSWritebackActionAction,
   runManualATSSyncAction,
+  saveATSConnectionStatusAction,
   saveATSSyncModeAction,
   saveATSTriggerRuleAction,
   saveATSWritebackPolicyAction,
@@ -197,6 +198,9 @@ export function ATSSettingsWorkspace({
   snapshot: ATSAdminSnapshot;
   canManage: boolean;
 }) {
+  const activeConnectionCount = snapshot.connections.filter(
+    (connection) => connection.status === "active",
+  ).length;
   const firstConnectionId = snapshot.connections[0]?.id ?? "";
   const [triggerConnectionId, setTriggerConnectionId] =
     useState(firstConnectionId);
@@ -272,7 +276,7 @@ export function ATSSettingsWorkspace({
             </h2>
           </div>
           <span className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600">
-            {snapshot.connections.length} active
+            {activeConnectionCount} active
           </span>
         </div>
 
@@ -391,6 +395,31 @@ export function ATSSettingsWorkspace({
                         Test
                       </button>
                     </form>
+                    {connection.status === "active" ||
+                    connection.status === "paused" ? (
+                      <form action={saveATSConnectionStatusAction}>
+                        <input
+                          type="hidden"
+                          name="connectionId"
+                          value={connection.id}
+                        />
+                        <input
+                          type="hidden"
+                          name="status"
+                          value={
+                            connection.status === "active"
+                              ? "paused"
+                              : "active"
+                          }
+                        />
+                        <button
+                          type="submit"
+                          className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700"
+                        >
+                          {connection.status === "active" ? "Pause" : "Resume"}
+                        </button>
+                      </form>
+                    ) : null}
                     <form action={runManualATSSyncAction}>
                       <input
                         type="hidden"

@@ -10,6 +10,7 @@ export type AuditAction =
   | "ats.connection_tested"
   | "ats.zoho_demo_configured"
   | "ats.sync_mode_saved"
+  | "ats.connection_status_saved"
   | "ats.manual_sync"
   | "ats.trigger_rule_saved"
   | "ats.writeback_policy_saved"
