@@ -92,6 +92,32 @@ describe("ATS sync route", () => {
     });
   });
 
+  it("accepts CRON_SECRET as the scheduler secret fallback", async () => {
+    vi.stubEnv("ATS_SYNC_SECRET", "");
+    vi.stubEnv("CRON_SECRET", "cron-secret");
+    mockRunConfiguredATSSyncs.mockResolvedValue({
+      scannedConnections: 1,
+      attemptedConnections: 1,
+      succeededConnections: 1,
+      failedConnections: 0,
+      results: [],
+    });
+
+    const response = await GET(
+      new Request("http://test.local/api/ats/sync", {
+        method: "GET",
+        headers: {
+          authorization: "Bearer cron-secret",
+        },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockRunConfiguredATSSyncs).toHaveBeenCalledWith({
+      now: expect.any(String),
+    });
+  });
+
   it("returns a failing status when any configured ATS sync fails", async () => {
     vi.stubEnv("ATS_SYNC_SECRET", "secret-token");
     mockRunConfiguredATSSyncs.mockResolvedValue({

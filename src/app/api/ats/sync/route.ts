@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 import { runConfiguredATSSyncs } from "@/lib/ats-integrations/scheduled-sync";
 
 function configuredSyncSecret() {
-  return process.env.ATS_SYNC_SECRET?.trim() || null;
+  return (
+    process.env.ATS_SYNC_SECRET?.trim() ||
+    process.env.CRON_SECRET?.trim() ||
+    null
+  );
 }
 
 function requestSyncSecret(request: Request) {
