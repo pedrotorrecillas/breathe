@@ -311,6 +311,34 @@ export async function saveATSTriggerRuleAction(
       throw new Error("ATS connection not found.");
     }
 
+    const connectionStages = (state.atsExternalStages ?? []).filter(
+      (stage) =>
+        stage.companyId === recruiter.company.id &&
+        stage.connectionId === connection.id,
+    );
+    const connectionJobs = (state.atsExternalJobs ?? []).filter(
+      (job) =>
+        job.companyId === recruiter.company.id &&
+        job.connectionId === connection.id,
+    );
+
+    if (
+      connectionStages.length > 0 &&
+      !connectionStages.some((stage) => stage.externalId === externalStageId)
+    ) {
+      throw new Error(
+        "Choose a trigger stage from the selected ATS connection.",
+      );
+    }
+
+    if (
+      externalJobId &&
+      connectionJobs.length > 0 &&
+      !connectionJobs.some((job) => job.externalId === externalJobId)
+    ) {
+      throw new Error("Choose a trigger job from the selected ATS connection.");
+    }
+
     const now = new Date().toISOString();
     const rule = {
       id: buildTriggerRuleId({

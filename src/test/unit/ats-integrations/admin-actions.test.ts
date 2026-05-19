@@ -216,6 +216,97 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("rejects trigger stages from another ATS connection", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsExternalStages = [
+      {
+        id: "ats_stage_own",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalJobId: "mock_job_1",
+        externalId: "mock_stage_screen",
+        name: "Screen",
+        category: "screening",
+        position: 1,
+        status: "active",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+      {
+        id: "ats_stage_other_connection",
+        companyId: "company_1",
+        connectionId: "ats_conn_2",
+        provider: "mock_ats",
+        externalJobId: "mock_job_2",
+        externalId: "mock_stage_offer",
+        name: "Offer",
+        category: "offer",
+        position: 4,
+        status: "active",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { saveATSTriggerRuleAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("externalStageId", "mock_stage_offer");
+    formData.append("actions", "queue_interview");
+
+    await expect(saveATSTriggerRuleAction(formData)).rejects.toThrow(
+      "Choose a trigger stage from the selected ATS connection.",
+    );
+    expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
+  });
+
+  it("rejects trigger jobs from another ATS connection", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsExternalJobs = [
+      {
+        id: "ats_job_own",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalId: "mock_job_1",
+        externalUrl: null,
+        title: "Store Associate",
+        status: "active",
+        externalUpdatedAt: null,
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+      {
+        id: "ats_job_other_connection",
+        companyId: "company_1",
+        connectionId: "ats_conn_2",
+        provider: "mock_ats",
+        externalId: "mock_job_2",
+        externalUrl: null,
+        title: "Warehouse Lead",
+        status: "active",
+        externalUpdatedAt: null,
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { saveATSTriggerRuleAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("externalStageId", "mock_stage_screen");
+    formData.set("externalJobId", "mock_job_2");
+    formData.append("actions", "queue_interview");
+
+    await expect(saveATSTriggerRuleAction(formData)).rejects.toThrow(
+      "Choose a trigger job from the selected ATS connection.",
+    );
+    expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
+  });
+
   it("rejects trigger rules without configured actions", async () => {
     const { saveATSTriggerRuleAction } =
       await import("@/app/(recruiter)/settings/integrations/ats/actions");
