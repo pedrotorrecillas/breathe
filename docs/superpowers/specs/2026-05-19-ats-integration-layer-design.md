@@ -261,6 +261,7 @@ Use OAuth where possible. For the first demo, support `env_token` mode:
 - `ZOHO_RECRUIT_REFRESH_TOKEN`
 - `ZOHO_RECRUIT_CLIENT_ID`
 - `ZOHO_RECRUIT_CLIENT_SECRET`
+- `ZOHO_RECRUIT_REDIRECT_URI`
 - `ZOHO_RECRUIT_ACCOUNTS_BASE_URL`
 - `ZOHO_RECRUIT_API_BASE_URL`
 
@@ -269,8 +270,11 @@ first implementation does not need a full OAuth install wizard.
 
 The codebase includes `src/lib/ats-integrations/zoho/oauth.ts` for demo setup:
 it builds the offline authorization URL and exchanges the returned authorization
-code for access/refresh tokens. This keeps the first demo independent of a full
-OAuth install wizard while avoiding one-off token setup logic.
+code for access/refresh tokens. When `ZOHO_RECRUIT_CLIENT_ID` and
+`ZOHO_RECRUIT_REDIRECT_URI` are configured, the ATS admin page exposes the
+authorization URL without leaking the client secret. This keeps the first demo
+independent of a full OAuth install wizard while avoiding one-off token setup
+logic.
 
 For demo readiness, `npm run test:smoke:zoho` runs a non-destructive live
 check when Zoho credentials are present. It validates the connection and reads

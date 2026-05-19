@@ -13,6 +13,7 @@ import type {
 } from "@/domain/ats-integrations/types";
 import type { ATSAdapterCapabilities } from "@/lib/ats-integrations/adapters/types";
 import { getATSAdapter } from "@/lib/ats-integrations/registry";
+import { buildZohoRecruitAuthorizationUrl } from "@/lib/ats-integrations/zoho/oauth";
 import type { AuthenticatedRecruiter } from "@/lib/auth/types";
 import { loadRuntimeStoreState } from "@/lib/db/runtime-store";
 
@@ -33,6 +34,9 @@ export type ATSAdminSnapshot = {
   externalStages: ATSCanonicalStage[];
   externalApplications: ATSCanonicalApplication[];
   availableProviders: ATSAvailableProvider[];
+  zohoDemoSetup: {
+    authorizationUrl: string | null;
+  };
 };
 
 export function listATSAvailableProviders(): ATSAvailableProvider[] {
@@ -102,6 +106,7 @@ export async function getATSAdminSnapshot(
       (application) => application.companyId === companyId,
     ),
     availableProviders: listATSAvailableProviders(),
+    zohoDemoSetup: buildZohoDemoSetup(),
   };
 }
 
@@ -149,6 +154,25 @@ function zohoRecruitSecretRef() {
   }
 
   return "env:ZOHO_RECRUIT_ACCESS_TOKEN";
+}
+
+function buildZohoDemoSetup(): ATSAdminSnapshot["zohoDemoSetup"] {
+  const clientId = process.env.ZOHO_RECRUIT_CLIENT_ID?.trim();
+  const redirectUri = process.env.ZOHO_RECRUIT_REDIRECT_URI?.trim();
+
+  if (!clientId || !redirectUri) {
+    return { authorizationUrl: null };
+  }
+
+  return {
+    authorizationUrl: buildZohoRecruitAuthorizationUrl({
+      accountsBaseUrl:
+        process.env.ZOHO_RECRUIT_ACCOUNTS_BASE_URL?.trim() ||
+        "https://accounts.zoho.com",
+      clientId,
+      redirectUri,
+    }),
+  };
 }
 
 export function buildDefaultZohoDemoConnection(input: {

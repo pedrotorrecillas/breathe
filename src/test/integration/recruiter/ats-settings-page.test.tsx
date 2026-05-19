@@ -167,6 +167,10 @@ function buildATSSnapshot() {
         },
       },
     ],
+    zohoDemoSetup: {
+      authorizationUrl:
+        "https://accounts.zoho.eu/oauth/v2/auth?client_id=client_id",
+    },
   };
 }
 
@@ -232,6 +236,12 @@ describe("ATS settings page", () => {
     expect(
       screen.getByRole("button", { name: /Configure Zoho demo/i }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Open Zoho OAuth/i }),
+    ).toHaveAttribute(
+      "href",
+      "https://accounts.zoho.eu/oauth/v2/auth?client_id=client_id",
+    );
     expect(screen.getByText(/Stage triggers/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Writeback policy/i).length).toBeGreaterThan(0);
     expect(
@@ -244,7 +254,9 @@ describe("ATS settings page", () => {
       screen.getByRole("button", { name: /^Retry$/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Last attempt: retryable_error · Zoho Recruit request failed with 429\./i),
+      screen.getByText(
+        /Last attempt: retryable_error · Zoho Recruit request failed with 429\./i,
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getAllByRole("option", { name: /Store Associate/i }).length,
@@ -271,8 +283,12 @@ describe("ATS settings page", () => {
       screen.getByRole("heading", { name: /Imported ATS applications/i }),
     ).toBeInTheDocument();
     expect(screen.getByText(/Ana Gomez/i)).toBeInTheDocument();
-    expect(screen.getByText(/Store Associate · Breathe Screen/i)).toBeInTheDocument();
-    expect(screen.getByText(/Linked to Breathe candidate/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Store Associate · Breathe Screen/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Linked to Breathe candidate/i),
+    ).toBeInTheDocument();
   });
 
   it("does not offer candidate note writeback when the selected provider does not support notes", async () => {
@@ -307,9 +323,9 @@ describe("ATS settings page", () => {
 
     render(await ATSSettingsPage());
 
-    expect(
-      screen.getByLabelText("Sync mode for Zoho Recruit"),
-    ).toHaveValue("scheduled");
+    expect(screen.getByLabelText("Sync mode for Zoho Recruit")).toHaveValue(
+      "scheduled",
+    );
     expect(
       screen.queryByRole("option", { name: "Webhook plus polling" }),
     ).not.toBeInTheDocument();

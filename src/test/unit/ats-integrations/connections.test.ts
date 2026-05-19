@@ -44,6 +44,32 @@ describe("ATS admin snapshot", () => {
     });
   });
 
+  it("exposes a Zoho OAuth authorization URL for admin setup when redirect settings are configured", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_CLIENT_ID", "client_id");
+    vi.stubEnv("ZOHO_RECRUIT_CLIENT_SECRET", "client_secret");
+    vi.stubEnv(
+      "ZOHO_RECRUIT_REDIRECT_URI",
+      "https://nacar.test/oauth/zoho/callback",
+    );
+    vi.stubEnv("ZOHO_RECRUIT_ACCOUNTS_BASE_URL", "https://accounts.zoho.eu");
+
+    const snapshot = await getATSAdminSnapshot(recruiter);
+
+    expect(snapshot.zohoDemoSetup.authorizationUrl).not.toContain(
+      "client_secret",
+    );
+
+    const url = new URL(snapshot.zohoDemoSetup.authorizationUrl ?? "");
+    expect(url.origin).toBe("https://accounts.zoho.eu");
+    expect(url.pathname).toBe("/oauth/v2/auth");
+    expect(url.searchParams.get("client_id")).toBe("client_id");
+    expect(url.searchParams.get("scope")).toBe("ZohoRecruit.modules.ALL");
+    expect(url.searchParams.get("access_type")).toBe("offline");
+    expect(url.searchParams.get("redirect_uri")).toBe(
+      "https://nacar.test/oauth/zoho/callback",
+    );
+  });
+
   it("includes imported jobs and stages for admin trigger configuration", async () => {
     const state = await loadRuntimeStoreState();
     state.atsExternalJobs.push(

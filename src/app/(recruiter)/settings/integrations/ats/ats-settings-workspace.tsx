@@ -270,6 +270,16 @@ export function ATSSettingsWorkspace({
                 Configure Zoho demo
               </button>
             </form>
+            {snapshot.zohoDemoSetup.authorizationUrl ? (
+              <a
+                href={snapshot.zohoDemoSetup.authorizationUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700"
+              >
+                Open Zoho OAuth
+              </a>
+            ) : null}
           </div>
         ) : null}
 
@@ -419,7 +429,9 @@ export function ATSSettingsWorkspace({
           </div>
           <div className="rounded-md border border-slate-200 px-4 py-3">
             <p className="text-sm font-medium text-slate-950">
-              {zohoWritebackIsReady ? "Writeback ready" : "Writeback incomplete"}
+              {zohoWritebackIsReady
+                ? "Writeback ready"
+                : "Writeback incomplete"}
             </p>
             <p className="mt-1 text-xs text-slate-500">
               Note plus stage move to {zohoDemoWritebackStageId}

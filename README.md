@@ -76,6 +76,7 @@ ZOHO_RECRUIT_ACCESS_TOKEN=
 ZOHO_RECRUIT_REFRESH_TOKEN=
 ZOHO_RECRUIT_CLIENT_ID=
 ZOHO_RECRUIT_CLIENT_SECRET=
+ZOHO_RECRUIT_REDIRECT_URI=
 ZOHO_RECRUIT_ACCOUNTS_BASE_URL=https://accounts.zoho.eu
 ZOHO_RECRUIT_API_BASE_URL=https://recruit.zoho.eu
 
@@ -108,6 +109,9 @@ Notes:
   `grant_type=authorization_code`. Store the returned `refresh_token` in
   `ZOHO_RECRUIT_REFRESH_TOKEN`; the ATS adapter will refresh access tokens at
   runtime.
+- When `ZOHO_RECRUIT_CLIENT_ID` and `ZOHO_RECRUIT_REDIRECT_URI` are configured,
+  the ATS admin page shows an `Open Zoho OAuth` setup link generated without
+  exposing `ZOHO_RECRUIT_CLIENT_SECRET`.
 - `ZOHO_RECRUIT_SMOKE_ENABLE_WRITEBACK=true` enables the destructive live smoke
   writeback checks and requires a throwaway candidate/job/status.
 
@@ -219,6 +223,7 @@ Relevant tests now live under:
 - `src/test/integration/recruiter/*`
 
 ## Structure
+
 The repository is split around product boundaries instead of generic layers.
 
 High-level flow:
