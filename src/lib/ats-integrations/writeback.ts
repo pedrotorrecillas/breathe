@@ -6,6 +6,7 @@ import type {
   ATSWritebackActionType,
   ATSWritebackAttempt,
   ATSWritebackResult,
+  ATSStageCategory,
 } from "@/domain/ats-integrations/types";
 import { getATSAdapter } from "@/lib/ats-integrations/registry";
 import {
@@ -64,6 +65,59 @@ function writebackAttemptId(input: {
   return `ats_attempt_${sanitizeIdPart(input.writebackActionId)}_${sanitizeIdPart(
     input.attemptedAt,
   )}_${input.index}`;
+}
+
+function updateCanonicalApplicationAfterStageMove(input: {
+  state: RuntimeStoreState;
+  action: ATSWritebackAction;
+  now: string;
+}) {
+  if (
+    input.action.actionType !== "application_stage_move" ||
+    !input.action.targetExternalApplicationId ||
+    !input.action.targetExternalStageId
+  ) {
+    return;
+  }
+
+  input.state.atsExternalApplications =
+    input.state.atsExternalApplications.map((application) => {
+      if (
+        application.companyId !== input.action.companyId ||
+        application.connectionId !== input.action.connectionId ||
+        application.externalId !== input.action.targetExternalApplicationId
+      ) {
+        return application;
+      }
+
+      const targetStage = input.state.atsExternalStages.find(
+        (stage) =>
+          stage.companyId === input.action.companyId &&
+          stage.connectionId === input.action.connectionId &&
+          stage.externalId === input.action.targetExternalStageId &&
+          (!stage.externalJobId ||
+            !input.action.targetExternalJobId ||
+            stage.externalJobId === input.action.targetExternalJobId),
+      );
+      const stageName = targetStage?.name ?? input.action.targetExternalStageId;
+      const stageCategory: ATSStageCategory =
+        targetStage?.category ?? application.stageCategory;
+
+      return {
+        ...application,
+        externalStageId: input.action.targetExternalStageId,
+        stageName,
+        stageCategory,
+        lastSeenAt: input.now,
+        rawSnapshot: {
+          ...application.rawSnapshot,
+          previousExternalStageId: application.externalStageId,
+          previousStageName: application.stageName,
+          writebackActionId: input.action.id,
+          writebackUpdatedAt: input.now,
+        },
+      };
+    });
 }
 
 export async function enqueueATSWriteback(
@@ -183,6 +237,14 @@ export async function processATSWritebackActionInState(input: {
         }
       : item,
   );
+
+  if (providerResult.status === "succeeded") {
+    updateCanonicalApplicationAfterStageMove({
+      state,
+      action,
+      now: input.now,
+    });
+  }
 
   return {
     action: state.atsWritebackActions.find((item) => item.id === action.id)!,
