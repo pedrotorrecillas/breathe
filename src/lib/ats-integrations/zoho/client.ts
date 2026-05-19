@@ -1,4 +1,8 @@
 import type { ATSConnection } from "@/domain/ats-integrations/types";
+import {
+  recruitApiBaseUrlForAccountsBaseUrl,
+  resolveZohoRecruitApiBaseUrl,
+} from "@/lib/ats-integrations/zoho/urls";
 
 export type ZohoRecruitConfig = {
   accessToken: string | null;
@@ -21,17 +25,19 @@ type ZohoRefreshTokenResponse = {
 };
 
 export function getZohoRecruitConfigFromEnv(): ZohoRecruitConfig {
+  const accountsBaseUrl =
+    process.env.ZOHO_RECRUIT_ACCOUNTS_BASE_URL?.trim() ||
+    "https://accounts.zoho.com";
+
   return {
     accessToken: process.env.ZOHO_RECRUIT_ACCESS_TOKEN?.trim() || null,
     refreshToken: process.env.ZOHO_RECRUIT_REFRESH_TOKEN?.trim() || null,
     clientId: process.env.ZOHO_RECRUIT_CLIENT_ID?.trim() || null,
     clientSecret: process.env.ZOHO_RECRUIT_CLIENT_SECRET?.trim() || null,
-    accountsBaseUrl:
-      process.env.ZOHO_RECRUIT_ACCOUNTS_BASE_URL?.trim() ||
-      "https://accounts.zoho.com",
+    accountsBaseUrl,
     apiBaseUrl:
       process.env.ZOHO_RECRUIT_API_BASE_URL?.trim() ||
-      "https://recruit.zoho.com",
+      recruitApiBaseUrlForAccountsBaseUrl(accountsBaseUrl),
   };
 }
 
@@ -83,7 +89,11 @@ async function refreshZohoRecruitAccessToken(config: ZohoRecruitConfig) {
 
   return {
     accessToken: tokenResponse.access_token,
-    apiBaseUrl: tokenResponse.api_domain ?? config.apiBaseUrl,
+    apiBaseUrl: resolveZohoRecruitApiBaseUrl({
+      accountsBaseUrl: config.accountsBaseUrl,
+      configuredApiBaseUrl: config.apiBaseUrl,
+      tokenApiDomain: tokenResponse.api_domain,
+    }),
   };
 }
 
@@ -138,7 +148,12 @@ export function createZohoRecruitClient(
       }
 
       const text = await response.text();
-      const body = text ? JSON.parse(text) : {};
+
+      if (response.status === 204 || !text) {
+        return { data: [] } as TResponse;
+      }
+
+      const body = JSON.parse(text);
 
       if (!response.ok) {
         throw new Error(

@@ -39,7 +39,7 @@ describe("Zoho Recruit OAuth helpers", () => {
           JSON.stringify({
             access_token: "access_token",
             refresh_token: "refresh_token",
-            api_domain: "https://recruit.zoho.eu",
+            api_domain: "https://www.zohoapis.eu",
             token_type: "Bearer",
             expires_in: 3600,
           }),

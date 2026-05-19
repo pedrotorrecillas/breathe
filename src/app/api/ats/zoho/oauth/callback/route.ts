@@ -1,4 +1,5 @@
 import { exchangeZohoRecruitAuthorizationCode } from "@/lib/ats-integrations/zoho/oauth";
+import { recruitApiBaseUrlForAccountsBaseUrl } from "@/lib/ats-integrations/zoho/urls";
 import { requireAuthenticatedApiRequest } from "@/lib/auth/server";
 import { recruiterCanManageTeams } from "@/lib/team-access";
 
@@ -72,18 +73,19 @@ function readZohoOAuthCallbackConfig(): ZohoOAuthCallbackConfig | null {
   const clientId = process.env.ZOHO_RECRUIT_CLIENT_ID?.trim();
   const clientSecret = process.env.ZOHO_RECRUIT_CLIENT_SECRET?.trim();
   const redirectUri = process.env.ZOHO_RECRUIT_REDIRECT_URI?.trim();
+  const accountsBaseUrl =
+    process.env.ZOHO_RECRUIT_ACCOUNTS_BASE_URL?.trim() ||
+    "https://accounts.zoho.com";
 
   if (!clientId || !clientSecret || !redirectUri) {
     return null;
   }
 
   return {
-    accountsBaseUrl:
-      process.env.ZOHO_RECRUIT_ACCOUNTS_BASE_URL?.trim() ||
-      "https://accounts.zoho.com",
+    accountsBaseUrl,
     apiBaseUrl:
       process.env.ZOHO_RECRUIT_API_BASE_URL?.trim() ||
-      "https://recruit.zoho.com",
+      recruitApiBaseUrlForAccountsBaseUrl(accountsBaseUrl),
     clientId,
     clientSecret,
     redirectUri,

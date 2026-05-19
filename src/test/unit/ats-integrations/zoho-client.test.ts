@@ -114,6 +114,61 @@ describe("Zoho Recruit client", () => {
     );
   });
 
+  it("keeps Recruit API calls on the Recruit domain when Zoho returns a generic api_domain", async () => {
+    const fetchMock = vi.fn(async (url: string | URL) => {
+      const href = String(url);
+
+      if (href.startsWith("https://accounts.zoho.eu/oauth/v2/token")) {
+        return new Response(
+          JSON.stringify({
+            access_token: "fresh_access_token",
+            api_domain: "https://www.zohoapis.eu",
+            expires_in: 3600,
+            token_type: "Bearer",
+          }),
+          { status: 200 },
+        );
+      }
+
+      return new Response(JSON.stringify({ data: [] }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = createZohoRecruitClient(zohoConnection, {
+      accessToken: null,
+      refreshToken: "refresh_token",
+      clientId: "client_id",
+      clientSecret: "client_secret",
+      accountsBaseUrl: "https://accounts.zoho.eu",
+      apiBaseUrl: "https://recruit.zoho.eu",
+    });
+
+    await client.request("/recruit/v2/Job_Openings?per_page=1", {
+      method: "GET",
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://recruit.zoho.eu/recruit/v2/Job_Openings?per_page=1",
+      expect.any(Object),
+    );
+  });
+
+  it("treats empty Zoho list responses as a valid empty Recruit connection", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "access_token");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(null, { status: 204 })),
+    );
+
+    await expect(
+      zohoRecruitAdapter.validateConnection({ connection: zohoConnection }),
+    ).resolves.toMatchObject({
+      ok: true,
+      externalAccountId: "zoho_account",
+    });
+  });
+
   it("refreshes and retries once when a configured access token has expired", async () => {
     const fetchMock = vi.fn(async (url: string | URL, init?: RequestInit) => {
       const href = String(url);

@@ -1,3 +1,5 @@
+import { resolveZohoRecruitApiBaseUrl } from "@/lib/ats-integrations/zoho/urls";
+
 const defaultZohoRecruitScopes = ["ZohoRecruit.modules.ALL"];
 
 export type ZohoRecruitAuthorizationUrlInput = {
@@ -97,7 +99,11 @@ export async function exchangeZohoRecruitAuthorizationCode(
   return {
     accessToken: tokenResponse.access_token,
     refreshToken: tokenResponse.refresh_token,
-    apiDomain: tokenResponse.api_domain ?? null,
+    apiDomain: resolveZohoRecruitApiBaseUrl({
+      accountsBaseUrl: input.accountsBaseUrl,
+      configuredApiBaseUrl: "",
+      tokenApiDomain: tokenResponse.api_domain,
+    }),
     tokenType: tokenResponse.token_type ?? null,
     expiresIn: tokenResponse.expires_in ?? null,
   };
