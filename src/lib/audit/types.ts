@@ -5,7 +5,11 @@ export type AuditAction =
   | "job_access.granted"
   | "job_access.revoked"
   | "profile.updated"
-  | "company.updated";
+  | "company.updated"
+  | "ats.connection_created"
+  | "ats.manual_sync"
+  | "ats.trigger_rule_saved"
+  | "ats.writeback_policy_saved";
 
 export type AuditActor = {
   userId: string;
@@ -19,7 +23,14 @@ export type AuditEvent = {
   actor: AuditActor;
   action: AuditAction;
   occurredAt: string;
-  targetType: "team" | "team_membership" | "job_access" | "user" | "company";
+  targetType:
+    | "team"
+    | "team_membership"
+    | "job_access"
+    | "user"
+    | "company"
+    | "ats_connection"
+    | "ats_trigger_rule";
   targetId: string;
   summary: string;
   metadata: Record<string, string | boolean | null>;
