@@ -409,6 +409,71 @@ describe("ATS sync", () => {
     });
   });
 
+  it("archives active ATS applications that disappear from a completed sync", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsExternalApplications.push({
+      id: "ats_application_ats_conn_1_mock_app_removed",
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      externalId: "mock_app_removed",
+      externalCandidateId: "mock_candidate_removed",
+      externalJobId: "mock_job_store_associate",
+      externalStageId: "mock_stage_breathe_screen",
+      externalUrl: "https://mock.example/applications/mock_app_removed",
+      internalCandidateId: null,
+      internalApplicationId: null,
+      internalJobId: null,
+      candidateName: "Removed Candidate",
+      candidateEmail: "removed@example.com",
+      candidatePhone: null,
+      jobTitle: "Store Associate",
+      stageName: "Breathe Screen",
+      stageCategory: "screening",
+      status: "active",
+      externalUpdatedAt: "2026-05-19T08:00:00.000Z",
+      lastSeenAt: "2026-05-19T10:00:00.000Z",
+      rawSnapshot: { providerRecordId: "mock_app_removed" },
+    });
+    await saveRuntimeStoreState(state);
+
+    await runATSSync({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      now: "2026-05-19T11:00:00.000Z",
+    });
+
+    const afterSync = await loadRuntimeStoreState();
+    expect(
+      afterSync.atsExternalApplications.find(
+        (application) => application.externalId === "mock_app_removed",
+      ),
+    ).toMatchObject({
+      status: "archived_external",
+      lastSeenAt: "2026-05-19T11:00:00.000Z",
+      rawSnapshot: expect.objectContaining({
+        archivedReason: "missing_from_completed_sync",
+      }),
+    });
+    expect(
+      afterSync.atsSyncEvents.find(
+        (event) =>
+          event.eventType === "external_record_archived" &&
+          event.externalObjectType === "application" &&
+          event.externalObjectId === "mock_app_removed",
+      ),
+    ).toMatchObject({
+      externalJobId: "mock_job_store_associate",
+      externalCandidateId: "mock_candidate_removed",
+      externalStageId: "mock_stage_breathe_screen",
+      payload: expect.objectContaining({
+        archiveReason: "missing_from_completed_sync",
+        previousStatus: "active",
+        status: "archived_external",
+      }),
+    });
+  });
+
   it("updates linked Breathe applications when the ATS moves into a mapped stage", async () => {
     const state = await loadRuntimeStoreState();
     state.atsConnections = state.atsConnections.map((connection) =>

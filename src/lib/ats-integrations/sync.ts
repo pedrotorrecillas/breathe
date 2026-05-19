@@ -591,6 +591,73 @@ function applyMappedATSStageToLinkedApplication(input: {
   );
 }
 
+function archiveApplicationsMissingFromCompletedSync(input: {
+  state: RuntimeStoreState;
+  connection: RunATSSyncConnection;
+  companyId: string;
+  seenApplicationExternalIds: Set<string>;
+  now: string;
+}) {
+  let createdEvents = 0;
+  const missingApplications = input.state.atsExternalApplications.filter(
+    (application) =>
+      application.companyId === input.companyId &&
+      application.connectionId === input.connection.id &&
+      application.provider === input.connection.provider &&
+      application.status === "active" &&
+      !input.seenApplicationExternalIds.has(application.externalId),
+  );
+
+  for (const application of missingApplications) {
+    const archivedApplication: ATSCanonicalApplication = {
+      ...application,
+      status: "archived_external",
+      lastSeenAt: input.now,
+      rawSnapshot: {
+        ...application.rawSnapshot,
+        archivedReason: "missing_from_completed_sync",
+        archivedAt: input.now,
+      },
+    };
+
+    input.state.atsExternalApplications =
+      input.state.atsExternalApplications.map((item) =>
+        item.id === application.id ? archivedApplication : item,
+      );
+
+    const archivedEvent = buildEvent({
+      companyId: input.companyId,
+      connectionId: input.connection.id,
+      provider: input.connection.provider,
+      eventType: "external_record_archived",
+      externalObjectType: "application",
+      externalObjectId: application.externalId,
+      externalJobId: application.externalJobId,
+      externalCandidateId: application.externalCandidateId,
+      externalStageId: application.externalStageId,
+      occurredAt: input.now,
+      externalUpdatedAt: eventUpdatedAt(application),
+      idempotencyDiscriminator: [
+        application.status,
+        archivedApplication.status,
+        "missing_from_completed_sync",
+      ].join("->"),
+      payload: {
+        ...application.rawSnapshot,
+        archiveReason: "missing_from_completed_sync",
+        previousStatus: application.status,
+        status: archivedApplication.status,
+      },
+    });
+
+    if (appendSyncEventOnce(input.state, archivedEvent)) {
+      createdEvents += 1;
+    }
+  }
+
+  return createdEvents;
+}
+
 export async function runATSSync(
   input: RunATSSyncInput,
 ): Promise<RunATSSyncResult> {
@@ -619,6 +686,7 @@ export async function runATSSync(
       createdWorkflowRequests: 0,
     };
     const autoProcessWorkflowRequestIds: string[] = [];
+    const seenApplicationExternalIds = new Set<string>();
 
     let jobsCursor: string | null = getStoredSyncCursor({
       state,
@@ -760,6 +828,7 @@ export async function runATSSync(
       });
 
       for (const application of applicationsPage.records) {
+        seenApplicationExternalIds.add(application.externalId);
         const previousApplication = state.atsExternalApplications.find(
           (item) =>
             item.connectionId === connection.id &&
@@ -992,6 +1061,14 @@ export async function runATSSync(
       hasMoreApplications =
         applicationsPage.hasMore && Boolean(applicationsCursor);
     }
+
+    result.createdEvents += archiveApplicationsMissingFromCompletedSync({
+      state,
+      connection,
+      companyId: input.companyId,
+      seenApplicationExternalIds,
+      now: input.now,
+    });
 
     upsertSyncCursor({
       state,
