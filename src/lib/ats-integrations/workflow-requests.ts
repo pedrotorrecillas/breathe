@@ -328,11 +328,11 @@ export function enqueueATSWritebacksForEvaluation(input: {
           item.companyId === linkedApplication.companyId,
       );
 
-      if (connection && connection.status !== "active") {
+      if (!connection || connection.status !== "active") {
         return [];
       }
 
-      const policy = connection?.writebackPolicy ?? defaultWritebackPolicy;
+      const policy = connection.writebackPolicy ?? defaultWritebackPolicy;
       const moveToExternalStageId = policy.moveToExternalStageId
         ? writebackStageIdForMappingValue({
             mappingValue: policy.moveToExternalStageId,
