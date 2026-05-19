@@ -25,6 +25,7 @@ import { recruiterCanManageTeams } from "@/lib/team-access";
 import { processATSWorkflowRequest } from "@/lib/ats-integrations/workflow-requests";
 import { processATSWritebackAction } from "@/lib/ats-integrations/writeback";
 import { getATSAdapter } from "@/lib/ats-integrations/registry";
+import { stageMappingValueMatchesExternalStage } from "@/lib/ats-integrations/stage-mappings";
 
 const atsTriggerActions: ATSTriggerAction[] = [
   "import_candidate",
@@ -214,6 +215,22 @@ function stageMappingValues(
   return atsInternalStageKeys
     .map((stage) => mappings[stage])
     .filter((value): value is string => Boolean(value));
+}
+
+function stageMappingValueExistsInStages(input: {
+  mappingValue: string;
+  stages: Array<{
+    externalJobId: string | null;
+    externalId: string;
+  }>;
+}) {
+  return input.stages.some((stage) =>
+    stageMappingValueMatchesExternalStage({
+      mappingValue: input.mappingValue,
+      externalJobId: stage.externalJobId,
+      externalStageId: stage.externalId,
+    }),
+  );
 }
 
 async function requireOwnedWorkflowRequest(input: {
@@ -1011,9 +1028,10 @@ export async function saveATSWritebackPolicyAction(
     if (
       moveToExternalStageId &&
       connectionStages.length > 0 &&
-      !connectionStages.some(
-        (stage) => stage.externalId === moveToExternalStageId,
-      )
+      !stageMappingValueExistsInStages({
+        mappingValue: moveToExternalStageId,
+        stages: connectionStages,
+      })
     ) {
       throw new Error(
         "Choose a writeback target stage from the selected ATS connection.",
@@ -1023,8 +1041,11 @@ export async function saveATSWritebackPolicyAction(
     if (
       mappedExternalStageIds.length > 0 &&
       connectionStages.length > 0 &&
-      !mappedExternalStageIds.every((externalStageId) =>
-        connectionStages.some((stage) => stage.externalId === externalStageId),
+      !mappedExternalStageIds.every((mappingValue) =>
+        stageMappingValueExistsInStages({
+          mappingValue,
+          stages: connectionStages,
+        }),
       )
     ) {
       throw new Error(

@@ -10,6 +10,7 @@ import {
   buildATSWorkflowRequestsForEvent,
   enqueueATSWritebacksForEvaluation,
 } from "@/lib/ats-integrations/workflow-requests";
+import { stageMappingValueForExternalStage } from "@/lib/ats-integrations/stage-mappings";
 
 const evaluation: CandidateEvaluation = {
   id: "eval_1",
@@ -340,6 +341,35 @@ describe("ATS workflow requests", () => {
       targetExternalStageId: "mock_stage_interview_completed",
     });
     expect(actions[0].payload.body).toContain("Breathe interview report");
+  });
+
+  it("uses scoped writeback target stages without leaking the scope to the ATS", () => {
+    const actions = enqueueATSWritebacksForEvaluation({
+      evaluation,
+      interviewRun,
+      atsConnections: [
+        buildConnection({
+          writebackPolicy: {
+            reportMode: "status_comment",
+            moveToExternalStageId: stageMappingValueForExternalStage({
+              externalJobId: "mock_job_store_associate",
+              externalStageId: "mock_stage_interview_completed",
+            }),
+            requiresRecruiterReview: false,
+          },
+        }),
+      ],
+      atsApplications: [linkedApplication],
+      existingActions: [],
+      now: "2026-05-19T11:01:00.000Z",
+    });
+
+    expect(actions).toHaveLength(1);
+    expect(actions[0]).toMatchObject({
+      actionType: "application_stage_move",
+      targetExternalJobId: "mock_job_store_associate",
+      targetExternalStageId: "mock_stage_interview_completed",
+    });
   });
 
   it("does not enqueue report writeback when the admin policy disables reports", () => {

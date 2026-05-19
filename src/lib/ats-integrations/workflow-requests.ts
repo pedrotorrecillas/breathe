@@ -16,7 +16,10 @@ import type { CandidateEvaluation } from "@/domain/evaluations/types";
 import type { InterviewRun } from "@/domain/interviews/types";
 import type { Job } from "@/domain/jobs/types";
 import type { ATSTriggerMatch } from "@/lib/ats-integrations/triggers";
-import { internalStageForExternalStage } from "@/lib/ats-integrations/stage-mappings";
+import {
+  internalStageForExternalStage,
+  writebackStageIdForMappingValue,
+} from "@/lib/ats-integrations/stage-mappings";
 import {
   loadRuntimeStoreState,
   saveRuntimeStoreState,
@@ -164,6 +167,7 @@ function buildImportedApplication(input: {
 }): CandidateApplication {
   const mappedStage = internalStageForExternalStage({
     connection: input.connection,
+    externalJobId: input.atsApplication.externalJobId,
     externalStageId: input.atsApplication.externalStageId,
   });
 
@@ -314,6 +318,12 @@ export function enqueueATSWritebacksForEvaluation(input: {
           item.companyId === linkedApplication.companyId,
       );
       const policy = connection?.writebackPolicy ?? defaultWritebackPolicy;
+      const moveToExternalStageId = policy.moveToExternalStageId
+        ? writebackStageIdForMappingValue({
+            mappingValue: policy.moveToExternalStageId,
+            externalJobId: linkedApplication.externalJobId,
+          })
+        : null;
       const actionTypes: ATSWritebackActionType[] = [];
 
       if (policy.reportMode === "candidate_note") {
@@ -322,12 +332,12 @@ export function enqueueATSWritebacksForEvaluation(input: {
 
       if (
         policy.reportMode === "status_comment" &&
-        !policy.moveToExternalStageId
+        !moveToExternalStageId
       ) {
         actionTypes.push("status_comment");
       }
 
-      if (policy.moveToExternalStageId) {
+      if (moveToExternalStageId) {
         actionTypes.push("application_stage_move");
       }
 
@@ -338,7 +348,7 @@ export function enqueueATSWritebacksForEvaluation(input: {
           actionType,
           targetExternalStageId:
             actionType === "application_stage_move"
-              ? policy.moveToExternalStageId
+              ? moveToExternalStageId
               : null,
           now: input.now,
         }),

@@ -8,6 +8,7 @@ import type {
   CandidateApplication,
   CandidatePipelineStage,
 } from "@/domain/candidates/types";
+import { writebackStageIdForMappingValue } from "@/lib/ats-integrations/stage-mappings";
 
 function sanitizeIdPart(value: string) {
   return value.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
@@ -105,11 +106,18 @@ export function buildATSStageMoveWritebacksForApplicationStageChange(input: {
         return [];
       }
 
-      const targetExternalStageId =
+      const mappingValue =
         connection.writebackPolicy?.stageMoveMappings?.[
           input.nextStage as ATSInternalStageKey
         ] ??
         null;
+
+      const targetExternalStageId = mappingValue
+        ? writebackStageIdForMappingValue({
+            mappingValue,
+            externalJobId: atsApplication.externalJobId,
+          })
+        : null;
 
       if (!targetExternalStageId) {
         return [];

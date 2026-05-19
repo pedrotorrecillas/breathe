@@ -2,6 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ATSSettingsPage from "@/app/(recruiter)/settings/integrations/ats/page";
+import { stageMappingValueForExternalStage } from "@/lib/ats-integrations/stage-mappings";
 
 const atsSnapshotState = vi.hoisted(() => ({
   snapshot: null as unknown,
@@ -273,11 +274,19 @@ describe("ATS settings page", () => {
       "status_comment",
     );
     expect(screen.getByLabelText("Writeback target stage")).toHaveValue(
-      "mock_stage_breathe_screen",
+      stageMappingValueForExternalStage({
+        externalJobId: "mock_job_store_associate",
+        externalStageId: "mock_stage_breathe_screen",
+      }),
     );
     expect(
       screen.getByLabelText("Move Breathe rejected to ATS stage"),
-    ).toHaveValue("mock_stage_rejected");
+    ).toHaveValue(
+      stageMappingValueForExternalStage({
+        externalJobId: "mock_job_store_associate",
+        externalStageId: "mock_stage_rejected",
+      }),
+    );
     expect(screen.getByRole("button", { name: /^Test$/i })).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: /Imported ATS applications/i }),

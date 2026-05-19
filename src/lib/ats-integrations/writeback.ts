@@ -89,6 +89,7 @@ function updateCanonicalApplicationAfterStageMove(input: {
 
   const mappedInternalStage = internalStageForExternalStage({
     connection: input.connection,
+    externalJobId: input.action.targetExternalJobId,
     externalStageId: input.action.targetExternalStageId,
   });
   let linkedInternalApplicationId: string | null = null;

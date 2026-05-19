@@ -6,6 +6,7 @@ import type {
   ATSAdminSnapshot,
   ATSAvailableProvider,
 } from "@/lib/ats-integrations/connections";
+import { stageMappingValueForExternalStage } from "@/lib/ats-integrations/stage-mappings";
 import type {
   ATSInternalStageKey,
   ATSWritebackPolicy,
@@ -72,6 +73,32 @@ function stageOptionLabel(input: {
   return job
     ? `${input.stage.name} · ${job.title}`
     : `${input.stage.name} · ${input.stage.externalId}`;
+}
+
+function stageOptionValue(stage: ATSAdminSnapshot["externalStages"][number]) {
+  return stageMappingValueForExternalStage({
+    externalJobId: stage.externalJobId,
+    externalStageId: stage.externalId,
+  });
+}
+
+function selectedStageMappingValue(input: {
+  value: string | null | undefined;
+  stages: ATSAdminSnapshot["externalStages"];
+}) {
+  if (!input.value) {
+    return "";
+  }
+
+  if (input.stages.some((stage) => stageOptionValue(stage) === input.value)) {
+    return input.value;
+  }
+
+  const legacyStage = input.stages.find(
+    (stage) => stage.externalId === input.value,
+  );
+
+  return legacyStage ? stageOptionValue(legacyStage) : input.value;
 }
 
 function latestWritebackAttempt(input: {
@@ -684,15 +711,16 @@ export function ATSSettingsWorkspace({
               writebackStages.length ? (
                 <select
                   name="moveToExternalStageId"
-                  defaultValue={
-                    selectedWritebackPolicy.moveToExternalStageId ?? ""
-                  }
+                  defaultValue={selectedStageMappingValue({
+                    value: selectedWritebackPolicy.moveToExternalStageId,
+                    stages: writebackStages,
+                  })}
                   className="rounded-md border border-slate-300 px-3 py-2 text-sm"
                   aria-label="Writeback target stage"
                 >
                   <option value="">Do not move stage</option>
                   {writebackStages.map((stage) => (
-                    <option key={stage.id} value={stage.externalId}>
+                    <option key={stage.id} value={stageOptionValue(stage)}>
                       {stageOptionLabel({
                         stage,
                         jobs: snapshot.externalJobs,
@@ -731,16 +759,20 @@ export function ATSSettingsWorkspace({
                         <select
                           name={`stageMoveMapping:${option.stage}`}
                           defaultValue={
-                            selectedWritebackPolicy.stageMoveMappings?.[
-                              option.stage
-                            ] ?? ""
+                            selectedStageMappingValue({
+                              value:
+                                selectedWritebackPolicy.stageMoveMappings?.[
+                                  option.stage
+                                ],
+                              stages: writebackStages,
+                            })
                           }
                           className="rounded-md border border-slate-300 px-2 py-2 text-sm font-normal text-slate-700"
                           aria-label={`Move Breathe ${option.stage} to ATS stage`}
                         >
                           <option value="">Do not sync this stage</option>
                           {writebackStages.map((stage) => (
-                            <option key={stage.id} value={stage.externalId}>
+                            <option key={stage.id} value={stageOptionValue(stage)}>
                               {stageOptionLabel({
                                 stage,
                                 jobs: snapshot.externalJobs,

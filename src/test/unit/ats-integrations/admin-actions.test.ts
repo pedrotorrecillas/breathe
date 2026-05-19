@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { stageMappingValueForExternalStage } from "@/lib/ats-integrations/stage-mappings";
+
 const mockRequireAuthenticatedRecruiter = vi.fn();
 const mockRecruiterCanManageTeams = vi.fn();
 const mockAppendAuditEvent = vi.fn();
@@ -980,6 +982,60 @@ describe("ATS admin actions", () => {
         }),
       }),
     );
+  });
+
+  it("saves job-scoped manual stage mappings from admin", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsExternalStages = [
+      {
+        id: "ats_stage_job_1_rejected",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalJobId: "job_1",
+        externalId: "rejected",
+        name: "Rejected",
+        category: "rejected",
+        position: 5,
+        status: "active",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+      {
+        id: "ats_stage_job_2_rejected",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalJobId: "job_2",
+        externalId: "rejected",
+        name: "Rejected",
+        category: "rejected",
+        position: 5,
+        status: "active",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { saveATSWritebackPolicyAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    const scopedRejectedStage = stageMappingValueForExternalStage({
+      externalJobId: "job_1",
+      externalStageId: "rejected",
+    });
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("reportMode", "candidate_note");
+    formData.set("stageMoveMapping:rejected", scopedRejectedStage);
+
+    await saveATSWritebackPolicyAction(formData);
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsConnections[0].writebackPolicy).toMatchObject({
+      stageMoveMappings: {
+        rejected: scopedRejectedStage,
+      },
+    });
   });
 
   it("saves status comment writeback policy without forcing a target stage move", async () => {

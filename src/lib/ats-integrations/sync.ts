@@ -474,6 +474,7 @@ function applyMappedATSStageToLinkedApplication(input: {
 }) {
   const internalStage = internalStageForExternalStage({
     connection: input.connection,
+    externalJobId: input.atsApplication.externalJobId,
     externalStageId: input.externalStageId,
   });
 
