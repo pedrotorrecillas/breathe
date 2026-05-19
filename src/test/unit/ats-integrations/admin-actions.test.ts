@@ -430,4 +430,50 @@ describe("ATS admin actions", () => {
       }),
     );
   });
+
+  it("rejects writeback target stages from another ATS connection", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsExternalStages = [
+      {
+        id: "ats_stage_own",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalJobId: "mock_job_1",
+        externalId: "mock_stage_shortlisted",
+        name: "Shortlisted",
+        category: "evaluation",
+        position: 3,
+        status: "active",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+      {
+        id: "ats_stage_other_connection",
+        companyId: "company_1",
+        connectionId: "ats_conn_2",
+        provider: "mock_ats",
+        externalJobId: "mock_job_2",
+        externalId: "mock_stage_hired",
+        name: "Hired",
+        category: "hired",
+        position: 4,
+        status: "active",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { saveATSWritebackPolicyAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("reportMode", "candidate_note");
+    formData.set("moveToExternalStageId", "mock_stage_hired");
+
+    await expect(saveATSWritebackPolicyAction(formData)).rejects.toThrow(
+      "Choose a writeback target stage from the selected ATS connection.",
+    );
+    expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
+  });
 });

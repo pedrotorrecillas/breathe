@@ -496,6 +496,24 @@ export async function saveATSWritebackPolicyAction(
       throw new Error("ATS connection not found.");
     }
 
+    const connectionStages = (state.atsExternalStages ?? []).filter(
+      (stage) =>
+        stage.companyId === recruiter.company.id &&
+        stage.connectionId === connection.id,
+    );
+
+    if (
+      moveToExternalStageId &&
+      connectionStages.length > 0 &&
+      !connectionStages.some(
+        (stage) => stage.externalId === moveToExternalStageId,
+      )
+    ) {
+      throw new Error(
+        "Choose a writeback target stage from the selected ATS connection.",
+      );
+    }
+
     const policy: ATSWritebackPolicy = {
       reportMode,
       moveToExternalStageId,
