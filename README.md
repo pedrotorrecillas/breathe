@@ -100,6 +100,14 @@ Notes:
 - Zoho region hosts must match the demo account. EU accounts use
   `https://accounts.zoho.eu` and `https://recruit.zoho.eu`; US accounts use
   `https://accounts.zoho.com` and `https://recruit.zoho.com`.
+- To prepare a stable Zoho demo credential, register a Zoho API client, open an
+  offline authorization URL with `scope=ZohoRecruit.modules.ALL`,
+  `response_type=code`, `access_type=offline`, and the registered
+  `redirect_uri`, then exchange the returned `code` against
+  `{ZOHO_RECRUIT_ACCOUNTS_BASE_URL}/oauth/v2/token` with
+  `grant_type=authorization_code`. Store the returned `refresh_token` in
+  `ZOHO_RECRUIT_REFRESH_TOKEN`; the ATS adapter will refresh access tokens at
+  runtime.
 - `ZOHO_RECRUIT_SMOKE_ENABLE_WRITEBACK=true` enables the destructive live smoke
   writeback checks and requires a throwaway candidate/job/status.
 
