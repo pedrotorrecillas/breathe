@@ -442,6 +442,11 @@ export async function processATSWorkflowRequest(input: {
         item.companyId === request.companyId &&
         (!requestConnectionId || item.id === requestConnectionId),
     ) ?? null;
+
+  if (atsConnection && atsConnection.status !== "active") {
+    throw new Error("ATS connection is not active for workflow request.");
+  }
+
   const atsApplication = state.atsExternalApplications.find(
     (item) =>
       item.companyId === request.companyId &&
