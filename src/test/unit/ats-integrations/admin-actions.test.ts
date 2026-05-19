@@ -838,17 +838,21 @@ describe("ATS admin actions", () => {
     );
   });
 
-  it("rejects status comment writeback policy without a target stage move", async () => {
+  it("saves status comment writeback policy without forcing a target stage move", async () => {
     const { saveATSWritebackPolicyAction } =
       await import("@/app/(recruiter)/settings/integrations/ats/actions");
     const formData = new FormData();
     formData.set("connectionId", "ats_conn_1");
     formData.set("reportMode", "status_comment");
 
-    await expect(saveATSWritebackPolicyAction(formData)).rejects.toThrow(
-      "Choose a writeback target stage before writing reports as status comments.",
-    );
-    expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
+    await saveATSWritebackPolicyAction(formData);
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsConnections[0].writebackPolicy).toEqual({
+      reportMode: "status_comment",
+      moveToExternalStageId: null,
+      requiresRecruiterReview: false,
+    });
   });
 
   it("rejects writeback target stages from another ATS connection", async () => {
