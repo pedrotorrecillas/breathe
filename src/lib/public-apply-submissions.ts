@@ -179,6 +179,40 @@ function shouldAutoProcessATSWriteback(input: {
   );
 }
 
+async function enqueueAndMaybeProcessATSWritebacksForEvaluation(input: {
+  state: RuntimeStoreState;
+  evaluation: CandidateEvaluation;
+  interviewRun: InterviewRun;
+  now: string;
+}) {
+  const writebackActions = enqueueATSWritebacksForEvaluation({
+    evaluation: input.evaluation,
+    interviewRun: input.interviewRun,
+    atsConnections: input.state.atsConnections,
+    atsApplications: input.state.atsExternalApplications,
+    existingActions: input.state.atsWritebackActions,
+    now: input.now,
+  });
+
+  input.state.atsWritebackActions.push(...writebackActions);
+  const autoProcessableWritebackIds = writebackActions
+    .map((action) => action.id)
+    .filter((writebackActionId) =>
+      shouldAutoProcessATSWriteback({
+        state: input.state,
+        writebackActionId,
+      }),
+    );
+
+  for (const writebackActionId of autoProcessableWritebackIds) {
+    await processATSWritebackActionInState({
+      state: input.state,
+      writebackActionId,
+      now: input.now,
+    });
+  }
+}
+
 function normalizeTranscriptResolution(
   transcript: string | TranscriptSegment[],
 ): string | TranscriptSegment[] | null {
@@ -374,32 +408,12 @@ async function maybeGenerateInterviewEvaluation(input: {
     input.state.evaluations.push(evaluation);
   }
 
-  const writebackActions = enqueueATSWritebacksForEvaluation({
+  await enqueueAndMaybeProcessATSWritebacksForEvaluation({
+    state: input.state,
     evaluation,
     interviewRun: snapshot.interviewRun,
-    atsConnections: input.state.atsConnections,
-    atsApplications: input.state.atsExternalApplications,
-    existingActions: input.state.atsWritebackActions,
     now: generatedAt.toISOString(),
   });
-
-  input.state.atsWritebackActions.push(...writebackActions);
-  const autoProcessableWritebackIds = writebackActions
-    .map((action) => action.id)
-    .filter((writebackActionId) =>
-      shouldAutoProcessATSWriteback({
-        state: input.state,
-        writebackActionId,
-      }),
-    );
-
-  for (const writebackActionId of autoProcessableWritebackIds) {
-    await processATSWritebackActionInState({
-      state: input.state,
-      writebackActionId,
-      now: generatedAt.toISOString(),
-    });
-  }
 
   return evaluation;
 }
@@ -507,6 +521,13 @@ export async function saveInterviewEvaluation(
   } else {
     state.evaluations.push(evaluation);
   }
+
+  await enqueueAndMaybeProcessATSWritebacksForEvaluation({
+    state,
+    evaluation,
+    interviewRun,
+    now: evaluation.generatedAt,
+  });
 
   await saveRuntimeStoreState(state);
 

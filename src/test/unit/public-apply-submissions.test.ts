@@ -645,6 +645,110 @@ describe("public apply submissions", () => {
     expect((await getPublicApplySubmissionSnapshot()).interviewRuns).toHaveLength(1);
   });
 
+  it("enqueues ATS writeback actions when a stored evaluation belongs to a linked ATS application", async () => {
+    const submission = await submitPublicApplication({
+      jobId: "job_warehouse_madrid",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "en",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    expect(submission.success).toBe(true);
+
+    if (!submission.success) {
+      return;
+    }
+
+    const seededState = await loadRuntimeStoreState();
+    seededState.atsConnections.push({
+      id: "ats_conn_1",
+      companyId: "company_seed_demo",
+      provider: "mock_ats",
+      status: "active",
+      displayName: "Mock ATS",
+      authMode: "mock",
+      secretRef: null,
+      externalAccountId: "mock_account_from_connection",
+      lastSyncAt: null,
+      lastError: null,
+      createdAt: "2026-03-25T12:00:00.000Z",
+      updatedAt: "2026-03-25T12:00:00.000Z",
+      writebackPolicy: {
+        reportMode: "candidate_note",
+        moveToExternalStageId: null,
+        requiresRecruiterReview: true,
+      },
+    });
+    seededState.atsExternalApplications.push({
+      id: "ats_app_1",
+      companyId: "company_seed_demo",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      externalId: "mock_app_1",
+      externalCandidateId: "mock_candidate_lucia",
+      externalJobId: "mock_job_warehouse",
+      externalStageId: "mock_stage_screen",
+      externalUrl: null,
+      internalCandidateId: submission.data.candidate.id,
+      internalApplicationId: submission.data.application.id,
+      internalJobId: submission.data.application.jobId,
+      candidateName: "Lucia Torres",
+      candidateEmail: "lucia@example.com",
+      candidatePhone: "+34600123456",
+      jobTitle: "Warehouse Operator",
+      stageName: "Screen",
+      stageCategory: "screening",
+      status: "active",
+      externalUpdatedAt: "2026-03-25T12:00:00.000Z",
+      lastSeenAt: "2026-03-25T12:00:00.000Z",
+      rawSnapshot: {},
+    });
+    await saveRuntimeStoreState(seededState);
+
+    const evaluation: CandidateEvaluation = {
+      id: "eval_manual_ats",
+      companyId: "company_seed_demo",
+      interviewRunId: "run_1",
+      generatedAt: "2026-03-25T12:15:00.000Z",
+      finalNumericScore: 82,
+      finalScoreState: "Great",
+      blocks: [],
+      weightConfigSnapshot: {
+        mandatoryRequirementWeight: 0.8,
+        optionalRequirementWeight: 0.2,
+        essentialBlockWeight: 0.45,
+        technicalBlockWeight: 0.45,
+        interpersonalBlockWeight: 0.1,
+      },
+      fitClassification: "strong_fit",
+    };
+
+    const saveResult = await saveInterviewEvaluation(evaluation);
+
+    expect(saveResult.success).toBe(true);
+    const state = await loadRuntimeStoreState();
+    expect(state.atsWritebackActions).toHaveLength(1);
+    expect(state.atsWritebackActions[0]).toMatchObject({
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      actionType: "candidate_note",
+      targetExternalCandidateId: "mock_candidate_lucia",
+      sourceObjectType: "evaluation",
+      sourceObjectId: "eval_manual_ats",
+      status: "queued",
+    });
+  });
+
   it("refuses to store an evaluation when the interview run is missing", async () => {
     const evaluation: CandidateEvaluation = {
       id: "eval_1",
