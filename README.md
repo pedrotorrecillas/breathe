@@ -76,7 +76,7 @@ ZOHO_RECRUIT_ACCESS_TOKEN=
 ZOHO_RECRUIT_REFRESH_TOKEN=
 ZOHO_RECRUIT_CLIENT_ID=
 ZOHO_RECRUIT_CLIENT_SECRET=
-ZOHO_RECRUIT_REDIRECT_URI=
+ZOHO_RECRUIT_REDIRECT_URI=http://localhost:3000/api/ats/zoho/oauth/callback
 ZOHO_RECRUIT_ACCOUNTS_BASE_URL=https://accounts.zoho.eu
 ZOHO_RECRUIT_API_BASE_URL=https://recruit.zoho.eu
 
@@ -101,14 +101,12 @@ Notes:
 - Zoho region hosts must match the demo account. EU accounts use
   `https://accounts.zoho.eu` and `https://recruit.zoho.eu`; US accounts use
   `https://accounts.zoho.com` and `https://recruit.zoho.com`.
-- To prepare a stable Zoho demo credential, register a Zoho API client, open an
-  offline authorization URL with `scope=ZohoRecruit.modules.ALL`,
-  `response_type=code`, `access_type=offline`, and the registered
-  `redirect_uri`, then exchange the returned `code` against
-  `{ZOHO_RECRUIT_ACCOUNTS_BASE_URL}/oauth/v2/token` with
-  `grant_type=authorization_code`. Store the returned `refresh_token` in
-  `ZOHO_RECRUIT_REFRESH_TOKEN`; the ATS adapter will refresh access tokens at
-  runtime.
+- To prepare a stable Zoho demo credential, register a Zoho API client with
+  `ZOHO_RECRUIT_REDIRECT_URI` as the redirect URI, sign in to Breathe as an
+  admin, open `Open Zoho OAuth` from the ATS admin page, and approve the
+  request. The callback page exchanges the returned code and shows the
+  `ZOHO_RECRUIT_REFRESH_TOKEN` value to store server-side; the ATS adapter will
+  refresh access tokens at runtime.
 - When `ZOHO_RECRUIT_CLIENT_ID` and `ZOHO_RECRUIT_REDIRECT_URI` are configured,
   the ATS admin page shows an `Open Zoho OAuth` setup link generated without
   exposing `ZOHO_RECRUIT_CLIENT_SECRET`.
@@ -188,6 +186,9 @@ API routes:
   Run scheduled ATS polling sync for configured connections
 - `/api/ats/writebacks/process`
   Process approval-free queued ATS writebacks
+- `/api/ats/zoho/oauth/callback`
+  Exchange the Zoho demo OAuth code and render refresh-token env values for
+  authenticated ATS admins
 
 ## Architecture
 

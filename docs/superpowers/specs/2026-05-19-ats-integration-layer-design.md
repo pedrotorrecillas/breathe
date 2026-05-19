@@ -272,9 +272,11 @@ The codebase includes `src/lib/ats-integrations/zoho/oauth.ts` for demo setup:
 it builds the offline authorization URL and exchanges the returned authorization
 code for access/refresh tokens. When `ZOHO_RECRUIT_CLIENT_ID` and
 `ZOHO_RECRUIT_REDIRECT_URI` are configured, the ATS admin page exposes the
-authorization URL without leaking the client secret. This keeps the first demo
-independent of a full OAuth install wizard while avoiding one-off token setup
-logic.
+authorization URL without leaking the client secret. Zoho can redirect back to
+`/api/ats/zoho/oauth/callback`, which exchanges the authorization code for a
+refresh token and renders the server env values for authenticated ATS admins.
+This keeps the first demo independent of a full OAuth install wizard while
+avoiding one-off token setup logic.
 
 For demo readiness, `npm run test:smoke:zoho` runs a non-destructive live
 check when Zoho credentials are present. It validates the connection and reads
