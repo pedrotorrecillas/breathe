@@ -377,8 +377,9 @@ When a candidate enters a configured external stage/status:
    - create interview run,
    - dispatch immediately or queue for recruiter approval.
 4. Admin can approve queued requests. Approval imports/links the canonical ATS
-   application into Breathe's candidate/application model before later workflow
-   execution.
+   application into Breathe's candidate/application model, generates interview
+   preparation when requested, and creates a queued interview run for
+   `queue_interview` or `dispatch_interview`.
 5. Trigger execution stores a trace linked to the ATS event.
 
 The first implementation can queue trigger results as internal actions instead

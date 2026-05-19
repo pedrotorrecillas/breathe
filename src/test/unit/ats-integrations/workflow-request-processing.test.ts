@@ -125,4 +125,66 @@ describe("ATS workflow request processing", () => {
       status: "completed",
     });
   });
+
+  it("prepares and queues an interview when requested by the ATS trigger", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsWorkflowRequests[0] = {
+      ...state.atsWorkflowRequests[0],
+      requestedActions: [
+        "import_candidate",
+        "prepare_interview",
+        "queue_interview",
+      ],
+    };
+    await saveRuntimeStoreState(state);
+
+    await processATSWorkflowRequest({
+      workflowRequestId: "ats_workflow_1",
+      now: "2026-05-19T10:04:00.000Z",
+      approved: true,
+    });
+
+    const after = await loadRuntimeStoreState();
+    expect(after.interviewPreparationPackages).toHaveLength(1);
+    expect(after.interviewPreparationPackages[0]).toMatchObject({
+      jobId: "job_1",
+      candidateId: after.candidates[0].id,
+      language: "es",
+    });
+    expect(after.interviewRuns).toHaveLength(1);
+    expect(after.interviewRuns[0]).toMatchObject({
+      candidateId: after.candidates[0].id,
+      applicationId: after.applications[0].id,
+      jobId: "job_1",
+      interviewPreparationId: after.interviewPreparationPackages[0].id,
+      status: "queued",
+      pipelineStage: "applicant",
+    });
+  });
+
+  it("queues an interview for dispatch requests without calling the runtime provider directly", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsWorkflowRequests[0] = {
+      ...state.atsWorkflowRequests[0],
+      requestedActions: ["dispatch_interview"],
+      requiresRecruiterApproval: false,
+    };
+    await saveRuntimeStoreState(state);
+
+    await processATSWorkflowRequest({
+      workflowRequestId: "ats_workflow_1",
+      now: "2026-05-19T10:05:00.000Z",
+    });
+
+    const after = await loadRuntimeStoreState();
+    expect(after.interviewPreparationPackages).toHaveLength(1);
+    expect(after.interviewRuns).toHaveLength(1);
+    expect(after.interviewRuns[0]).toMatchObject({
+      provider: "happyrobot",
+      status: "queued",
+      dispatch: {
+        dispatchedAt: null,
+      },
+    });
+  });
 });

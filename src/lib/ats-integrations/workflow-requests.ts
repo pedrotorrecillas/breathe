@@ -14,11 +14,13 @@ import type {
 } from "@/domain/candidates/types";
 import type { CandidateEvaluation } from "@/domain/evaluations/types";
 import type { InterviewRun } from "@/domain/interviews/types";
+import type { Job } from "@/domain/jobs/types";
 import type { ATSTriggerMatch } from "@/lib/ats-integrations/triggers";
 import {
   loadRuntimeStoreState,
   saveRuntimeStoreState,
 } from "@/lib/db/runtime-store";
+import { createInterviewPreparationPackage } from "@/lib/interview-preparation";
 
 function sanitizeIdPart(value: string) {
   return value.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
@@ -151,6 +153,84 @@ function buildImportedApplication(input: {
   };
 }
 
+function buildQueuedInterviewRun(input: {
+  application: CandidateApplication;
+  preparationId: string | null;
+  now: string;
+}): InterviewRun {
+  return {
+    id: `ats_run_${sanitizeIdPart(input.application.id)}`,
+    companyId: input.application.companyId,
+    candidateId: input.application.candidateId,
+    applicationId: input.application.id,
+    jobId: input.application.jobId,
+    interviewPreparationId: input.preparationId,
+    provider: "happyrobot",
+    status: "queued",
+    pipelineStage: "applicant",
+    dispatch: {
+      dispatchedAt: null,
+      providerCallId: null,
+      providerAgentId: null,
+      providerSessionId: null,
+      outboundNumber: null,
+    },
+    metadata: {
+      selectedLanguage: "auto_detected",
+      candidateTimezone: {
+        timezone: null,
+        localDateTime: null,
+        utcDateTime: null,
+      },
+      disclosedWithAi: true,
+      disclosureText: "This interview is conducted using an AI-powered system.",
+      callbackRequestedAt: null,
+      failureReason: null,
+      providerOutcomeLabel: null,
+    },
+    trace: {
+      createdAt: input.now,
+      normalizedAt: null,
+      initiatedAt: null,
+      completedAt: null,
+      lastEventAt: null,
+    },
+    artifacts: {
+      recordingUrl: null,
+      transcriptUrl: null,
+      transcriptAssetRef: null,
+      providerPayloadSnapshotRef: null,
+      recordingDurationSeconds: null,
+    },
+  };
+}
+
+function ensureInterviewPreparation(input: {
+  state: Awaited<ReturnType<typeof loadRuntimeStoreState>>;
+  job: Job;
+  candidateId: string;
+  now: string;
+}) {
+  const existing =
+    input.state.interviewPreparationPackages.find(
+      (item) =>
+        item.jobId === input.job.id && item.candidateId === input.candidateId,
+    ) ?? null;
+
+  if (existing) {
+    return existing;
+  }
+
+  const preparation = createInterviewPreparationPackage({
+    job: input.job,
+    candidateId: input.candidateId,
+    now: new Date(input.now),
+  });
+  input.state.interviewPreparationPackages.push(preparation);
+
+  return preparation;
+}
+
 export function buildATSWorkflowRequestsForEvent(input: {
   event: ATSSyncEvent;
   matches: ATSTriggerMatch[];
@@ -255,7 +335,16 @@ export async function processATSWorkflowRequest(input: {
     };
   }
 
-  if (!request.requestedActions.includes("import_candidate")) {
+  const needsInternalApplication = request.requestedActions.some((action) =>
+    [
+      "import_candidate",
+      "prepare_interview",
+      "queue_interview",
+      "dispatch_interview",
+    ].includes(action),
+  );
+
+  if (!needsInternalApplication) {
     const skippedRequest = {
       ...request,
       status: "skipped" as const,
@@ -365,6 +454,37 @@ export async function processATSWorkflowRequest(input: {
       now: input.now,
     });
     state.applications.push(application);
+  }
+
+  const preparation =
+    request.requestedActions.includes("prepare_interview") ||
+    request.requestedActions.includes("queue_interview") ||
+    request.requestedActions.includes("dispatch_interview")
+      ? ensureInterviewPreparation({
+          state,
+          job: linkedJob,
+          candidateId: candidate.id,
+          now: input.now,
+        })
+      : null;
+
+  if (
+    request.requestedActions.includes("queue_interview") ||
+    request.requestedActions.includes("dispatch_interview")
+  ) {
+    const existingRun = state.interviewRuns.find(
+      (item) => item.applicationId === application.id,
+    );
+
+    if (!existingRun) {
+      state.interviewRuns.push(
+        buildQueuedInterviewRun({
+          application,
+          preparationId: preparation?.id ?? null,
+          now: input.now,
+        }),
+      );
+    }
   }
 
   const completedRequest: ATSWorkflowRequest = {
