@@ -391,6 +391,10 @@ export async function processATSWorkflowRequest(input: {
     throw new Error("ATS workflow request not found.");
   }
 
+  if (request.status !== "queued") {
+    throw new Error("ATS workflow request is not queued for processing.");
+  }
+
   if (request.requiresRecruiterApproval && !input.approved) {
     return {
       status: "waiting_for_approval",

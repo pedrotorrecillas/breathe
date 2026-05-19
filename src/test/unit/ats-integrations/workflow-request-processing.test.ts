@@ -107,6 +107,36 @@ describe("ATS workflow request processing", () => {
     expect(state.atsWorkflowRequests[0].status).toBe("queued");
   });
 
+  it("does not process workflow requests that already reached a terminal status", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsWorkflowRequests[0] = {
+      ...state.atsWorkflowRequests[0],
+      status: "completed",
+      internalCandidateId: "candidate_existing",
+      internalApplicationId: "application_existing",
+      updatedAt: "2026-05-19T10:02:00.000Z",
+    };
+    await saveRuntimeStoreState(state);
+
+    await expect(
+      processATSWorkflowRequest({
+        workflowRequestId: "ats_workflow_1",
+        now: "2026-05-19T10:03:00.000Z",
+        approved: true,
+      }),
+    ).rejects.toThrow("ATS workflow request is not queued for processing.");
+
+    const after = await loadRuntimeStoreState();
+    expect(after.candidates).toHaveLength(0);
+    expect(after.applications).toHaveLength(0);
+    expect(after.atsWorkflowRequests[0]).toMatchObject({
+      status: "completed",
+      internalCandidateId: "candidate_existing",
+      internalApplicationId: "application_existing",
+      updatedAt: "2026-05-19T10:02:00.000Z",
+    });
+  });
+
   it("imports and links the canonical ATS application after approval", async () => {
     const result = await processATSWorkflowRequest({
       workflowRequestId: "ats_workflow_1",
