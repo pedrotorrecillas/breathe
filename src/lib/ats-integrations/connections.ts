@@ -126,22 +126,35 @@ export function buildDefaultMockATSConnection(input: {
   };
 }
 
+function hasZohoRecruitCredentials() {
+  return Boolean(
+    process.env.ZOHO_RECRUIT_ACCESS_TOKEN?.trim() ||
+      (process.env.ZOHO_RECRUIT_REFRESH_TOKEN?.trim() &&
+        process.env.ZOHO_RECRUIT_CLIENT_ID?.trim() &&
+        process.env.ZOHO_RECRUIT_CLIENT_SECRET?.trim()),
+  );
+}
+
 export function buildDefaultZohoDemoConnection(input: {
   companyId: string;
   now: string;
 }): ATSConnection {
+  const hasCredentials = hasZohoRecruitCredentials();
+
   return {
     id: `ats_conn_${randomUUID()}`,
     companyId: input.companyId,
     provider: "zoho_recruit",
-    status: "active",
+    status: hasCredentials ? "active" : "error",
     syncMode: "manual",
     displayName: "Zoho Recruit demo",
     authMode: "env_token",
     secretRef: "env:ZOHO_RECRUIT_ACCESS_TOKEN",
     externalAccountId: null,
     lastSyncAt: null,
-    lastError: null,
+    lastError: hasCredentials
+      ? null
+      : "Configure ZOHO_RECRUIT_ACCESS_TOKEN or refresh-token credentials before syncing Zoho Recruit.",
     createdAt: input.now,
     updatedAt: input.now,
   };

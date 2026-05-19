@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockRequireAuthenticatedRecruiter = vi.fn();
 const mockRecruiterCanManageTeams = vi.fn();
@@ -69,6 +69,10 @@ const recruiterFixture = {
 };
 
 describe("ATS admin actions", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockAdapterCapabilities = {
@@ -163,6 +167,38 @@ describe("ATS admin actions", () => {
       externalAccountId: "mock_account_verified",
       message: "Mock ATS connection is available.",
     });
+  });
+
+  it("creates a Zoho demo connection as errored when credentials are missing", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "");
+    vi.stubEnv("ZOHO_RECRUIT_REFRESH_TOKEN", "");
+    vi.stubEnv("ZOHO_RECRUIT_CLIENT_ID", "");
+    vi.stubEnv("ZOHO_RECRUIT_CLIENT_SECRET", "");
+    const { createZohoEnvConnectionAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+
+    await createZohoEnvConnectionAction(new FormData());
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    const zohoConnection = savedState.atsConnections.find(
+      (connection: { provider: string }) =>
+        connection.provider === "zoho_recruit",
+    );
+    expect(zohoConnection).toMatchObject({
+      provider: "zoho_recruit",
+      status: "error",
+      lastError:
+        "Configure ZOHO_RECRUIT_ACCESS_TOKEN or refresh-token credentials before syncing Zoho Recruit.",
+    });
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ats.connection_created",
+        metadata: expect.objectContaining({
+          provider: "zoho_recruit",
+          credentialStatus: "missing",
+        }),
+      }),
+    );
   });
 
   it("saves configurable trigger actions and recruiter approval", async () => {

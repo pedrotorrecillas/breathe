@@ -160,6 +160,7 @@ export async function createZohoEnvConnectionAction(
       summary: "Created Zoho Recruit integration connection.",
       metadata: {
         provider: connection.provider,
+        credentialStatus: connection.status === "active" ? "present" : "missing",
       },
     });
     await saveRuntimeStoreState(state);
