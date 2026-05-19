@@ -122,4 +122,79 @@ describe("Zoho Recruit client", () => {
       }),
     );
   });
+
+  it("maps adapter cursors to Zoho list record pages", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "access_token");
+    const fetchMock = vi.fn(async (url: string | URL) => {
+      const href = String(url);
+
+      if (href.includes("/recruit/v2/Job_Openings")) {
+        return new Response(
+          JSON.stringify({
+            data: [
+              {
+                id: "58431000000012345",
+                Posting_Title: "Store Associate",
+                Job_Opening_Status: "In-progress",
+                Modified_Time: "2026-05-19T10:00:00+02:00",
+              },
+            ],
+            info: {
+              page: 2,
+              per_page: 100,
+              more_records: true,
+            },
+          }),
+          { status: 200 },
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          data: [
+            {
+              id: "58431000000054321",
+              Full_Name: "Ana Martin",
+              Email: "ana@example.com",
+              Candidate_Status: "Breathe Screen",
+              Modified_Time: "2026-05-19T10:05:00+02:00",
+            },
+          ],
+          info: {
+            page: 3,
+            per_page: 50,
+            more_records: false,
+          },
+        }),
+        { status: 200 },
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const jobsPage = await zohoRecruitAdapter.listJobs({
+      connection: zohoConnection,
+      cursor: "2",
+      limit: 100,
+    });
+    const applicationsPage = await zohoRecruitAdapter.listApplications({
+      connection: zohoConnection,
+      cursor: "3",
+      limit: 50,
+    });
+
+    const jobUrl = new URL(String(fetchMock.mock.calls[0][0]));
+    const applicationsUrl = new URL(String(fetchMock.mock.calls[1][0]));
+    expect(jobUrl.searchParams.get("page")).toBe("2");
+    expect(jobUrl.searchParams.get("per_page")).toBe("100");
+    expect(applicationsUrl.searchParams.get("page")).toBe("3");
+    expect(applicationsUrl.searchParams.get("per_page")).toBe("50");
+    expect(jobsPage).toMatchObject({
+      nextCursor: "3",
+      hasMore: true,
+    });
+    expect(applicationsPage).toMatchObject({
+      nextCursor: null,
+      hasMore: false,
+    });
+  });
 });

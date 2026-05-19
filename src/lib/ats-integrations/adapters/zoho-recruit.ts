@@ -10,6 +10,11 @@ import {
 
 type ZohoListResponse = {
   data?: ZohoRecord[];
+  info?: {
+    page?: number;
+    per_page?: number;
+    more_records?: boolean;
+  };
 };
 
 function bodyFromWriteback(action: ATSWritebackAction) {
@@ -25,6 +30,36 @@ function bodyFromWriteback(action: ATSWritebackAction) {
   }
 
   return JSON.stringify(action.payload);
+}
+
+function zohoPageFromCursor(cursor: string | null) {
+  const page = cursor ? Number.parseInt(cursor, 10) : 1;
+
+  return Number.isFinite(page) && page > 0 ? page : 1;
+}
+
+function zohoListPath(input: {
+  moduleApiName: string;
+  page: number;
+  perPage: number;
+}) {
+  const params = new URLSearchParams({
+    per_page: String(input.perPage),
+    page: String(input.page),
+  });
+
+  return `/recruit/v2/${input.moduleApiName}?${params.toString()}`;
+}
+
+function nextZohoCursor(input: {
+  currentPage: number;
+  response: ZohoListResponse;
+}) {
+  if (!input.response.info?.more_records) {
+    return null;
+  }
+
+  return String((input.response.info.page ?? input.currentPage) + 1);
 }
 
 export const zohoRecruitAdapter: ATSAdapter = {
@@ -53,15 +88,20 @@ export const zohoRecruitAdapter: ATSAdapter = {
   },
   async listJobs(input) {
     const client = createZohoRecruitClient(input.connection);
+    const page = zohoPageFromCursor(input.cursor);
     const response = await client.request<ZohoListResponse>(
-      `/recruit/v2/Job_Openings?per_page=${input.limit}`,
+      zohoListPath({
+        moduleApiName: "Job_Openings",
+        page,
+        perPage: input.limit,
+      }),
       { method: "GET" },
     );
 
     return {
       records: (response.data ?? []).map(mapZohoJobOpeningToProviderJob),
-      nextCursor: null,
-      hasMore: false,
+      nextCursor: nextZohoCursor({ currentPage: page, response }),
+      hasMore: Boolean(response.info?.more_records),
     };
   },
   async listStages() {
@@ -91,8 +131,13 @@ export const zohoRecruitAdapter: ATSAdapter = {
   },
   async listApplications(input) {
     const client = createZohoRecruitClient(input.connection);
+    const page = zohoPageFromCursor(input.cursor);
     const response = await client.request<ZohoListResponse>(
-      `/recruit/v2/Candidates?per_page=${input.limit}`,
+      zohoListPath({
+        moduleApiName: "Candidates",
+        page,
+        perPage: input.limit,
+      }),
       { method: "GET" },
     );
 
@@ -104,8 +149,8 @@ export const zohoRecruitAdapter: ATSAdapter = {
           fallbackJobTitle: "Unknown Zoho Job",
         }),
       ),
-      nextCursor: null,
-      hasMore: false,
+      nextCursor: nextZohoCursor({ currentPage: page, response }),
+      hasMore: Boolean(response.info?.more_records),
     };
   },
   async getCandidate(input) {
