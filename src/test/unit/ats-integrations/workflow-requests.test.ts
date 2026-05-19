@@ -192,6 +192,79 @@ describe("ATS workflow requests", () => {
     });
   });
 
+  it("formats evaluation writebacks as a recruiter-readable interview report", () => {
+    const actions = enqueueATSWritebacksForEvaluation({
+      evaluation: {
+        ...evaluation,
+        finalNumericScore: 74,
+        finalScoreState: "Good",
+        fitClassification: "viable_fit",
+        blocks: [
+          {
+            category: "essential",
+            label: "Essential requirements",
+            numericScore: 84,
+            scoreState: "Great",
+            requirements: [
+              {
+                requirementId: "req_1",
+                label: "Warehouse experience",
+                importance: "MANDATORY",
+                numericScore: 92,
+                scoreState: "Great",
+                explanation: "Direct evidence of prior warehouse work.",
+                evidence: {
+                  highlightedQuote: "I worked in a warehouse for four years.",
+                  transcriptStartMs: 10000,
+                  transcriptEndMs: 18000,
+                },
+              },
+            ],
+          },
+          {
+            category: "interpersonal",
+            label: "Interpersonal skills",
+            numericScore: 41,
+            scoreState: "Low",
+            requirements: [
+              {
+                requirementId: "req_2",
+                label: "Team communication",
+                importance: "OPTIONAL",
+                numericScore: 41,
+                scoreState: "Low",
+                explanation: "Some evidence of communication.",
+                evidence: null,
+              },
+            ],
+          },
+        ],
+      },
+      interviewRun,
+      atsConnections: [buildConnection()],
+      atsApplications: [linkedApplication],
+      existingActions: [],
+      now: "2026-05-19T11:01:00.000Z",
+    });
+
+    expect(actions[0].payload).toMatchObject({
+      summary: "Good · 74/100",
+      fitClassification: "viable_fit",
+      finalNumericScore: 74,
+      finalScoreState: "Good",
+    });
+    expect(actions[0].payload.body).toContain("Breathe interview report");
+    expect(actions[0].payload.body).toContain("Result: Good · 74/100");
+    expect(actions[0].payload.body).toContain("Fit: viable_fit");
+    expect(actions[0].payload.body).toContain(
+      "Essential requirements stand out as the strongest block",
+    );
+    expect(actions[0].payload.body).toContain(
+      "- Warehouse experience (Great)",
+    );
+    expect(actions[0].payload.body).toContain("- Team communication (Low)");
+  });
+
   it("honors the admin writeback policy for report mode and stage movement", () => {
     const actions = enqueueATSWritebacksForEvaluation({
       evaluation,

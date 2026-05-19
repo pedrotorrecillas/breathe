@@ -20,6 +20,7 @@ import {
   loadRuntimeStoreState,
   saveRuntimeStoreState,
 } from "@/lib/db/runtime-store";
+import { buildEvaluationSummary } from "@/lib/evaluation-summary";
 import { createInterviewPreparationPackage } from "@/lib/interview-preparation";
 
 function sanitizeIdPart(value: string) {
@@ -41,11 +42,36 @@ const defaultWritebackPolicy: ATSWritebackPolicy = {
 };
 
 function buildEvaluationPayload(input: { evaluation: CandidateEvaluation }) {
+  const summary = buildEvaluationSummary(input.evaluation);
+  const body = [
+    "Breathe interview report",
+    "",
+    `Result: ${summary.headline}`,
+    input.evaluation.fitClassification
+      ? `Fit: ${input.evaluation.fitClassification}`
+      : null,
+    "",
+    `Summary: ${summary.summary}`,
+    "",
+    "Strengths:",
+    ...(summary.strengths.length
+      ? summary.strengths.map((item) => `- ${item}`)
+      : ["- No strengths available yet."]),
+    "",
+    "Concerns:",
+    ...(summary.concerns.length
+      ? summary.concerns.map((item) => `- ${item}`)
+      : ["- No concerns available yet."]),
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n");
+
   return {
-    summary: `${input.evaluation.finalScoreState}: ${
-      input.evaluation.finalNumericScore ?? "Pending"
-    }`,
+    summary: summary.headline,
+    body,
     fitClassification: input.evaluation.fitClassification ?? null,
+    finalNumericScore: summary.finalNumericScore,
+    finalScoreState: summary.finalScoreState,
   };
 }
 
