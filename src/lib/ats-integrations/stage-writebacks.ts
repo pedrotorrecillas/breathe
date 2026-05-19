@@ -88,6 +88,7 @@ export function buildATSStageMoveWritebacksForApplicationStageChange(input: {
   const linkedApplications = input.atsApplications.filter(
     (atsApplication) =>
       atsApplication.companyId === input.application.companyId &&
+      atsApplication.status === "active" &&
       (atsApplication.internalApplicationId === input.application.id ||
         (atsApplication.internalCandidateId === input.application.candidateId &&
           atsApplication.internalJobId === input.application.jobId)),

@@ -47,6 +47,48 @@ const atsApplicationBase: ATSCanonicalApplication = {
 };
 
 describe("ATS stage writebacks", () => {
+  it("does not create stage move writebacks for externally archived ATS applications", () => {
+    const connection: ATSConnection = {
+      id: "ats_conn_1",
+      companyId: "company_1",
+      provider: "mock_ats",
+      status: "active",
+      displayName: "Mock ATS",
+      authMode: "mock",
+      secretRef: null,
+      externalAccountId: "mock_account",
+      lastSyncAt: null,
+      lastError: null,
+      createdAt: "2026-05-19T10:00:00.000Z",
+      updatedAt: "2026-05-19T10:00:00.000Z",
+      writebackPolicy: {
+        reportMode: "candidate_note",
+        moveToExternalStageId: null,
+        requiresRecruiterReview: true,
+        stageMoveMappings: {
+          rejected: "shared_rejected",
+        },
+      },
+    };
+
+    const actions = buildATSStageMoveWritebacksForApplicationStageChange({
+      application,
+      previousStage: "shortlisted",
+      nextStage: "rejected",
+      atsConnections: [connection],
+      atsApplications: [
+        {
+          ...atsApplicationBase,
+          status: "archived_external",
+        },
+      ],
+      existingActions: [],
+      now: "2026-05-19T11:00:00.000Z",
+    });
+
+    expect(actions).toHaveLength(0);
+  });
+
   it("uses job-scoped stage mappings without leaking the scope into provider writebacks", () => {
     const connection: ATSConnection = {
       id: "ats_conn_1",
