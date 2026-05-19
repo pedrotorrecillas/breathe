@@ -841,6 +841,20 @@ export async function saveATSTriggerRuleAction(
 
     if (
       externalJobId &&
+      connectionStages.length > 0 &&
+      !activeConnectionStages.some(
+        (stage) =>
+          stage.externalId === externalStageId &&
+          (!stage.externalJobId || stage.externalJobId === externalJobId),
+      )
+    ) {
+      throw new Error(
+        "Choose a trigger stage that belongs to the selected ATS job.",
+      );
+    }
+
+    if (
+      externalJobId &&
       connectionJobs.length > 0 &&
       !activeConnectionJobs.some((job) => job.externalId === externalJobId)
     ) {
