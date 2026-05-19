@@ -351,6 +351,7 @@ async function maybeGenerateInterviewEvaluation(input: {
   const writebackActions = enqueueATSWritebacksForEvaluation({
     evaluation,
     interviewRun: snapshot.interviewRun,
+    atsConnections: input.state.atsConnections,
     atsApplications: input.state.atsExternalApplications,
     existingActions: input.state.atsWritebackActions,
     now: generatedAt.toISOString(),

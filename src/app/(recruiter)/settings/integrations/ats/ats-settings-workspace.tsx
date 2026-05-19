@@ -13,11 +13,10 @@ import {
   saveATSWritebackPolicyAction,
 } from "./actions";
 
-function providerLabel(
-  providers: ATSAvailableProvider[],
-  provider: string,
-) {
-  return providers.find((item) => item.provider === provider)?.label ?? provider;
+function providerLabel(providers: ATSAvailableProvider[], provider: string) {
+  return (
+    providers.find((item) => item.provider === provider)?.label ?? provider
+  );
 }
 
 export function ATSSettingsWorkspace({
@@ -125,7 +124,10 @@ export function ATSSettingsWorkspace({
             >
               {snapshot.connections.map((connection) => (
                 <option key={connection.id} value={connection.id}>
-                  {providerLabel(snapshot.availableProviders, connection.provider)}
+                  {providerLabel(
+                    snapshot.availableProviders,
+                    connection.provider,
+                  )}
                 </option>
               ))}
             </select>
@@ -139,6 +141,41 @@ export function ATSSettingsWorkspace({
               placeholder="External job ID, optional"
               className="rounded-md border border-slate-300 px-3 py-2 text-sm"
             />
+            <div className="grid gap-2 rounded-md border border-slate-200 p-3">
+              {[
+                ["import_candidate", "Import candidate"],
+                ["prepare_interview", "Prepare interview"],
+                ["queue_interview", "Queue interview"],
+                ["dispatch_interview", "Dispatch interview"],
+              ].map(([value, label]) => (
+                <label
+                  key={value}
+                  className="flex items-center gap-2 text-sm text-slate-700"
+                >
+                  <input
+                    type="checkbox"
+                    name="actions"
+                    value={value}
+                    defaultChecked={
+                      value === "import_candidate" ||
+                      value === "prepare_interview" ||
+                      value === "queue_interview"
+                    }
+                    className="size-4 rounded border-slate-300"
+                  />
+                  {label}
+                </label>
+              ))}
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  name="requiresRecruiterApproval"
+                  defaultChecked
+                  className="size-4 rounded border-slate-300"
+                />
+                Require recruiter approval
+              </label>
+            </div>
             <button
               type="submit"
               className="w-fit rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700"
@@ -154,7 +191,9 @@ export function ATSSettingsWorkspace({
                 key={rule.id}
                 className="rounded-md border border-slate-200 px-4 py-3"
               >
-                <p className="text-sm font-medium text-slate-950">{rule.name}</p>
+                <p className="text-sm font-medium text-slate-950">
+                  {rule.name}
+                </p>
                 <p className="mt-1 text-xs text-slate-500">
                   {providerLabel(snapshot.availableProviders, rule.provider)} ·{" "}
                   {rule.externalStageId}
@@ -184,7 +223,10 @@ export function ATSSettingsWorkspace({
           </p>
         ) : null}
         {canManage && snapshot.connections.length ? (
-          <form action={saveATSWritebackPolicyAction} className="mt-4 grid gap-3">
+          <form
+            action={saveATSWritebackPolicyAction}
+            className="mt-4 grid gap-3"
+          >
             <select
               name="connectionId"
               className="rounded-md border border-slate-300 px-3 py-2 text-sm"
@@ -192,7 +234,10 @@ export function ATSSettingsWorkspace({
             >
               {snapshot.connections.map((connection) => (
                 <option key={connection.id} value={connection.id}>
-                  {providerLabel(snapshot.availableProviders, connection.provider)}
+                  {providerLabel(
+                    snapshot.availableProviders,
+                    connection.provider,
+                  )}
                 </option>
               ))}
             </select>

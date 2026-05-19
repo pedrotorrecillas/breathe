@@ -311,9 +311,9 @@ The admin needs to configure:
 - Trigger rules:
   - when candidate enters external stage/status X,
   - for external job Y or all jobs,
-  - create/update Breathe candidate/application,
-  - generate interview preparation,
-  - start interview workflow or mark for recruiter review.
+  - choose Breathe actions such as create/update candidate, generate interview
+    preparation, queue interview workflow, or dispatch interview,
+  - require or skip recruiter approval before execution.
 - Writeback policy:
   - write report as note/custom field/status comment,
   - move external candidate to stage/status after outcome,

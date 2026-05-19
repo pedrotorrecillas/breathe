@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 
 import { appendAuditEvent } from "@/lib/audit/log";
-import type { ATSTriggerAction, ATSWritebackPolicy } from "@/domain/ats-integrations/types";
+import type {
+  ATSTriggerAction,
+  ATSWritebackPolicy,
+} from "@/domain/ats-integrations/types";
 import { requireAuthenticatedRecruiter } from "@/lib/auth/server";
 import {
   buildDefaultMockATSConnection,
@@ -16,10 +19,27 @@ import {
 } from "@/lib/db/runtime-store";
 import { recruiterCanManageTeams } from "@/lib/team-access";
 
+const atsTriggerActions: ATSTriggerAction[] = [
+  "import_candidate",
+  "prepare_interview",
+  "queue_interview",
+  "dispatch_interview",
+];
+
 function requireATSAdmin(canManage: boolean) {
   if (!canManage) {
     throw new Error("Only admins and owners can manage ATS integrations.");
   }
+}
+
+function parseTriggerActions(formData: FormData): ATSTriggerAction[] {
+  const selectedActions = formData
+    .getAll("actions")
+    .filter((value): value is ATSTriggerAction =>
+      atsTriggerActions.includes(value as ATSTriggerAction),
+    );
+
+  return Array.from(new Set(selectedActions));
 }
 
 export async function createMockATSConnectionAction(
@@ -52,7 +72,9 @@ export async function createMockATSConnectionAction(
     revalidatePath("/settings/integrations/ats");
   } catch (error) {
     throw new Error(
-      error instanceof Error ? error.message : "Could not create ATS connection.",
+      error instanceof Error
+        ? error.message
+        : "Could not create ATS connection.",
     );
   }
 }
@@ -87,7 +109,9 @@ export async function createZohoEnvConnectionAction(
     revalidatePath("/settings/integrations/ats");
   } catch (error) {
     throw new Error(
-      error instanceof Error ? error.message : "Could not create ATS connection.",
+      error instanceof Error
+        ? error.message
+        : "Could not create ATS connection.",
     );
   }
 }
@@ -125,7 +149,9 @@ export async function runManualATSSyncAction(
     await saveRuntimeStoreState(state);
     revalidatePath("/settings/integrations/ats");
   } catch (error) {
-    throw new Error(error instanceof Error ? error.message : "Could not sync ATS.");
+    throw new Error(
+      error instanceof Error ? error.message : "Could not sync ATS.",
+    );
   }
 }
 
@@ -136,16 +162,29 @@ export async function saveATSTriggerRuleAction(
     const recruiter = await requireAuthenticatedRecruiter();
     requireATSAdmin(recruiterCanManageTeams(recruiter));
     const connectionId = String(formData.get("connectionId") ?? "");
-    const externalStageId = String(formData.get("externalStageId") ?? "").trim();
-    const externalJobId = String(formData.get("externalJobId") ?? "").trim() || null;
+    const externalStageId = String(
+      formData.get("externalStageId") ?? "",
+    ).trim();
+    const externalJobId =
+      String(formData.get("externalJobId") ?? "").trim() || null;
+    const actions = parseTriggerActions(formData);
+    const requiresRecruiterApproval =
+      formData.get("requiresRecruiterApproval") === "on";
 
     if (!connectionId || !externalStageId) {
       throw new Error("Choose a connection and external stage.");
     }
 
+    if (actions.length === 0) {
+      throw new Error(
+        "Choose at least one Breathe action for the ATS trigger.",
+      );
+    }
+
     const state = await loadRuntimeStoreState();
     const connection = state.atsConnections.find(
-      (item) => item.id === connectionId && item.companyId === recruiter.company.id,
+      (item) =>
+        item.id === connectionId && item.companyId === recruiter.company.id,
     );
 
     if (!connection) {
@@ -153,11 +192,6 @@ export async function saveATSTriggerRuleAction(
     }
 
     const now = new Date().toISOString();
-    const actions: ATSTriggerAction[] = [
-      "import_candidate",
-      "prepare_interview",
-      "queue_interview",
-    ];
     const rule = {
       id: `ats_rule_${connectionId}_${externalStageId}`.replace(
         /[^a-zA-Z0-9_]+/g,
@@ -171,7 +205,7 @@ export async function saveATSTriggerRuleAction(
       externalJobId,
       externalStageId,
       actions,
-      requiresRecruiterApproval: true,
+      requiresRecruiterApproval,
       createdAt: now,
       updatedAt: now,
     };
@@ -231,7 +265,8 @@ export async function saveATSWritebackPolicyAction(
 
     const state = await loadRuntimeStoreState();
     const connection = state.atsConnections.find(
-      (item) => item.id === connectionId && item.companyId === recruiter.company.id,
+      (item) =>
+        item.id === connectionId && item.companyId === recruiter.company.id,
     );
 
     if (!connection) {
@@ -271,7 +306,9 @@ export async function saveATSWritebackPolicyAction(
     revalidatePath("/settings/integrations/ats");
   } catch (error) {
     throw new Error(
-      error instanceof Error ? error.message : "Could not save writeback policy.",
+      error instanceof Error
+        ? error.message
+        : "Could not save writeback policy.",
     );
   }
 }
