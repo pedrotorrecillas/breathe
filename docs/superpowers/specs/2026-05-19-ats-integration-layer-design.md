@@ -271,6 +271,14 @@ For demo readiness, `npm run test:smoke:zoho` runs a non-destructive live
 check when Zoho credentials are present. It validates the connection and reads
 jobs/applications; it skips automatically without credentials.
 
+The same smoke file also includes live writeback checks, but they are
+destructive and opt-in. They only run when
+`ZOHO_RECRUIT_SMOKE_ENABLE_WRITEBACK=true` plus explicit target IDs are set:
+
+- `ZOHO_RECRUIT_SMOKE_CANDIDATE_ID` for candidate note writeback.
+- `ZOHO_RECRUIT_SMOKE_JOB_ID` to scope a status move to a specific Job Opening.
+- `ZOHO_RECRUIT_SMOKE_TARGET_STATUS` for the status/stage move target.
+
 ### Sync Surface
 
 Minimum Zoho sync:
