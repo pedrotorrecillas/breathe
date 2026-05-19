@@ -114,6 +114,10 @@ export async function processATSWritebackAction(
     throw new Error("ATS writeback action not found.");
   }
 
+  if (action.status !== "queued" && action.status !== "retryable_error") {
+    throw new Error("ATS writeback action is not queued for processing.");
+  }
+
   const connection = state.atsConnections.find(
     (item) =>
       item.id === action.connectionId &&

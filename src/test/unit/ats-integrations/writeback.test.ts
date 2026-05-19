@@ -122,4 +122,37 @@ describe("ATS writeback queue", () => {
     });
     expect(afterFailure.atsWritebackAttempts).toHaveLength(1);
   });
+
+  it("does not dispatch writeback actions that already reached a terminal status", async () => {
+    const queued = await enqueueATSWriteback({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      actionType: "candidate_note",
+      targetExternalCandidateId: "mock_candidate_ana",
+      targetExternalApplicationId: "mock_app_1",
+      targetExternalJobId: "mock_job_store_associate",
+      targetExternalStageId: null,
+      sourceObjectType: "evaluation",
+      sourceObjectId: "eval_terminal",
+      payload: { body: "Breathe interview summary" },
+      now: "2026-05-19T12:00:00.000Z",
+    });
+
+    await processATSWritebackAction({
+      writebackActionId: queued.id,
+      now: "2026-05-19T12:01:00.000Z",
+    });
+
+    await expect(
+      processATSWritebackAction({
+        writebackActionId: queued.id,
+        now: "2026-05-19T12:02:00.000Z",
+      }),
+    ).rejects.toThrow("ATS writeback action is not queued for processing.");
+
+    const state = await loadRuntimeStoreState();
+    expect(state.atsWritebackActions[0].status).toBe("succeeded");
+    expect(state.atsWritebackAttempts).toHaveLength(1);
+  });
 });
