@@ -15,6 +15,7 @@ vi.mock("@/lib/ats-integrations/registry", () => ({
         supportsWebhooks: false,
         supportsPolling: true,
         supportsCandidateNotes: true,
+        supportsStatusComments: true,
         supportsReportLinks: false,
         supportsStageMove: true,
         supportsCustomFields: false,

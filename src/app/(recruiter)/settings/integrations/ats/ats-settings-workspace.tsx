@@ -220,11 +220,16 @@ export function ATSSettingsWorkspace({
     : null;
   const canWriteCandidateNotes =
     selectedWritebackCapabilities?.supportsCandidateNotes ?? true;
+  const canWriteStatusComments =
+    selectedWritebackCapabilities?.supportsStatusComments ?? true;
   const canMoveStages =
     selectedWritebackCapabilities?.supportsStageMove ?? true;
   const reportModeValue =
-    selectedWritebackPolicy.reportMode === "candidate_note" &&
-    !canWriteCandidateNotes
+    (selectedWritebackPolicy.reportMode === "candidate_note" &&
+      !canWriteCandidateNotes) ||
+    (selectedWritebackPolicy.reportMode === "status_comment" &&
+      !canWriteStatusComments &&
+      !canMoveStages)
       ? "disabled"
       : selectedWritebackPolicy.reportMode;
   const triggerJobs = useMemo(
@@ -738,7 +743,9 @@ export function ATSSettingsWorkspace({
               {canWriteCandidateNotes ? (
                 <option value="candidate_note">Candidate note</option>
               ) : null}
-              <option value="status_comment">Status comment</option>
+              {canWriteStatusComments || canMoveStages ? (
+                <option value="status_comment">Status comment</option>
+              ) : null}
               <option value="disabled">Disabled</option>
             </select>
             {canMoveStages ? (

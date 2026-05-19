@@ -15,6 +15,7 @@ let mockAdapterCapabilities = {
   supportsWebhooks: true,
   supportsPolling: true,
   supportsCandidateNotes: true,
+  supportsStatusComments: true,
   supportsReportLinks: true,
   supportsStageMove: true,
   supportsCustomFields: true,
@@ -81,6 +82,7 @@ describe("ATS admin actions", () => {
       supportsWebhooks: true,
       supportsPolling: true,
       supportsCandidateNotes: true,
+      supportsStatusComments: true,
       supportsReportLinks: true,
       supportsStageMove: true,
       supportsCustomFields: true,
@@ -1449,6 +1451,46 @@ describe("ATS admin actions", () => {
       "Selected ATS provider does not support candidate note writebacks.",
     );
     expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
+  });
+
+  it("rejects status comment writeback policy when the adapter does not support comments", async () => {
+    mockAdapterCapabilities = {
+      ...mockAdapterCapabilities,
+      supportsStatusComments: false,
+    };
+    const { saveATSWritebackPolicyAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("reportMode", "status_comment");
+
+    await expect(saveATSWritebackPolicyAction(formData)).rejects.toThrow(
+      "Selected ATS provider does not support status comment writebacks.",
+    );
+    expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
+  });
+
+  it("allows status comment mode as a stage move comment when the adapter supports stage moves", async () => {
+    mockAdapterCapabilities = {
+      ...mockAdapterCapabilities,
+      supportsStatusComments: false,
+      supportsStageMove: true,
+    };
+    const { saveATSWritebackPolicyAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("reportMode", "status_comment");
+    formData.set("moveToExternalStageId", "mock_stage_interview_completed");
+
+    await saveATSWritebackPolicyAction(formData);
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsConnections[0].writebackPolicy).toEqual({
+      reportMode: "status_comment",
+      moveToExternalStageId: "mock_stage_interview_completed",
+      requiresRecruiterReview: false,
+    });
   });
 
   it("rejects stage move writeback policy when the adapter does not support stage moves", async () => {

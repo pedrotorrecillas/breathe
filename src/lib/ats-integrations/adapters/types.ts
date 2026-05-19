@@ -94,6 +94,7 @@ export type ATSAdapterCapabilities = {
   supportsWebhooks: boolean;
   supportsPolling: boolean;
   supportsCandidateNotes: boolean;
+  supportsStatusComments: boolean;
   supportsReportLinks: boolean;
   supportsStageMove: boolean;
   supportsCustomFields: boolean;

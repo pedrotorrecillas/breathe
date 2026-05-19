@@ -27,6 +27,7 @@ describe("Zoho Recruit client", () => {
   it("only advertises writeback capabilities implemented by the Zoho adapter", () => {
     expect(zohoRecruitAdapter.capabilities).toMatchObject({
       supportsCandidateNotes: true,
+      supportsStatusComments: true,
       supportsStageMove: true,
       supportsCustomFields: false,
     });

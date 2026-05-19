@@ -147,6 +147,7 @@ function buildATSSnapshot() {
           supportsWebhooks: true,
           supportsPolling: true,
           supportsCandidateNotes: true,
+          supportsStatusComments: true,
           supportsReportLinks: true,
           supportsStageMove: true,
           supportsCustomFields: true,
@@ -161,6 +162,7 @@ function buildATSSnapshot() {
           supportsWebhooks: false,
           supportsPolling: true,
           supportsCandidateNotes: true,
+          supportsStatusComments: true,
           supportsReportLinks: false,
           supportsStageMove: true,
           supportsCustomFields: true,
@@ -314,6 +316,27 @@ describe("ATS settings page", () => {
 
     expect(
       screen.queryByRole("option", { name: "Candidate note" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Report writeback mode")).toHaveValue(
+      "disabled",
+    );
+  });
+
+  it("does not offer status comment writeback when the selected provider cannot write comments or move stages", async () => {
+    const snapshot = buildATSSnapshot();
+    snapshot.connections[0].writebackPolicy = {
+      reportMode: "status_comment",
+      moveToExternalStageId: null,
+      requiresRecruiterReview: true,
+    };
+    snapshot.availableProviders[0].capabilities.supportsStatusComments = false;
+    snapshot.availableProviders[0].capabilities.supportsStageMove = false;
+    atsSnapshotState.snapshot = snapshot;
+
+    render(await ATSSettingsPage());
+
+    expect(
+      screen.queryByRole("option", { name: "Status comment" }),
     ).not.toBeInTheDocument();
     expect(screen.getByLabelText("Report writeback mode")).toHaveValue(
       "disabled",

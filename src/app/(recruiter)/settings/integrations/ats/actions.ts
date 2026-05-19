@@ -1154,6 +1154,16 @@ export async function saveATSWritebackPolicyAction(
     }
 
     if (
+      reportMode === "status_comment" &&
+      !moveToExternalStageId &&
+      !adapter.capabilities.supportsStatusComments
+    ) {
+      throw new Error(
+        "Selected ATS provider does not support status comment writebacks.",
+      );
+    }
+
+    if (
       (moveToExternalStageId || mappedExternalStageIds.length > 0) &&
       !adapter.capabilities.supportsStageMove
     ) {

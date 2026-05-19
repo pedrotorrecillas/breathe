@@ -182,6 +182,7 @@ export const zohoRecruitAdapter: ATSAdapter = {
     supportsWebhooks: false,
     supportsPolling: true,
     supportsCandidateNotes: true,
+    supportsStatusComments: true,
     supportsReportLinks: false,
     supportsStageMove: true,
     supportsCustomFields: false,

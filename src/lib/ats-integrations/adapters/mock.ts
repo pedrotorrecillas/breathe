@@ -135,6 +135,7 @@ export const mockATSAdapter: ATSAdapter = {
     supportsWebhooks: true,
     supportsPolling: true,
     supportsCandidateNotes: true,
+    supportsStatusComments: true,
     supportsReportLinks: true,
     supportsStageMove: true,
     supportsCustomFields: true,
