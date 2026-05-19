@@ -173,6 +173,55 @@ describe("Zoho Recruit client", () => {
     );
   });
 
+  it("marks Zoho writebacks as terminal errors when the provider response contains record errors", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "access_token");
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: [
+              {
+                status: "error",
+                code: "INVALID_DATA",
+                message: "the related id given seems to be invalid",
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await zohoRecruitAdapter.writeback({
+      connection: zohoConnection,
+      action: {
+        id: "ats_writeback_error_1",
+        companyId: "company_1",
+        connectionId: "ats_conn_zoho",
+        provider: "zoho_recruit",
+        actionType: "candidate_note",
+        targetExternalCandidateId: "missing_candidate",
+        targetExternalApplicationId: "missing_candidate",
+        targetExternalJobId: null,
+        targetExternalStageId: null,
+        sourceObjectType: "evaluation",
+        sourceObjectId: "eval_1",
+        status: "queued",
+        idempotencyKey: "key",
+        payload: { body: "Breathe interview summary" },
+        createdAt: "2026-05-19T12:00:00.000Z",
+        updatedAt: "2026-05-19T12:00:00.000Z",
+      },
+    });
+
+    expect(result).toMatchObject({
+      status: "terminal_error",
+      providerStatusCode: 200,
+      errorMessage:
+        "Zoho Recruit writeback failed: INVALID_DATA - the related id given seems to be invalid",
+    });
+  });
+
   it("maps adapter cursors to Zoho list record pages", async () => {
     vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "access_token");
     const fetchMock = vi.fn(async (url: string | URL) => {

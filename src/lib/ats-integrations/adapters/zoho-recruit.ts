@@ -1,4 +1,7 @@
-import type { ATSWritebackAction } from "@/domain/ats-integrations/types";
+import type {
+  ATSWritebackAction,
+  ATSWritebackResult,
+} from "@/domain/ats-integrations/types";
 import type {
   ATSAdapter,
   ATSProviderApplication,
@@ -87,6 +90,57 @@ function stageMovePayload(action: ATSWritebackAction) {
       : {}),
     Candidate_Status: action.targetExternalStageId,
     comments: "Updated by Breathe.",
+  };
+}
+
+function flattenZohoDataEntries(value: unknown): ZohoRecord[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item) => {
+    if (Array.isArray(item)) {
+      return flattenZohoDataEntries(item);
+    }
+
+    return item && typeof item === "object" ? [item as ZohoRecord] : [];
+  });
+}
+
+function resultFromZohoWritebackResponse(
+  response: Record<string, unknown>,
+): ATSWritebackResult {
+  const failedEntry = flattenZohoDataEntries(response.data).find((entry) => {
+    const status = typeof entry.status === "string" ? entry.status : null;
+    const code = typeof entry.code === "string" ? entry.code : null;
+
+    return (
+      status?.toLowerCase() === "error" ||
+      (code !== null && code.toUpperCase() !== "SUCCESS")
+    );
+  });
+
+  if (failedEntry) {
+    const code =
+      typeof failedEntry.code === "string" ? failedEntry.code : "ERROR";
+    const message =
+      typeof failedEntry.message === "string"
+        ? failedEntry.message
+        : "Provider returned an unsuccessful writeback result.";
+
+    return {
+      status: "terminal_error",
+      providerStatusCode: 200,
+      providerResponse: response,
+      errorMessage: `Zoho Recruit writeback failed: ${code} - ${message}`,
+    };
+  }
+
+  return {
+    status: "succeeded",
+    providerStatusCode: 200,
+    providerResponse: response,
+    errorMessage: null,
   };
 }
 
@@ -242,12 +296,7 @@ export const zohoRecruitAdapter: ATSAdapter = {
         },
       );
 
-      return {
-        status: "succeeded",
-        providerStatusCode: 200,
-        providerResponse: response,
-        errorMessage: null,
-      };
+      return resultFromZohoWritebackResponse(response);
     }
 
     if (
@@ -271,12 +320,7 @@ export const zohoRecruitAdapter: ATSAdapter = {
         },
       );
 
-      return {
-        status: "succeeded",
-        providerStatusCode: 200,
-        providerResponse: response,
-        errorMessage: null,
-      };
+      return resultFromZohoWritebackResponse(response);
     }
 
     return {
