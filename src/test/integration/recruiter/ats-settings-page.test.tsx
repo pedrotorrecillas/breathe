@@ -46,6 +46,7 @@ vi.mock("@/lib/ats-integrations/connections", () => ({
   getATSAdminSnapshot: vi.fn(async () => ({
     connections: [],
     triggerRules: [],
+    workflowRequests: [],
     availableProviders: [
       { provider: "mock_ats", label: "Mock ATS", implemented: true },
       { provider: "zoho_recruit", label: "Zoho Recruit", implemented: true },
@@ -66,5 +67,8 @@ describe("ATS settings page", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Stage triggers/i)).toBeInTheDocument();
     expect(screen.getByText(/Writeback policy/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /ATS-triggered work/i }),
+    ).toBeInTheDocument();
   });
 });

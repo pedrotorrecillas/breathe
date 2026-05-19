@@ -372,12 +372,13 @@ When a candidate enters a configured external stage/status:
 
 1. `ATSSyncEvent` is created.
 2. `triggers.ts` matches company, connection, job, and external stage/status.
-3. If no internal candidate/application exists, the canonical application is
-   linked or imported into Breathe's candidate/application model.
-4. The trigger creates a Breathe workflow request:
+3. The trigger creates a Breathe workflow request:
    - generate interview preparation,
    - create interview run,
    - dispatch immediately or queue for recruiter approval.
+4. Admin can approve queued requests. Approval imports/links the canonical ATS
+   application into Breathe's candidate/application model before later workflow
+   execution.
 5. Trigger execution stores a trace linked to the ATS event.
 
 The first implementation can queue trigger results as internal actions instead
@@ -430,6 +431,8 @@ Integration tests:
 - sync import creates external records without touching unrelated domains,
 - configured stage trigger imports/links candidate and creates an internal
   workflow request,
+- approved workflow request imports/links a Breathe candidate/application from
+  the canonical ATS application,
 - evaluation summary creates queued writeback action,
 - writeback success updates action/attempt state.
 

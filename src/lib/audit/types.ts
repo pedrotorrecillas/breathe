@@ -9,7 +9,8 @@ export type AuditAction =
   | "ats.connection_created"
   | "ats.manual_sync"
   | "ats.trigger_rule_saved"
-  | "ats.writeback_policy_saved";
+  | "ats.writeback_policy_saved"
+  | "ats.workflow_request_processed";
 
 export type AuditActor = {
   userId: string;
@@ -30,7 +31,8 @@ export type AuditEvent = {
     | "user"
     | "company"
     | "ats_connection"
-    | "ats_trigger_rule";
+    | "ats_trigger_rule"
+    | "ats_workflow_request";
   targetId: string;
   summary: string;
   metadata: Record<string, string | boolean | null>;

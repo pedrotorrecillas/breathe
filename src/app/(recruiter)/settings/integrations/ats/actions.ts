@@ -18,6 +18,7 @@ import {
   saveRuntimeStoreState,
 } from "@/lib/db/runtime-store";
 import { recruiterCanManageTeams } from "@/lib/team-access";
+import { processATSWorkflowRequest } from "@/lib/ats-integrations/workflow-requests";
 
 const atsTriggerActions: ATSTriggerAction[] = [
   "import_candidate",
@@ -241,6 +242,49 @@ export async function saveATSTriggerRuleAction(
   } catch (error) {
     throw new Error(
       error instanceof Error ? error.message : "Could not save trigger rule.",
+    );
+  }
+}
+
+export async function approveATSWorkflowRequestAction(
+  formData: FormData,
+): Promise<void> {
+  try {
+    const recruiter = await requireAuthenticatedRecruiter();
+    requireATSAdmin(recruiterCanManageTeams(recruiter));
+    const workflowRequestId = String(formData.get("workflowRequestId") ?? "");
+
+    if (!workflowRequestId) {
+      throw new Error("Choose an ATS workflow request to approve.");
+    }
+
+    const processed = await processATSWorkflowRequest({
+      workflowRequestId,
+      now: new Date().toISOString(),
+      approved: true,
+    });
+    const state = await loadRuntimeStoreState();
+
+    appendAuditEvent({
+      state,
+      recruiter,
+      action: "ats.workflow_request_processed",
+      targetType: "ats_workflow_request",
+      targetId: workflowRequestId,
+      summary: "Approved and processed ATS workflow request.",
+      metadata: {
+        status: processed.status,
+        candidateId: processed.candidateId,
+        applicationId: processed.applicationId,
+      },
+    });
+    await saveRuntimeStoreState(state);
+    revalidatePath("/settings/integrations/ats");
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Could not process ATS workflow request.",
     );
   }
 }

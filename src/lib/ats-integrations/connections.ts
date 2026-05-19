@@ -4,6 +4,7 @@ import type {
   ATSConnection,
   ATSProviderKey,
   ATSTriggerRule,
+  ATSWorkflowRequest,
 } from "@/domain/ats-integrations/types";
 import type { AuthenticatedRecruiter } from "@/lib/auth/types";
 import { loadRuntimeStoreState } from "@/lib/db/runtime-store";
@@ -17,6 +18,7 @@ export type ATSAvailableProvider = {
 export type ATSAdminSnapshot = {
   connections: ATSConnection[];
   triggerRules: ATSTriggerRule[];
+  workflowRequests: ATSWorkflowRequest[];
   availableProviders: ATSAvailableProvider[];
 };
 
@@ -45,6 +47,9 @@ export async function getATSAdminSnapshot(
     ),
     triggerRules: state.atsTriggerRules.filter(
       (rule) => rule.companyId === companyId,
+    ),
+    workflowRequests: state.atsWorkflowRequests.filter(
+      (request) => request.companyId === companyId,
     ),
     availableProviders: listATSAvailableProviders(),
   };

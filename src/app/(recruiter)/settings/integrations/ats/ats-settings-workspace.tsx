@@ -8,6 +8,7 @@ import type {
 import {
   createMockATSConnectionAction,
   createZohoEnvConnectionAction,
+  approveATSWorkflowRequestAction,
   runManualATSSyncAction,
   saveATSTriggerRuleAction,
   saveATSWritebackPolicyAction,
@@ -263,6 +264,51 @@ export function ATSSettingsWorkspace({
             </button>
           </form>
         ) : null}
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <p className="ops-kicker text-slate-500">Workflow requests</p>
+        <h2 className="mt-2 text-lg font-semibold text-slate-950">
+          ATS-triggered work
+        </h2>
+        <div className="mt-4 grid gap-3">
+          {snapshot.workflowRequests.length ? (
+            snapshot.workflowRequests.map((request) => (
+              <div
+                key={request.id}
+                className="flex items-center justify-between gap-4 rounded-md border border-slate-200 px-4 py-3"
+              >
+                <div>
+                  <p className="text-sm font-medium text-slate-950">
+                    {request.externalApplicationId}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {request.status} · {request.requestedActions.join(", ")}
+                  </p>
+                </div>
+                {canManage && request.status === "queued" ? (
+                  <form action={approveATSWorkflowRequestAction}>
+                    <input
+                      type="hidden"
+                      name="workflowRequestId"
+                      value={request.id}
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700"
+                    >
+                      Approve
+                    </button>
+                  </form>
+                ) : null}
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-slate-600">
+              No ATS workflow requests yet.
+            </p>
+          )}
+        </div>
       </section>
     </div>
   );

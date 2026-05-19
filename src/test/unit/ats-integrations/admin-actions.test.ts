@@ -6,6 +6,7 @@ const mockAppendAuditEvent = vi.fn();
 const mockLoadRuntimeStoreState = vi.fn();
 const mockSaveRuntimeStoreState = vi.fn();
 const mockRevalidatePath = vi.fn();
+const mockProcessATSWorkflowRequest = vi.fn();
 
 vi.mock("next/cache", () => ({
   revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args),
@@ -28,6 +29,11 @@ vi.mock("@/lib/db/runtime-store", () => ({
   loadRuntimeStoreState: () => mockLoadRuntimeStoreState(),
   saveRuntimeStoreState: (...args: unknown[]) =>
     mockSaveRuntimeStoreState(...args),
+}));
+
+vi.mock("@/lib/ats-integrations/workflow-requests", () => ({
+  processATSWorkflowRequest: (...args: unknown[]) =>
+    mockProcessATSWorkflowRequest(...args),
 }));
 
 const recruiterFixture = {
@@ -62,7 +68,32 @@ describe("ATS admin actions", () => {
         },
       ],
       atsTriggerRules: [],
+      atsWorkflowRequests: [
+        {
+          id: "ats_workflow_1",
+          companyId: "company_1",
+          atsSyncEventId: "ats_evt_1",
+          atsTriggerRuleId: "ats_rule_1",
+          externalApplicationId: "mock_app_1",
+          internalCandidateId: null,
+          internalApplicationId: null,
+          requestedActions: ["import_candidate"],
+          requiresRecruiterApproval: true,
+          status: "queued",
+          createdAt: "2026-05-19T10:00:00.000Z",
+          updatedAt: "2026-05-19T10:00:00.000Z",
+        },
+      ],
       auditEvents: [],
+    });
+    mockProcessATSWorkflowRequest.mockResolvedValue({
+      status: "completed",
+      request: {
+        id: "ats_workflow_1",
+        companyId: "company_1",
+      },
+      candidateId: "ats_cand_1",
+      applicationId: "ats_app_1",
     });
   });
 
@@ -100,5 +131,29 @@ describe("ATS admin actions", () => {
       "Choose at least one Breathe action for the ATS trigger.",
     );
     expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
+  });
+
+  it("approves and processes queued ATS workflow requests", async () => {
+    const { approveATSWorkflowRequestAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("workflowRequestId", "ats_workflow_1");
+
+    await approveATSWorkflowRequestAction(formData);
+
+    expect(mockProcessATSWorkflowRequest).toHaveBeenCalledWith({
+      workflowRequestId: "ats_workflow_1",
+      now: expect.any(String),
+      approved: true,
+    });
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ats.workflow_request_processed",
+        targetId: "ats_workflow_1",
+      }),
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith(
+      "/settings/integrations/ats",
+    );
   });
 });
