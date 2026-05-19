@@ -38,6 +38,20 @@ describe("ATS workflow request processing", () => {
         greatCap: null,
       },
     });
+    state.atsConnections.push({
+      id: "ats_conn_1",
+      companyId: "company_1",
+      provider: "mock_ats",
+      status: "active",
+      displayName: "Mock ATS",
+      authMode: "mock",
+      secretRef: null,
+      externalAccountId: "mock_account",
+      lastSyncAt: null,
+      lastError: null,
+      createdAt: "2026-05-19T09:00:00.000Z",
+      updatedAt: "2026-05-19T09:00:00.000Z",
+    });
     state.atsExternalApplications.push({
       id: "ats_app_1",
       companyId: "company_1",
@@ -126,6 +140,35 @@ describe("ATS workflow request processing", () => {
     });
   });
 
+  it("uses admin stage mappings when importing the linked Breathe application", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsConnections[0] = {
+      ...state.atsConnections[0],
+      writebackPolicy: {
+        reportMode: "candidate_note",
+        moveToExternalStageId: null,
+        stageMoveMappings: {
+          interviewed: "mock_stage_breathe_screen",
+          rejected: "mock_stage_rejected",
+        },
+        requiresRecruiterReview: false,
+      },
+    };
+    await saveRuntimeStoreState(state);
+
+    const result = await processATSWorkflowRequest({
+      workflowRequestId: "ats_workflow_1",
+      now: "2026-05-19T10:03:00.000Z",
+      approved: true,
+    });
+
+    expect(result.status).toBe("completed");
+    const after = await loadRuntimeStoreState();
+    expect(after.applications[0]).toMatchObject({
+      stage: "interviewed",
+    });
+  });
+
   it("imports the ATS application from the connection that produced the sync event", async () => {
     const state = await loadRuntimeStoreState();
     state.atsExternalApplications.unshift({
@@ -150,7 +193,8 @@ describe("ATS workflow request processing", () => {
       externalStageId: "mock_stage_breathe_screen",
       occurredAt: "2026-05-19T10:01:00.000Z",
       processedAt: "2026-05-19T10:01:00.000Z",
-      idempotencyKey: "ats_conn_1:application_seen:mock_app_ana_store_associate",
+      idempotencyKey:
+        "ats_conn_1:application_seen:mock_app_ana_store_associate",
       payload: {},
     });
     await saveRuntimeStoreState(state);

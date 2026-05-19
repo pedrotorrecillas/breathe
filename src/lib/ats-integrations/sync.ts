@@ -3,12 +3,11 @@ import type {
   ATSCanonicalCandidate,
   ATSCanonicalJob,
   ATSCanonicalStage,
-  ATSInternalStageKey,
   ATSSyncEvent,
   ATSSyncResource,
 } from "@/domain/ats-integrations/types";
-import type { CandidatePipelineStage } from "@/domain/candidates/types";
 import { getATSAdapter } from "@/lib/ats-integrations/registry";
+import { internalStageForExternalStage } from "@/lib/ats-integrations/stage-mappings";
 import type {
   ATSProviderApplication,
   ATSProviderCandidate,
@@ -409,31 +408,6 @@ function applicationStageChanged(input: {
   }
 
   return input.previous.externalStageId !== input.next.externalStageId;
-}
-
-const internalStageMappingOrder: ATSInternalStageKey[] = [
-  "applicant",
-  "interviewed",
-  "shortlisted",
-  "hired",
-  "rejected",
-  "needs_human",
-];
-
-function internalStageForExternalStage(input: {
-  connection: RunATSSyncConnection;
-  externalStageId: string | null;
-}): CandidatePipelineStage | null {
-  if (!input.externalStageId) {
-    return null;
-  }
-
-  const mappings = input.connection.writebackPolicy?.stageMoveMappings ?? {};
-  const matchingStage = internalStageMappingOrder.find(
-    (stage) => mappings[stage] === input.externalStageId,
-  );
-
-  return matchingStage ?? null;
 }
 
 type RunATSSyncConnection = RuntimeStoreState["atsConnections"][number];

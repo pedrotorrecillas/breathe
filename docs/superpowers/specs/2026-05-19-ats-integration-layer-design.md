@@ -343,9 +343,9 @@ The admin needs to configure:
   - move external candidate to stage/status after outcome,
   - skip writeback until recruiter review.
 - Manual stage mappings are bidirectional for linked applications: Breathe
-  stage changes enqueue provider stage moves, and detected ATS stage changes
-  move the linked Breathe application when the external stage maps back to an
-  internal stage.
+  stage changes enqueue provider stage moves, and ATS stages move the linked
+  Breathe application when importing or syncing if the external stage maps back
+  to an internal stage.
 
 Admin actions must be audited using the existing audit log pattern.
 

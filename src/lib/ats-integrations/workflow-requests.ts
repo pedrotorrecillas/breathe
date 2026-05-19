@@ -16,6 +16,7 @@ import type { CandidateEvaluation } from "@/domain/evaluations/types";
 import type { InterviewRun } from "@/domain/interviews/types";
 import type { Job } from "@/domain/jobs/types";
 import type { ATSTriggerMatch } from "@/lib/ats-integrations/triggers";
+import { internalStageForExternalStage } from "@/lib/ats-integrations/stage-mappings";
 import {
   loadRuntimeStoreState,
   saveRuntimeStoreState,
@@ -156,10 +157,16 @@ function buildImportedCandidate(input: {
 
 function buildImportedApplication(input: {
   atsApplication: ATSCanonicalApplication;
+  connection: ATSConnection | null;
   candidateId: string;
   jobId: string;
   now: string;
 }): CandidateApplication {
+  const mappedStage = internalStageForExternalStage({
+    connection: input.connection,
+    externalStageId: input.atsApplication.externalStageId,
+  });
+
   return {
     id: `ats_app_${sanitizeIdPart(input.atsApplication.connectionId)}_${sanitizeIdPart(
       input.atsApplication.externalId,
@@ -168,7 +175,8 @@ function buildImportedApplication(input: {
     candidateId: input.candidateId,
     jobId: input.jobId,
     source: "ats",
-    stage: applicationStageFromATSApplication(input.atsApplication),
+    stage:
+      mappedStage ?? applicationStageFromATSApplication(input.atsApplication),
     submittedAt:
       input.atsApplication.externalUpdatedAt ??
       input.atsApplication.lastSeenAt ??
@@ -404,6 +412,12 @@ export async function processATSWorkflowRequest(input: {
     state.atsSyncEvents.find((item) => item.id === request.atsSyncEventId) ??
     null;
   const requestConnectionId = request.connectionId ?? syncEvent?.connectionId;
+  const atsConnection =
+    state.atsConnections.find(
+      (item) =>
+        item.companyId === request.companyId &&
+        (!requestConnectionId || item.id === requestConnectionId),
+    ) ?? null;
   const atsApplication = state.atsExternalApplications.find(
     (item) =>
       item.companyId === request.companyId &&
@@ -491,6 +505,7 @@ export async function processATSWorkflowRequest(input: {
   if (!application) {
     application = buildImportedApplication({
       atsApplication,
+      connection: atsConnection,
       candidateId: candidate.id,
       jobId: linkedJob.id,
       now: input.now,
