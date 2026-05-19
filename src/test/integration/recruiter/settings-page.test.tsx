@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mockRequireAuthenticatedRecruiter = vi.fn();
@@ -21,6 +22,21 @@ vi.mock("@/lib/team-access", () => ({
 
 vi.mock("@/components/team-management-workspace", () => ({
   TeamManagementWorkspace: () => <div data-testid="team-management-workspace" />,
+}));
+
+vi.mock("next/link", () => ({
+  default: ({
+    href,
+    children,
+    ...props
+  }: AnchorHTMLAttributes<HTMLAnchorElement> & {
+    href: string;
+    children: ReactNode;
+  }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 const recruiterFixture = {
@@ -97,6 +113,9 @@ describe("settings page", () => {
     expect(
       screen.getByTestId("team-management-workspace"),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /ATS integrations/i }),
+    ).toHaveAttribute("href", "/settings/integrations/ats");
     expect(
       screen.queryByText(/only admins and owners can change teams/i),
     ).not.toBeInTheDocument();

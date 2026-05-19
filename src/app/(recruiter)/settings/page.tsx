@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { StatusBadge } from "@/components/status-badge";
 import { TeamManagementWorkspace } from "@/components/team-management-workspace";
 import {
@@ -140,6 +142,27 @@ export default async function SettingsPage() {
               )}
             </CardContent>
           </Card>
+
+          {canManageTeams ? (
+            <Card>
+              <CardHeader>
+                <p className="ops-kicker text-muted-foreground">Integrations</p>
+                <CardTitle>ATS integrations</CardTitle>
+                <CardDescription>
+                  Manage external ATS connections, stage triggers, and
+                  writeback policy.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link
+                  className="inline-flex h-8 items-center justify-center rounded-[0.75rem] border border-border bg-card/88 px-2.5 text-sm font-medium text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.74)] transition-all hover:border-foreground/30 hover:bg-card focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:outline-none"
+                  href="/settings/integrations/ats"
+                >
+                  ATS integrations
+                </Link>
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader>
