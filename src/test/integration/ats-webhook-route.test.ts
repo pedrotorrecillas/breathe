@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST } from "@/app/api/ats/webhooks/[provider]/route";
 import {
@@ -8,7 +8,12 @@ import {
 } from "@/lib/db/runtime-store";
 
 describe("ATS webhook route", () => {
+  beforeEach(() => {
+    vi.stubEnv("ATS_WEBHOOK_SECRET", "webhook-secret");
+  });
+
   afterEach(async () => {
+    vi.unstubAllEnvs();
     await resetRuntimeStoreState();
   });
 
@@ -31,12 +36,50 @@ describe("ATS webhook route", () => {
     const response = await POST(
       new Request("http://test.local/api/ats/webhooks/mock_ats", {
         method: "POST",
+        headers: {
+          authorization: "Bearer webhook-secret",
+        },
         body: JSON.stringify({ id: "evt_1" }),
       }),
       { params: Promise.resolve({ provider: "mock_ats" }) },
     );
 
     expect(response.status).toBe(202);
+  });
+
+  it("rejects webhook requests when the webhook secret is not configured", async () => {
+    vi.stubEnv("ATS_WEBHOOK_SECRET", "");
+
+    const response = await POST(
+      new Request("http://test.local/api/ats/webhooks/mock_ats", {
+        method: "POST",
+        headers: {
+          authorization: "Bearer webhook-secret",
+        },
+        body: JSON.stringify({ id: "evt_1" }),
+      }),
+      { params: Promise.resolve({ provider: "mock_ats" }) },
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "ATS webhook secret is not configured.",
+    });
+  });
+
+  it("rejects webhook requests without the configured secret", async () => {
+    const response = await POST(
+      new Request("http://test.local/api/ats/webhooks/mock_ats", {
+        method: "POST",
+        body: JSON.stringify({ id: "evt_1" }),
+      }),
+      { params: Promise.resolve({ provider: "mock_ats" }) },
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "Unauthorized ATS webhook request.",
+    });
   });
 
   it("persists and dedupes raw webhook events for active provider connections", async () => {
@@ -61,6 +104,9 @@ describe("ATS webhook route", () => {
     const request = () =>
       new Request("http://test.local/api/ats/webhooks/mock_ats", {
         method: "POST",
+        headers: {
+          "x-ats-webhook-secret": "webhook-secret",
+        },
         body: JSON.stringify({
           id: "evt_1",
           connectionId: "ats_conn_1",
@@ -176,6 +222,9 @@ describe("ATS webhook route", () => {
     const response = await POST(
       new Request("http://test.local/api/ats/webhooks/mock_ats", {
         method: "POST",
+        headers: {
+          authorization: "Bearer webhook-secret",
+        },
         body: JSON.stringify({
           id: "evt_sync_1",
           connectionId: "ats_conn_1",
@@ -212,6 +261,9 @@ describe("ATS webhook route", () => {
     const response = await POST(
       new Request("http://test.local/api/ats/webhooks/zoho_recruit", {
         method: "POST",
+        headers: {
+          authorization: "Bearer webhook-secret",
+        },
         body: JSON.stringify({ id: "evt_1" }),
       }),
       { params: Promise.resolve({ provider: "zoho_recruit" }) },

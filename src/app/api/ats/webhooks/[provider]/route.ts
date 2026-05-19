@@ -23,6 +23,43 @@ function sanitizeIdPart(value: string) {
   return value.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 }
 
+function configuredWebhookSecret() {
+  return process.env.ATS_WEBHOOK_SECRET?.trim() || null;
+}
+
+function requestWebhookSecret(request: Request) {
+  const authorization = request.headers.get("authorization") ?? "";
+  const bearerPrefix = "Bearer ";
+
+  if (authorization.startsWith(bearerPrefix)) {
+    return authorization.slice(bearerPrefix.length).trim();
+  }
+
+  return request.headers.get("x-ats-webhook-secret")?.trim() || null;
+}
+
+function authorizeWebhookRequest(request: Request) {
+  const expectedSecret = configuredWebhookSecret();
+
+  if (!expectedSecret) {
+    return {
+      ok: false,
+      status: 503,
+      error: "ATS webhook secret is not configured.",
+    } as const;
+  }
+
+  if (requestWebhookSecret(request) !== expectedSecret) {
+    return {
+      ok: false,
+      status: 401,
+      error: "Unauthorized ATS webhook request.",
+    } as const;
+  }
+
+  return { ok: true } as const;
+}
+
 function stringField(payload: Record<string, unknown>, key: string) {
   const value = payload[key];
 
@@ -155,6 +192,15 @@ export async function POST(request: Request, context: ATSWebhookRouteContext) {
     return NextResponse.json(
       { error: "Unsupported ATS provider." },
       { status: 400 },
+    );
+  }
+
+  const authorization = authorizeWebhookRequest(request);
+
+  if (!authorization.ok) {
+    return NextResponse.json(
+      { error: authorization.error },
+      { status: authorization.status },
     );
   }
 
