@@ -131,6 +131,67 @@ describe("ATS writeback queue", () => {
     expect(afterFailure.atsWritebackAttempts).toHaveLength(1);
   });
 
+  it("skips queued writebacks when the target ATS application was archived before processing", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsExternalApplications.push({
+      id: "ats_app_1",
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      externalId: "mock_app_1",
+      externalCandidateId: "mock_candidate_ana",
+      externalJobId: "mock_job_store_associate",
+      externalStageId: "mock_stage_breathe_screen",
+      externalUrl: null,
+      internalCandidateId: "candidate_1",
+      internalApplicationId: "app_1",
+      internalJobId: "job_1",
+      candidateName: "Ana Martin",
+      candidateEmail: "ana@example.com",
+      candidatePhone: "+34600000000",
+      jobTitle: "Store Associate",
+      stageName: "Breathe Screen",
+      stageCategory: "screening",
+      status: "archived_external",
+      externalUpdatedAt: "2026-05-19T10:00:00.000Z",
+      lastSeenAt: "2026-05-19T10:30:00.000Z",
+      rawSnapshot: {},
+    });
+    await saveRuntimeStoreState(state);
+
+    const queued = await enqueueATSWriteback({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      actionType: "candidate_note",
+      targetExternalCandidateId: "mock_candidate_ana",
+      targetExternalApplicationId: "mock_app_1",
+      targetExternalJobId: "mock_job_store_associate",
+      targetExternalStageId: null,
+      sourceObjectType: "evaluation",
+      sourceObjectId: "eval_archived",
+      payload: { body: "Breathe interview summary" },
+      now: "2026-05-19T12:00:00.000Z",
+    });
+
+    const processed = await processATSWritebackAction({
+      writebackActionId: queued.id,
+      now: "2026-05-19T12:01:00.000Z",
+    });
+
+    expect(processed.action.status).toBe("skipped");
+    expect(processed.attempt).toMatchObject({
+      writebackActionId: queued.id,
+      status: "skipped",
+      providerStatusCode: null,
+      errorMessage:
+        "ATS writeback skipped because the target application is archived_external.",
+    });
+    expect(processed.attempt.providerResponse).not.toHaveProperty(
+      "externalAccountId",
+    );
+  });
+
   it("updates the canonical ATS application after a successful stage move writeback", async () => {
     const state = await loadRuntimeStoreState();
     state.atsExternalStages.push({

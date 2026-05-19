@@ -9,7 +9,7 @@ export type AutoProcessableATSWritebackResult = {
   companyId: string;
   connectionId: string;
   provider: string;
-  status: "succeeded" | "failed";
+  status: "succeeded" | "skipped" | "failed";
   processed: ProcessedATSWritebackAction | null;
   errorMessage: string | null;
 };
@@ -18,6 +18,7 @@ export type AutoProcessableATSWritebacksResult = {
   scannedActions: number;
   attemptedActions: number;
   succeededActions: number;
+  skippedActions: number;
   failedActions: number;
   results: AutoProcessableATSWritebackResult[];
 };
@@ -58,7 +59,10 @@ export async function runAutoProcessableATSWritebacks(input: {
         connectionId: action.connectionId,
         provider: action.provider,
         status:
-          processed.action.status === "succeeded" ? "succeeded" : "failed",
+          processed.action.status === "succeeded" ||
+          processed.action.status === "skipped"
+            ? processed.action.status
+            : "failed",
         processed,
         errorMessage:
           processed.action.status === "succeeded"
@@ -82,12 +86,16 @@ export async function runAutoProcessableATSWritebacks(input: {
   const succeededActions = results.filter(
     (result) => result.status === "succeeded",
   ).length;
-  const failedActions = results.length - succeededActions;
+  const skippedActions = results.filter(
+    (result) => result.status === "skipped",
+  ).length;
+  const failedActions = results.length - succeededActions - skippedActions;
 
   return {
     scannedActions: state.atsWritebackActions.length,
     attemptedActions: results.length,
     succeededActions,
+    skippedActions,
     failedActions,
     results,
   };

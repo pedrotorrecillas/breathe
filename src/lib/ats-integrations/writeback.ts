@@ -73,6 +73,38 @@ function writebackAttemptId(input: {
   )}_${input.index}`;
 }
 
+function skippedWritebackForInactiveApplication(input: {
+  state: RuntimeStoreState;
+  action: ATSWritebackAction;
+}): ATSWritebackResult | null {
+  if (!input.action.targetExternalApplicationId) {
+    return null;
+  }
+
+  const targetApplication = input.state.atsExternalApplications.find(
+    (application) =>
+      application.companyId === input.action.companyId &&
+      application.connectionId === input.action.connectionId &&
+      application.provider === input.action.provider &&
+      application.externalId === input.action.targetExternalApplicationId,
+  );
+
+  if (!targetApplication || targetApplication.status === "active") {
+    return null;
+  }
+
+  return {
+    status: "skipped",
+    providerStatusCode: null,
+    providerResponse: {
+      reason: "target_application_inactive",
+      targetExternalApplicationId: input.action.targetExternalApplicationId,
+      targetStatus: targetApplication.status,
+    },
+    errorMessage: `ATS writeback skipped because the target application is ${targetApplication.status}.`,
+  };
+}
+
 function updateCanonicalApplicationAfterStageMove(input: {
   state: RuntimeStoreState;
   connection: ATSConnection;
@@ -238,13 +270,15 @@ export async function processATSWritebackActionInState(input: {
     throw new Error("ATS connection is not active.");
   }
 
-  const providerResult = await dispatchWriteback({
-    connection,
-    action: {
-      ...action,
-      updatedAt: input.now,
-    },
-  });
+  const providerResult =
+    skippedWritebackForInactiveApplication({ state, action }) ??
+    (await dispatchWriteback({
+      connection,
+      action: {
+        ...action,
+        updatedAt: input.now,
+      },
+    }));
   const attempt: ATSWritebackAttempt = {
     id: writebackAttemptId({
       writebackActionId: action.id,

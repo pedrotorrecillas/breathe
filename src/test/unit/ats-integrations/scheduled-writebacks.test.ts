@@ -144,4 +144,71 @@ describe("ATS scheduled writeback runner", () => {
     ).toBe("queued");
     expect(state.atsWritebackAttempts).toHaveLength(2);
   });
+
+  it("reports locally skipped writebacks separately from provider failures", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsWritebackActions = [
+      {
+        id: "ats_writeback_archived",
+        companyId: "company_1",
+        connectionId: "ats_conn_auto",
+        provider: "mock_ats",
+        actionType: "candidate_note",
+        targetExternalCandidateId: "mock_candidate_archived",
+        targetExternalApplicationId: "mock_app_archived",
+        targetExternalJobId: "mock_job_1",
+        targetExternalStageId: null,
+        sourceObjectType: "evaluation",
+        sourceObjectId: "eval_archived",
+        status: "queued",
+        idempotencyKey: "key_archived",
+        payload: { body: "Archived summary" },
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+    ];
+    state.atsExternalApplications.push({
+      id: "ats_app_archived",
+      companyId: "company_1",
+      connectionId: "ats_conn_auto",
+      provider: "mock_ats",
+      externalId: "mock_app_archived",
+      externalCandidateId: "mock_candidate_archived",
+      externalJobId: "mock_job_1",
+      externalStageId: "mock_stage_screen",
+      externalUrl: null,
+      internalCandidateId: "candidate_1",
+      internalApplicationId: "app_1",
+      internalJobId: "job_1",
+      candidateName: "Ana Martin",
+      candidateEmail: "ana@example.com",
+      candidatePhone: null,
+      jobTitle: "Store Associate",
+      stageName: "Screening",
+      stageCategory: "screening",
+      status: "archived_external",
+      externalUpdatedAt: "2026-05-19T10:00:00.000Z",
+      lastSeenAt: "2026-05-19T10:30:00.000Z",
+      rawSnapshot: {},
+    });
+    await saveRuntimeStoreState(state);
+
+    const result = await runAutoProcessableATSWritebacks({
+      now: "2026-05-19T12:00:00.000Z",
+    });
+
+    expect(result).toMatchObject({
+      scannedActions: 1,
+      attemptedActions: 1,
+      succeededActions: 0,
+      skippedActions: 1,
+      failedActions: 0,
+    });
+    expect(result.results[0]).toMatchObject({
+      writebackActionId: "ats_writeback_archived",
+      status: "skipped",
+      errorMessage:
+        "ATS writeback skipped because the target application is archived_external.",
+    });
+  });
 });
