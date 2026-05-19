@@ -35,6 +35,11 @@ type ProcessATSWritebackActionInput = {
   now: string;
 };
 
+export type ProcessedATSWritebackAction = {
+  action: ATSWritebackAction;
+  attempt: ATSWritebackAttempt;
+};
+
 function sanitizeIdPart(value: string) {
   return value.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 }
@@ -160,7 +165,7 @@ export async function enqueueATSWriteback(
 
 export async function processATSWritebackAction(
   input: ProcessATSWritebackActionInput,
-) {
+): Promise<ProcessedATSWritebackAction> {
   const state = await loadRuntimeStoreState();
   const processed = await processATSWritebackActionInState({
     state,
@@ -177,7 +182,7 @@ export async function processATSWritebackActionInState(input: {
   state: RuntimeStoreState;
   writebackActionId: string;
   now: string;
-}) {
+}): Promise<ProcessedATSWritebackAction> {
   const state = input.state;
   const action = state.atsWritebackActions.find(
     (item) => item.id === input.writebackActionId,
