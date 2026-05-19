@@ -151,15 +151,7 @@ describe("Zoho Recruit client", () => {
 
       return new Response(
         JSON.stringify({
-          data: [
-            {
-              id: "58431000000054321",
-              Full_Name: "Ana Martin",
-              Email: "ana@example.com",
-              Candidate_Status: "Breathe Screen",
-              Modified_Time: "2026-05-19T10:05:00+02:00",
-            },
-          ],
+          data: [],
           info: {
             page: 3,
             per_page: 50,
@@ -192,6 +184,87 @@ describe("Zoho Recruit client", () => {
       nextCursor: "3",
       hasMore: true,
     });
+    expect(applicationsPage).toMatchObject({
+      nextCursor: "3",
+      hasMore: true,
+    });
+  });
+
+  it("lists applications from candidates associated to Zoho job openings", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "access_token");
+    const fetchMock = vi.fn(async (url: string | URL) => {
+      const href = String(url);
+
+      if (href.includes("/recruit/v2/Job_Openings/58431000000012345/associate")) {
+        return new Response(
+          JSON.stringify({
+            data: [
+              {
+                id: "58431000000054321",
+                Full_Name: "Ana Martin",
+                Email: "ana@example.com",
+                Mobile: "+34600000000",
+                Candidate_Status: "Breathe Screen",
+                Modified_Time: "2026-05-19T10:05:00+02:00",
+              },
+            ],
+            info: {
+              page: 1,
+              per_page: 25,
+              more_records: false,
+            },
+          }),
+          { status: 200 },
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          data: [
+            {
+              id: "58431000000012345",
+              Posting_Title: "Store Associate",
+              Job_Opening_Status: "In-progress",
+              Modified_Time: "2026-05-19T10:00:00+02:00",
+            },
+          ],
+          info: {
+            page: 1,
+            per_page: 25,
+            more_records: false,
+          },
+        }),
+        { status: 200 },
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const applicationsPage = await zohoRecruitAdapter.listApplications({
+      connection: zohoConnection,
+      cursor: null,
+      limit: 25,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "https://recruit.zoho.com/recruit/v2/Job_Openings?per_page=25&page=1",
+      expect.any(Object),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://recruit.zoho.com/recruit/v2/Job_Openings/58431000000012345/associate?per_page=25&page=1",
+      expect.any(Object),
+    );
+    expect(applicationsPage.records).toEqual([
+      expect.objectContaining({
+        externalId: "58431000000054321:58431000000012345",
+        externalCandidateId: "58431000000054321",
+        externalJobId: "58431000000012345",
+        jobTitle: "Store Associate",
+        externalStageId: "Breathe Screen",
+        stageCategory: "screening",
+      }),
+    ]);
     expect(applicationsPage).toMatchObject({
       nextCursor: null,
       hasMore: false,

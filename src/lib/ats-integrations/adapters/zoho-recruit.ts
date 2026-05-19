@@ -1,5 +1,8 @@
 import type { ATSWritebackAction } from "@/domain/ats-integrations/types";
-import type { ATSAdapter } from "@/lib/ats-integrations/adapters/types";
+import type {
+  ATSAdapter,
+  ATSProviderApplication,
+} from "@/lib/ats-integrations/adapters/types";
 import { createZohoRecruitClient } from "@/lib/ats-integrations/zoho/client";
 import {
   mapZohoCandidateToProviderApplication,
@@ -49,6 +52,20 @@ function zohoListPath(input: {
   });
 
   return `/recruit/v2/${input.moduleApiName}?${params.toString()}`;
+}
+
+function zohoAssociatedRecordsPath(input: {
+  moduleApiName: string;
+  recordId: string;
+  page: number;
+  perPage: number;
+}) {
+  const params = new URLSearchParams({
+    per_page: String(input.perPage),
+    page: String(input.page),
+  });
+
+  return `/recruit/v2/${input.moduleApiName}/${input.recordId}/associate?${params.toString()}`;
 }
 
 function nextZohoCursor(input: {
@@ -132,25 +149,52 @@ export const zohoRecruitAdapter: ATSAdapter = {
   async listApplications(input) {
     const client = createZohoRecruitClient(input.connection);
     const page = zohoPageFromCursor(input.cursor);
-    const response = await client.request<ZohoListResponse>(
+    const jobsResponse = await client.request<ZohoListResponse>(
       zohoListPath({
-        moduleApiName: "Candidates",
+        moduleApiName: "Job_Openings",
         page,
         perPage: input.limit,
       }),
       { method: "GET" },
     );
+    const records: ATSProviderApplication[] = [];
+
+    for (const job of jobsResponse.data ?? []) {
+      const jobId = typeof job.id === "string" ? job.id : null;
+
+      if (!jobId) {
+        continue;
+      }
+
+      const jobTitle =
+        (typeof job.Posting_Title === "string" && job.Posting_Title.trim()) ||
+        (typeof job.Job_Opening_Name === "string" && job.Job_Opening_Name.trim()) ||
+        "Unknown Zoho Job";
+      const associatedResponse = await client.request<ZohoListResponse>(
+        zohoAssociatedRecordsPath({
+          moduleApiName: "Job_Openings",
+          recordId: jobId,
+          page: 1,
+          perPage: input.limit,
+        }),
+        { method: "GET" },
+      );
+
+      records.push(
+        ...(associatedResponse.data ?? []).map((candidate) =>
+          mapZohoCandidateToProviderApplication({
+            candidate,
+            fallbackJobId: jobId,
+            fallbackJobTitle: jobTitle,
+          }),
+        ),
+      );
+    }
 
     return {
-      records: (response.data ?? []).map((candidate) =>
-        mapZohoCandidateToProviderApplication({
-          candidate,
-          fallbackJobId: "zoho_job_unknown",
-          fallbackJobTitle: "Unknown Zoho Job",
-        }),
-      ),
-      nextCursor: nextZohoCursor({ currentPage: page, response }),
-      hasMore: Boolean(response.info?.more_records),
+      records,
+      nextCursor: nextZohoCursor({ currentPage: page, response: jobsResponse }),
+      hasMore: Boolean(jobsResponse.info?.more_records),
     };
   },
   async getCandidate(input) {
