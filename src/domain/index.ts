@@ -1,3 +1,4 @@
+export * from "@/domain/ats-integrations/types";
 export * from "@/domain/candidates/types";
 export * from "@/domain/evaluations/types";
 export * from "@/domain/interview-preparation/types";
