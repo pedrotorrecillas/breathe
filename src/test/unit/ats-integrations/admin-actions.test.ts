@@ -213,6 +213,44 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("keeps a Zoho demo connection errored when configured credentials fail validation", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "bad-token");
+    mockValidateConnection.mockRejectedValue(
+      new Error("Zoho Recruit request failed with 401."),
+    );
+    const { createZohoEnvConnectionAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+
+    await createZohoEnvConnectionAction(new FormData());
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    const zohoConnection = savedState.atsConnections.find(
+      (connection: { provider: string }) =>
+        connection.provider === "zoho_recruit",
+    );
+    expect(mockValidateConnection).toHaveBeenCalledWith({
+      connection: expect.objectContaining({
+        provider: "zoho_recruit",
+        status: "active",
+        secretRef: "env:ZOHO_RECRUIT_ACCESS_TOKEN",
+      }),
+    });
+    expect(zohoConnection).toMatchObject({
+      provider: "zoho_recruit",
+      status: "error",
+      lastError: "Zoho Recruit request failed with 401.",
+    });
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ats.connection_created",
+        metadata: expect.objectContaining({
+          provider: "zoho_recruit",
+          credentialStatus: "invalid",
+        }),
+      }),
+    );
+  });
+
   it("updates the existing Mock ATS connection instead of creating duplicates", async () => {
     const { createMockATSConnectionAction } =
       await import("@/app/(recruiter)/settings/integrations/ats/actions");
@@ -269,7 +307,7 @@ describe("ATS admin actions", () => {
       id: "ats_conn_zoho_existing",
       status: "active",
       secretRef: "env:ZOHO_RECRUIT_ACCESS_TOKEN",
-      externalAccountId: "zoho_existing",
+      externalAccountId: "mock_account_verified",
       lastSyncAt: "2026-05-19T10:00:00.000Z",
       lastError: null,
       createdAt: "2026-05-19T09:00:00.000Z",

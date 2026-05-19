@@ -351,7 +351,7 @@ export async function createZohoEnvConnectionAction(
           connection.companyId === recruiter.company.id &&
           connection.provider === "zoho_recruit",
       ) ?? null;
-    const connection = existingConnection
+    let connection = existingConnection
       ? {
           ...existingConnection,
           status: defaultConnection.status,
@@ -361,9 +361,38 @@ export async function createZohoEnvConnectionAction(
           updatedAt: defaultConnection.updatedAt,
         }
       : defaultConnection;
+
+    if (connection.status === "active") {
+      const adapter = getATSAdapter(connection.provider);
+      const check = await adapter
+        .validateConnection({ connection })
+        .catch((error: unknown) => ({
+          ok: false,
+          externalAccountId: null,
+          message:
+            error instanceof Error
+              ? error.message
+              : "ATS provider validation failed.",
+        }));
+
+      connection = {
+        ...connection,
+        status: check.ok ? "active" : "error",
+        externalAccountId:
+          check.externalAccountId ?? connection.externalAccountId,
+        lastError: check.ok ? null : check.message,
+      };
+    }
+
     const existingIndex = state.atsConnections.findIndex(
       (item) => item.id === connection.id,
     );
+    const credentialStatus =
+      defaultConnection.status === "active"
+        ? connection.status === "active"
+          ? "validated"
+          : "invalid"
+        : "missing";
 
     if (existingIndex >= 0) {
       state.atsConnections[existingIndex] = connection;
@@ -379,7 +408,7 @@ export async function createZohoEnvConnectionAction(
       summary: "Created Zoho Recruit integration connection.",
       metadata: {
         provider: connection.provider,
-        credentialStatus: connection.status === "active" ? "present" : "missing",
+        credentialStatus,
       },
     });
     await saveRuntimeStoreState(state);
