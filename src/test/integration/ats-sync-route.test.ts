@@ -7,7 +7,7 @@ vi.mock("@/lib/ats-integrations/scheduled-sync", () => ({
     mockRunConfiguredATSSyncs(...args),
 }));
 
-import { POST } from "@/app/api/ats/sync/route";
+import { GET, POST } from "@/app/api/ats/sync/route";
 
 describe("ATS sync route", () => {
   afterEach(() => {
@@ -53,6 +53,38 @@ describe("ATS sync route", () => {
       result: {
         attemptedConnections: 1,
         succeededConnections: 1,
+      },
+    });
+    expect(mockRunConfiguredATSSyncs).toHaveBeenCalledWith({
+      now: expect.any(String),
+    });
+  });
+
+  it("supports authorized GET requests for cron-style schedulers", async () => {
+    vi.stubEnv("ATS_SYNC_SECRET", "secret-token");
+    mockRunConfiguredATSSyncs.mockResolvedValue({
+      scannedConnections: 1,
+      attemptedConnections: 1,
+      succeededConnections: 1,
+      failedConnections: 0,
+      results: [],
+    });
+
+    const response = await GET(
+      new Request("http://test.local/api/ats/sync", {
+        method: "GET",
+        headers: {
+          "x-ats-sync-secret": "secret-token",
+        },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      success: true,
+      result: {
+        scannedConnections: 1,
+        attemptedConnections: 1,
       },
     });
     expect(mockRunConfiguredATSSyncs).toHaveBeenCalledWith({

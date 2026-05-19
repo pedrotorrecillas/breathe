@@ -39,7 +39,7 @@ function isAuthorized(request: Request) {
   return { ok: true } as const;
 }
 
-export async function POST(request: Request) {
+async function handleSyncRequest(request: Request) {
   const authorization = isAuthorized(request);
 
   if (!authorization.ok) {
@@ -60,4 +60,12 @@ export async function POST(request: Request) {
     success: true,
     result,
   });
+}
+
+export async function GET(request: Request) {
+  return handleSyncRequest(request);
+}
+
+export async function POST(request: Request) {
+  return handleSyncRequest(request);
 }
