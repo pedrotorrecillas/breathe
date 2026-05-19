@@ -455,6 +455,89 @@ export async function saveATSTriggerRuleAction(
       state.atsTriggerRules.push(rule);
     }
 
+    state.atsWorkflowRequests = state.atsWorkflowRequests ?? [];
+    state.atsSyncEvents = state.atsSyncEvents ?? [];
+
+    const matchingApplications = (state.atsExternalApplications ?? []).filter(
+      (application) =>
+        application.companyId === rule.companyId &&
+        application.connectionId === rule.connectionId &&
+        application.externalStageId === rule.externalStageId &&
+        (!rule.externalJobId ||
+          application.externalJobId === rule.externalJobId) &&
+        application.status === "active",
+    );
+
+    for (const application of matchingApplications) {
+      const existingRequest = state.atsWorkflowRequests.some(
+        (request) =>
+          request.atsTriggerRuleId === rule.id &&
+          request.connectionId === rule.connectionId &&
+          request.externalApplicationId === application.externalId,
+      );
+
+      if (existingRequest) {
+        continue;
+      }
+
+      let syncEvent = state.atsSyncEvents.find(
+        (event) =>
+          event.connectionId === application.connectionId &&
+          event.externalObjectType === "application" &&
+          event.externalObjectId === application.externalId &&
+          event.externalStageId === application.externalStageId,
+      );
+
+      if (!syncEvent) {
+        syncEvent = {
+          id: `ats_evt_backfill_${sanitizeATSRulePart(rule.id)}_${sanitizeATSRulePart(
+            application.externalId,
+          )}`,
+          companyId: application.companyId,
+          connectionId: application.connectionId,
+          provider: application.provider,
+          eventType: "application_seen",
+          externalObjectType: "application",
+          externalObjectId: application.externalId,
+          externalJobId: application.externalJobId,
+          externalCandidateId: application.externalCandidateId,
+          externalStageId: application.externalStageId,
+          occurredAt: now,
+          processedAt: now,
+          idempotencyKey: `trigger_backfill:${rule.id}:${application.externalId}`,
+          payload: application.rawSnapshot,
+        };
+        state.atsSyncEvents.push(syncEvent);
+      } else {
+        const syncEventId = syncEvent.id;
+        state.atsSyncEvents = state.atsSyncEvents.map((event) =>
+          event.id === syncEventId
+            ? {
+                ...event,
+                processedAt: event.processedAt ?? now,
+              }
+            : event,
+        );
+      }
+
+      state.atsWorkflowRequests.push({
+        id: `ats_workflow_${syncEvent.id}_${rule.id}`,
+        companyId: rule.companyId,
+        connectionId: rule.connectionId,
+        provider: rule.provider,
+        atsSyncEventId: syncEvent.id,
+        atsTriggerRuleId: rule.id,
+        externalApplicationId: application.externalId,
+        internalCandidateId: application.internalCandidateId,
+        internalApplicationId: application.internalApplicationId,
+        requestedActions: rule.actions,
+        requiresRecruiterApproval: rule.requiresRecruiterApproval,
+        status: "queued",
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
     appendAuditEvent({
       state,
       recruiter,

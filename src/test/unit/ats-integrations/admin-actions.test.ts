@@ -188,6 +188,109 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("backfills workflow requests for imported applications that already match a saved trigger", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsWorkflowRequests = [];
+    state.atsExternalStages = [
+      {
+        id: "ats_stage_screen",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalJobId: "mock_job_1",
+        externalId: "mock_stage_screen",
+        name: "Screen",
+        category: "screening",
+        position: 1,
+        status: "active",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ];
+    state.atsExternalJobs = [
+      {
+        id: "ats_job_1",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalId: "mock_job_1",
+        externalUrl: null,
+        title: "Store Associate",
+        status: "active",
+        externalUpdatedAt: null,
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ];
+    state.atsExternalApplications = [
+      {
+        id: "ats_app_imported",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalId: "mock_app_imported",
+        externalCandidateId: "mock_candidate_ana",
+        externalJobId: "mock_job_1",
+        externalStageId: "mock_stage_screen",
+        externalUrl: null,
+        internalCandidateId: null,
+        internalApplicationId: null,
+        internalJobId: null,
+        candidateName: "Ana Martin",
+        candidateEmail: "ana@example.com",
+        candidatePhone: "+34600000000",
+        jobTitle: "Store Associate",
+        stageName: "Screen",
+        stageCategory: "screening",
+        status: "active",
+        externalUpdatedAt: "2026-05-19T10:00:00.000Z",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ];
+    state.atsSyncEvents = [
+      {
+        id: "ats_evt_imported",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        eventType: "application_seen",
+        externalObjectType: "application",
+        externalObjectId: "mock_app_imported",
+        externalJobId: "mock_job_1",
+        externalCandidateId: "mock_candidate_ana",
+        externalStageId: "mock_stage_screen",
+        occurredAt: "2026-05-19T10:00:00.000Z",
+        processedAt: null,
+        idempotencyKey: "existing_event",
+        payload: {},
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { saveATSTriggerRuleAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("externalStageId", "mock_stage_screen");
+    formData.set("externalJobId", "mock_job_1");
+    formData.append("actions", "import_candidate");
+    formData.set("requiresRecruiterApproval", "on");
+
+    await saveATSTriggerRuleAction(formData);
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsWorkflowRequests).toHaveLength(1);
+    expect(savedState.atsWorkflowRequests[0]).toMatchObject({
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      atsSyncEventId: "ats_evt_imported",
+      externalApplicationId: "mock_app_imported",
+      requestedActions: ["import_candidate"],
+      requiresRecruiterApproval: true,
+      status: "queued",
+    });
+  });
+
   it("keeps separate trigger rules for the same stage on different external jobs", async () => {
     const state = await mockLoadRuntimeStoreState();
     state.atsTriggerRules = [
