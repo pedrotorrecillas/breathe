@@ -20,6 +20,7 @@ import {
   saveRuntimeStoreState,
   type RuntimeStoreState,
 } from "@/lib/db/runtime-store";
+import { enqueueATSWritebacksForEvaluation } from "@/lib/ats-integrations/workflow-requests";
 import { buildEvaluationSummary } from "@/lib/evaluation-summary";
 import { extractRequirementEvidenceFromTranscript } from "@/lib/evaluation-requirement-extraction";
 import { scoreEvaluationFromRequirementEvidence } from "@/lib/evaluation-scoring";
@@ -346,6 +347,16 @@ async function maybeGenerateInterviewEvaluation(input: {
   } else {
     input.state.evaluations.push(evaluation);
   }
+
+  const writebackActions = enqueueATSWritebacksForEvaluation({
+    evaluation,
+    interviewRun: snapshot.interviewRun,
+    atsApplications: input.state.atsExternalApplications,
+    existingActions: input.state.atsWritebackActions,
+    now: generatedAt.toISOString(),
+  });
+
+  input.state.atsWritebackActions.push(...writebackActions);
 
   return evaluation;
 }

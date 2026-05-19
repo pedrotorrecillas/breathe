@@ -354,3 +354,13 @@ export const atsWritebackAttemptsTable = pgTable("ats_writeback_attempts", {
   position: integer("position").notNull(),
   payload: jsonb("payload").notNull(),
 });
+
+export const atsWorkflowRequestsTable = pgTable("ats_workflow_requests", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull(),
+  atsSyncEventId: text("ats_sync_event_id").notNull(),
+  atsTriggerRuleId: text("ats_trigger_rule_id").notNull(),
+  status: text("status").notNull(),
+  position: integer("position").notNull(),
+  payload: jsonb("payload").notNull(),
+});

@@ -9,6 +9,7 @@ import type {
   ATSTriggerRule,
   ATSWritebackAction,
   ATSWritebackAttempt,
+  ATSWorkflowRequest,
 } from "@/domain/ats-integrations/types";
 import type {
   CandidateApplication,
@@ -50,6 +51,7 @@ import {
   atsTriggerRulesTable,
   atsWritebackActionsTable,
   atsWritebackAttemptsTable,
+  atsWorkflowRequestsTable,
   auditEventsTable,
   candidateNotesTable,
   candidatesTable,
@@ -103,6 +105,7 @@ export type RuntimeStoreState = {
   atsSyncEvents: ATSSyncEvent[];
   atsWritebackActions: ATSWritebackAction[];
   atsWritebackAttempts: ATSWritebackAttempt[];
+  atsWorkflowRequests: ATSWorkflowRequest[];
 };
 
 const memoryState: RuntimeStoreState = {
@@ -136,6 +139,7 @@ const memoryState: RuntimeStoreState = {
   atsSyncEvents: [],
   atsWritebackActions: [],
   atsWritebackAttempts: [],
+  atsWorkflowRequests: [],
 };
 
 function fallbackToMemoryState() {
@@ -182,6 +186,7 @@ function cloneState(state: RuntimeStoreState): RuntimeStoreState {
     atsSyncEvents: [...state.atsSyncEvents],
     atsWritebackActions: [...state.atsWritebackActions],
     atsWritebackAttempts: [...state.atsWritebackAttempts],
+    atsWorkflowRequests: [...state.atsWorkflowRequests],
   };
 }
 
@@ -262,6 +267,7 @@ export async function loadRuntimeStoreState(): Promise<RuntimeStoreState> {
       atsSyncEvents,
       atsWritebackActions,
       atsWritebackAttempts,
+      atsWorkflowRequests,
     ] = await Promise.all([
       db.select().from(companiesTable),
       db.select().from(companyMembershipsTable),
@@ -293,6 +299,7 @@ export async function loadRuntimeStoreState(): Promise<RuntimeStoreState> {
       db.select().from(atsSyncEventsTable),
       db.select().from(atsWritebackActionsTable),
       db.select().from(atsWritebackAttemptsTable),
+      db.select().from(atsWorkflowRequestsTable),
     ]);
 
     return {
@@ -386,6 +393,9 @@ export async function loadRuntimeStoreState(): Promise<RuntimeStoreState> {
       atsWritebackAttempts: atsWritebackAttempts
         .sort((left, right) => left.position - right.position)
         .map((row) => row.payload as ATSWritebackAttempt),
+      atsWorkflowRequests: atsWorkflowRequests
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as ATSWorkflowRequest),
     };
   } catch (error) {
     throw new Error(
@@ -424,6 +434,7 @@ export async function saveRuntimeStoreState(state: RuntimeStoreState) {
       await tx.delete(runtimeTraceEventsTable);
       await tx.delete(evaluationsTable);
       await tx.delete(atsWritebackAttemptsTable);
+      await tx.delete(atsWorkflowRequestsTable);
       await tx.delete(atsWritebackActionsTable);
       await tx.delete(atsSyncEventsTable);
       await tx.delete(atsTriggerRulesTable);
@@ -839,6 +850,20 @@ export async function saveRuntimeStoreState(state: RuntimeStoreState) {
           })),
         );
       }
+
+      if (state.atsWorkflowRequests.length > 0) {
+        await tx.insert(atsWorkflowRequestsTable).values(
+          state.atsWorkflowRequests.map((item, index) => ({
+            id: item.id,
+            companyId: item.companyId,
+            atsSyncEventId: item.atsSyncEventId,
+            atsTriggerRuleId: item.atsTriggerRuleId,
+            status: item.status,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
     });
   } catch (error) {
     throw new Error(
@@ -880,6 +905,7 @@ export async function resetRuntimeStoreState() {
       atsSyncEvents: [],
       atsWritebackActions: [],
       atsWritebackAttempts: [],
+      atsWorkflowRequests: [],
     });
     return;
   }
@@ -905,6 +931,7 @@ export async function resetRuntimeStoreState() {
   await db.delete(runtimeTraceEventsTable);
   await db.delete(evaluationsTable);
   await db.delete(atsWritebackAttemptsTable);
+  await db.delete(atsWorkflowRequestsTable);
   await db.delete(atsWritebackActionsTable);
   await db.delete(atsSyncEventsTable);
   await db.delete(atsTriggerRulesTable);

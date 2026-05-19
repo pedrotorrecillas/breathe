@@ -36,6 +36,13 @@
       "when": 1779203434370,
       "tag": "0005_ats_integrations",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1779204285077,
+      "tag": "0006_ats_workflow_requests",
+      "breakpoints": true
     }
   ]
 }
