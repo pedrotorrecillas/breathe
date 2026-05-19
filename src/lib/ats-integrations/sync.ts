@@ -73,6 +73,7 @@ function eventIdempotencyKey(input: {
   externalObjectType: ATSSyncEvent["externalObjectType"];
   externalObjectId: string;
   externalUpdatedAt: string | null;
+  discriminator?: string | null;
 }) {
   return [
     input.connectionId,
@@ -80,6 +81,7 @@ function eventIdempotencyKey(input: {
     input.externalObjectType,
     input.externalObjectId,
     input.externalUpdatedAt ?? "none",
+    input.discriminator ?? "none",
   ].join(":");
 }
 
@@ -123,7 +125,12 @@ function appendWorkflowRequestsForEvent(input: {
 
   for (const request of requests) {
     if (
-      input.state.atsWorkflowRequests.some((item) => item.id === request.id)
+      input.state.atsWorkflowRequests.some(
+        (item) =>
+          item.id === request.id ||
+          (item.atsTriggerRuleId === request.atsTriggerRuleId &&
+            item.externalApplicationId === request.externalApplicationId),
+      )
     ) {
       continue;
     }
@@ -274,6 +281,7 @@ function buildEvent(input: {
   externalStageId: string | null;
   occurredAt: string;
   externalUpdatedAt: string | null;
+  idempotencyDiscriminator?: string | null;
   payload: Record<string, unknown>;
 }): ATSSyncEvent {
   const idempotencyKey = eventIdempotencyKey({
@@ -282,6 +290,7 @@ function buildEvent(input: {
     externalObjectType: input.externalObjectType,
     externalObjectId: input.externalObjectId,
     externalUpdatedAt: input.externalUpdatedAt,
+    discriminator: input.idempotencyDiscriminator,
   });
 
   return {
@@ -304,6 +313,33 @@ function buildEvent(input: {
 
 function eventUpdatedAt(record: ProviderRecord) {
   return record.externalUpdatedAt ?? null;
+}
+
+function preserveInternalApplicationLinks(input: {
+  previous: ATSCanonicalApplication | undefined;
+  next: ATSCanonicalApplication;
+}): ATSCanonicalApplication {
+  if (!input.previous) {
+    return input.next;
+  }
+
+  return {
+    ...input.next,
+    internalCandidateId: input.previous.internalCandidateId,
+    internalApplicationId: input.previous.internalApplicationId,
+    internalJobId: input.previous.internalJobId,
+  };
+}
+
+function applicationStageChanged(input: {
+  previous: ATSCanonicalApplication | undefined;
+  next: ATSCanonicalApplication;
+}) {
+  if (!input.previous) {
+    return false;
+  }
+
+  return input.previous.externalStageId !== input.next.externalStageId;
 }
 
 export async function runATSSync(
@@ -442,18 +478,69 @@ export async function runATSSync(
       }
     }
 
-    const applicationRecord = canonicalApplication({
-      companyId: input.companyId,
-      connectionId: connection.id,
-      provider: connection.provider,
-      now: input.now,
-      record: application,
+    const previousApplication = state.atsExternalApplications.find(
+      (item) =>
+        item.connectionId === connection.id &&
+        item.externalId === application.externalId,
+    );
+    const applicationRecord = preserveInternalApplicationLinks({
+      previous: previousApplication,
+      next: canonicalApplication({
+        companyId: input.companyId,
+        connectionId: connection.id,
+        provider: connection.provider,
+        now: input.now,
+        record: application,
+      }),
     });
     if (upsertById(state.atsExternalApplications, applicationRecord)) {
       result.importedApplications += 1;
     }
 
-    const applicationEvent = buildEvent({
+    if (
+      applicationStageChanged({
+        previous: previousApplication,
+        next: applicationRecord,
+      })
+    ) {
+      const stageChangedEvent = buildEvent({
+        companyId: input.companyId,
+        connectionId: connection.id,
+        provider: connection.provider,
+        eventType: "application_stage_changed",
+        externalObjectType: "application",
+        externalObjectId: application.externalId,
+        externalJobId: application.externalJobId,
+        externalCandidateId: application.externalCandidateId,
+        externalStageId: application.externalStageId,
+        occurredAt: input.now,
+        externalUpdatedAt: eventUpdatedAt(application),
+        idempotencyDiscriminator: [
+          previousApplication?.externalStageId ?? "none",
+          application.externalStageId ?? "none",
+        ].join("->"),
+        payload: {
+          ...application.raw,
+          previousExternalStageId: previousApplication?.externalStageId ?? null,
+          previousStageName: previousApplication?.stageName ?? null,
+          previousStageCategory: previousApplication?.stageCategory ?? null,
+          externalStageId: application.externalStageId,
+          stageName: application.stageName,
+          stageCategory: application.stageCategory,
+        },
+      });
+
+      if (appendSyncEventOnce(state, stageChangedEvent)) {
+        result.createdEvents += 1;
+        result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
+          state,
+          event: stageChangedEvent,
+          now: input.now,
+        });
+      }
+    }
+
+    const applicationSeenEvent = buildEvent({
       companyId: input.companyId,
       connectionId: connection.id,
       provider: connection.provider,
@@ -468,11 +555,11 @@ export async function runATSSync(
       payload: application.raw,
     });
 
-    if (appendSyncEventOnce(state, applicationEvent)) {
+    if (appendSyncEventOnce(state, applicationSeenEvent)) {
       result.createdEvents += 1;
       result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
         state,
-        event: applicationEvent,
+        event: applicationSeenEvent,
         now: input.now,
       });
     }

@@ -86,4 +86,71 @@ describe("ATS sync", () => {
     const afterSecond = await loadRuntimeStoreState();
     expect(afterSecond.atsWorkflowRequests).toHaveLength(1);
   });
+
+  it("emits a stage-changed event when a known application moves into a configured stage", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsExternalApplications.push({
+      id: "ats_application_ats_conn_1_mock_app_ana_store_associate",
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      externalId: "mock_app_ana_store_associate",
+      externalCandidateId: "mock_candidate_ana",
+      externalJobId: "mock_job_store_associate",
+      externalStageId: "mock_stage_new",
+      externalUrl: "https://mock.example/applications/mock_app_ana_store_associate",
+      internalCandidateId: "candidate_existing",
+      internalApplicationId: "application_existing",
+      internalJobId: "job_existing",
+      candidateName: "Ana Gomez",
+      candidateEmail: "ana@example.com",
+      candidatePhone: "+34600000000",
+      jobTitle: "Store Associate",
+      stageName: "New",
+      stageCategory: "new",
+      status: "active",
+      externalUpdatedAt: "2026-05-19T08:00:00.000Z",
+      lastSeenAt: "2026-05-19T10:00:00.000Z",
+      rawSnapshot: { providerStageId: "mock_stage_new" },
+    });
+    await saveRuntimeStoreState(state);
+
+    const result = await runATSSync({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      now: "2026-05-19T11:00:00.000Z",
+    });
+
+    expect(result.createdWorkflowRequests).toBe(1);
+    const afterSync = await loadRuntimeStoreState();
+    const stageChangedEvent = afterSync.atsSyncEvents.find(
+      (event) =>
+        event.eventType === "application_stage_changed" &&
+        event.externalObjectId === "mock_app_ana_store_associate",
+    );
+    expect(stageChangedEvent).toMatchObject({
+      externalStageId: "mock_stage_breathe_screen",
+      processedAt: "2026-05-19T11:00:00.000Z",
+      payload: expect.objectContaining({
+        previousExternalStageId: "mock_stage_new",
+        externalStageId: "mock_stage_breathe_screen",
+      }),
+    });
+    expect(afterSync.atsWorkflowRequests).toHaveLength(1);
+    expect(afterSync.atsWorkflowRequests[0]).toMatchObject({
+      atsSyncEventId: stageChangedEvent?.id,
+      externalApplicationId: "mock_app_ana_store_associate",
+    });
+    expect(
+      afterSync.atsExternalApplications.find(
+        (application) =>
+          application.externalId === "mock_app_ana_store_associate",
+      ),
+    ).toMatchObject({
+      externalStageId: "mock_stage_breathe_screen",
+      internalCandidateId: "candidate_existing",
+      internalApplicationId: "application_existing",
+      internalJobId: "job_existing",
+    });
+  });
 });
