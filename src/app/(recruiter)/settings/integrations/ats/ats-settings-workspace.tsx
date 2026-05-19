@@ -451,7 +451,9 @@ export function ATSSettingsWorkspace({
                     {action.status} · {action.targetExternalCandidateId}
                   </p>
                 </div>
-                {canManage && action.status === "queued" ? (
+                {canManage &&
+                (action.status === "queued" ||
+                  action.status === "retryable_error") ? (
                   <form action={processATSWritebackActionAction}>
                     <input
                       type="hidden"
@@ -462,7 +464,7 @@ export function ATSSettingsWorkspace({
                       type="submit"
                       className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700"
                     >
-                      Send
+                      {action.status === "retryable_error" ? "Retry" : "Send"}
                     </button>
                   </form>
                 ) : null}

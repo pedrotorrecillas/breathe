@@ -77,4 +77,49 @@ describe("ATS writeback queue", () => {
       externalAccountId: "mock_account_from_connection",
     });
   });
+
+  it("records retryable errors when provider writeback dispatch fails", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsConnections = state.atsConnections.map((connection) => ({
+      ...connection,
+      provider: "recruitee",
+      displayName: "Recruitee",
+    }));
+    await saveRuntimeStoreState(state);
+
+    const queued = await enqueueATSWriteback({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "recruitee",
+      actionType: "candidate_note",
+      targetExternalCandidateId: "candidate_1",
+      targetExternalApplicationId: "application_1",
+      targetExternalJobId: "job_1",
+      targetExternalStageId: null,
+      sourceObjectType: "evaluation",
+      sourceObjectId: "eval_1",
+      payload: { body: "Breathe interview summary" },
+      now: "2026-05-19T12:00:00.000Z",
+    });
+
+    const processed = await processATSWritebackAction({
+      writebackActionId: queued.id,
+      now: "2026-05-19T12:02:00.000Z",
+    });
+
+    expect(processed.action.status).toBe("retryable_error");
+    expect(processed.attempt).toMatchObject({
+      writebackActionId: queued.id,
+      status: "retryable_error",
+      providerStatusCode: null,
+      errorMessage: "ATS provider recruitee is not implemented yet.",
+    });
+    const afterFailure = await loadRuntimeStoreState();
+    expect(afterFailure.atsWritebackActions[0]).toMatchObject({
+      id: queued.id,
+      status: "retryable_error",
+      updatedAt: "2026-05-19T12:02:00.000Z",
+    });
+    expect(afterFailure.atsWritebackAttempts).toHaveLength(1);
+  });
 });

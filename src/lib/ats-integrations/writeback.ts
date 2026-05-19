@@ -4,6 +4,7 @@ import type {
   ATSWritebackAction,
   ATSWritebackActionType,
   ATSWritebackAttempt,
+  ATSWritebackResult,
 } from "@/domain/ats-integrations/types";
 import { getATSAdapter } from "@/lib/ats-integrations/registry";
 import {
@@ -128,8 +129,7 @@ export async function processATSWritebackAction(
     throw new Error("ATS connection is not active.");
   }
 
-  const adapter = getATSAdapter(action.provider);
-  const providerResult = await adapter.writeback({
+  const providerResult = await dispatchWriteback({
     connection,
     action: {
       ...action,
@@ -167,4 +167,25 @@ export async function processATSWritebackAction(
     action: state.atsWritebackActions.find((item) => item.id === action.id)!,
     attempt,
   };
+}
+
+async function dispatchWriteback(input: {
+  connection: NonNullable<
+    Awaited<ReturnType<typeof loadRuntimeStoreState>>["atsConnections"][number]
+  >;
+  action: ATSWritebackAction;
+}): Promise<ATSWritebackResult> {
+  try {
+    const adapter = getATSAdapter(input.action.provider);
+
+    return await adapter.writeback(input);
+  } catch (error) {
+    return {
+      status: "retryable_error",
+      providerStatusCode: null,
+      providerResponse: {},
+      errorMessage:
+        error instanceof Error ? error.message : "ATS writeback failed.",
+    };
+  }
 }

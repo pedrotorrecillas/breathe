@@ -62,7 +62,26 @@ vi.mock("@/lib/ats-integrations/connections", () => ({
     ],
     triggerRules: [],
     workflowRequests: [],
-    writebackActions: [],
+    writebackActions: [
+      {
+        id: "ats_writeback_retry",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        actionType: "candidate_note",
+        targetExternalCandidateId: "mock_candidate_ana",
+        targetExternalApplicationId: "mock_app_1",
+        targetExternalJobId: "mock_job_store_associate",
+        targetExternalStageId: null,
+        sourceObjectType: "evaluation",
+        sourceObjectId: "eval_1",
+        status: "retryable_error",
+        idempotencyKey: "key",
+        payload: { body: "Breathe interview summary" },
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+    ],
     externalJobs: [
       {
         id: "ats_job_1",
@@ -119,6 +138,9 @@ describe("ATS settings page", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: /ATS outbound queue/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^Retry$/i }),
     ).toBeInTheDocument();
     expect(
       screen.getAllByRole("option", { name: /Store Associate/i }).length,
