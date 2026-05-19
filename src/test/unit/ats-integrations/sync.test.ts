@@ -158,6 +158,90 @@ describe("ATS sync", () => {
     });
   });
 
+  it("applies mapped ATS stages to deterministically linked Breathe applications on initial import", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsConnections = state.atsConnections.map((connection) =>
+      connection.id === "ats_conn_1"
+        ? {
+            ...connection,
+            writebackPolicy: {
+              reportMode: "candidate_note",
+              moveToExternalStageId: null,
+              stageMoveMappings: {
+                interviewed: "mock_stage_breathe_screen",
+              },
+              requiresRecruiterReview: false,
+            },
+          }
+        : connection,
+    );
+    state.jobs.push({
+      id: "job_store_associate",
+      companyId: "company_1",
+      title: "Store Associate",
+      summary: "Retail role",
+      location: "Madrid",
+      status: "active",
+      interviewLanguage: "es",
+      createdAt: "2026-05-19T09:00:00.000Z",
+      publishedAt: "2026-05-19T09:00:00.000Z",
+      expiresAt: null,
+      publicApplyPath: "/apply/store-associate",
+      pipeline: {
+        applicants: 0,
+        interviewed: 0,
+        shortlisted: 0,
+        hired: 0,
+        rejected: 0,
+      },
+      requirements: [],
+      interviewLimits: {
+        maxInterviews: null,
+        outstandingCap: null,
+        greatCap: null,
+      },
+    });
+    state.candidates.push({
+      id: "candidate_existing",
+      companyId: "company_1",
+      fullName: "Ana Gomez",
+      phone: "+34600000000",
+      normalizedPhone: "+34600000000",
+      email: "ana@example.com",
+      normalizedEmail: "ana@example.com",
+      linkedinUrl: null,
+      cvAssetRef: null,
+      locale: "es",
+      source: "manual",
+      consentAcceptedAt: null,
+    });
+    state.applications.push({
+      id: "application_existing",
+      companyId: "company_1",
+      candidateId: "candidate_existing",
+      jobId: "job_store_associate",
+      source: "manual",
+      stage: "applicant",
+      submittedAt: "2026-05-19T09:30:00.000Z",
+      needsHumanReviewAt: null,
+      legalAcceptance: null,
+      recruiterOutcomeNote: null,
+    });
+    await saveRuntimeStoreState(state);
+
+    await runATSSync({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      now: "2026-05-19T11:00:00.000Z",
+    });
+
+    const afterSync = await loadRuntimeStoreState();
+    expect(afterSync.applications[0]).toMatchObject({
+      id: "application_existing",
+      stage: "interviewed",
+    });
+  });
+
   it("does not link ATS applications to an internal job when the title match is ambiguous", async () => {
     const state = await loadRuntimeStoreState();
     state.jobs.push(

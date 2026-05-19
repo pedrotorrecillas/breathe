@@ -838,6 +838,14 @@ export async function runATSSync(
         }
         const applicationCanTriggerWorkflow =
           applicationRecord.status === "active";
+        if (applicationCanTriggerWorkflow) {
+          applyMappedATSStageToLinkedApplication({
+            state,
+            connection,
+            atsApplication: applicationRecord,
+            externalStageId: application.externalStageId,
+          });
+        }
 
         if (
           recordWasArchived({
@@ -910,12 +918,6 @@ export async function runATSSync(
           if (appendSyncEventOnce(state, stageChangedEvent)) {
             result.createdEvents += 1;
             if (applicationCanTriggerWorkflow) {
-              applyMappedATSStageToLinkedApplication({
-                state,
-                connection,
-                atsApplication: applicationRecord,
-                externalStageId: application.externalStageId,
-              });
               result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
                 state,
                 event: stageChangedEvent,
