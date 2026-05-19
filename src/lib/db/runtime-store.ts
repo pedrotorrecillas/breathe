@@ -1,4 +1,16 @@
 import type {
+  ATSCanonicalApplication,
+  ATSCanonicalCandidate,
+  ATSCanonicalJob,
+  ATSCanonicalStage,
+  ATSConnection,
+  ATSSyncCursor,
+  ATSSyncEvent,
+  ATSTriggerRule,
+  ATSWritebackAction,
+  ATSWritebackAttempt,
+} from "@/domain/ats-integrations/types";
+import type {
   CandidateApplication,
   CandidateNote,
   CandidateProfile,
@@ -28,6 +40,16 @@ import type { RuntimeTraceEvent } from "@/lib/runtime-tracing";
 import { getDatabaseClient, hasDatabaseUrl } from "@/lib/db/client";
 import {
   applicationsTable,
+  atsConnectionsTable,
+  atsExternalApplicationsTable,
+  atsExternalCandidatesTable,
+  atsExternalJobsTable,
+  atsExternalStagesTable,
+  atsSyncCursorsTable,
+  atsSyncEventsTable,
+  atsTriggerRulesTable,
+  atsWritebackActionsTable,
+  atsWritebackAttemptsTable,
   auditEventsTable,
   candidateNotesTable,
   candidatesTable,
@@ -71,6 +93,16 @@ export type RuntimeStoreState = {
   webhookRecords: HappyRobotWebhookRecord[];
   runtimeTraceEvents: RuntimeTraceEvent[];
   evaluations: CandidateEvaluation[];
+  atsConnections: ATSConnection[];
+  atsSyncCursors: ATSSyncCursor[];
+  atsExternalJobs: ATSCanonicalJob[];
+  atsExternalCandidates: ATSCanonicalCandidate[];
+  atsExternalApplications: ATSCanonicalApplication[];
+  atsExternalStages: ATSCanonicalStage[];
+  atsTriggerRules: ATSTriggerRule[];
+  atsSyncEvents: ATSSyncEvent[];
+  atsWritebackActions: ATSWritebackAction[];
+  atsWritebackAttempts: ATSWritebackAttempt[];
 };
 
 const memoryState: RuntimeStoreState = {
@@ -94,6 +126,16 @@ const memoryState: RuntimeStoreState = {
   webhookRecords: [],
   runtimeTraceEvents: [],
   evaluations: [],
+  atsConnections: [],
+  atsSyncCursors: [],
+  atsExternalJobs: [],
+  atsExternalCandidates: [],
+  atsExternalApplications: [],
+  atsExternalStages: [],
+  atsTriggerRules: [],
+  atsSyncEvents: [],
+  atsWritebackActions: [],
+  atsWritebackAttempts: [],
 };
 
 function fallbackToMemoryState() {
@@ -130,6 +172,16 @@ function cloneState(state: RuntimeStoreState): RuntimeStoreState {
     webhookRecords: [...state.webhookRecords],
     runtimeTraceEvents: [...state.runtimeTraceEvents],
     evaluations: [...state.evaluations],
+    atsConnections: [...state.atsConnections],
+    atsSyncCursors: [...state.atsSyncCursors],
+    atsExternalJobs: [...state.atsExternalJobs],
+    atsExternalCandidates: [...state.atsExternalCandidates],
+    atsExternalApplications: [...state.atsExternalApplications],
+    atsExternalStages: [...state.atsExternalStages],
+    atsTriggerRules: [...state.atsTriggerRules],
+    atsSyncEvents: [...state.atsSyncEvents],
+    atsWritebackActions: [...state.atsWritebackActions],
+    atsWritebackAttempts: [...state.atsWritebackAttempts],
   };
 }
 
@@ -200,6 +252,16 @@ export async function loadRuntimeStoreState(): Promise<RuntimeStoreState> {
       webhookRecords,
       runtimeTraceEvents,
       evaluations,
+      atsConnections,
+      atsSyncCursors,
+      atsExternalJobs,
+      atsExternalCandidates,
+      atsExternalApplications,
+      atsExternalStages,
+      atsTriggerRules,
+      atsSyncEvents,
+      atsWritebackActions,
+      atsWritebackAttempts,
     ] = await Promise.all([
       db.select().from(companiesTable),
       db.select().from(companyMembershipsTable),
@@ -221,6 +283,16 @@ export async function loadRuntimeStoreState(): Promise<RuntimeStoreState> {
       db.select().from(webhookRecordsTable),
       db.select().from(runtimeTraceEventsTable),
       db.select().from(evaluationsTable),
+      db.select().from(atsConnectionsTable),
+      db.select().from(atsSyncCursorsTable),
+      db.select().from(atsExternalJobsTable),
+      db.select().from(atsExternalCandidatesTable),
+      db.select().from(atsExternalApplicationsTable),
+      db.select().from(atsExternalStagesTable),
+      db.select().from(atsTriggerRulesTable),
+      db.select().from(atsSyncEventsTable),
+      db.select().from(atsWritebackActionsTable),
+      db.select().from(atsWritebackAttemptsTable),
     ]);
 
     return {
@@ -284,6 +356,36 @@ export async function loadRuntimeStoreState(): Promise<RuntimeStoreState> {
       evaluations: evaluations
         .sort((left, right) => left.position - right.position)
         .map((row) => row.payload as CandidateEvaluation),
+      atsConnections: atsConnections
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as ATSConnection),
+      atsSyncCursors: atsSyncCursors
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as ATSSyncCursor),
+      atsExternalJobs: atsExternalJobs
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as ATSCanonicalJob),
+      atsExternalCandidates: atsExternalCandidates
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as ATSCanonicalCandidate),
+      atsExternalApplications: atsExternalApplications
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as ATSCanonicalApplication),
+      atsExternalStages: atsExternalStages
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as ATSCanonicalStage),
+      atsTriggerRules: atsTriggerRules
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as ATSTriggerRule),
+      atsSyncEvents: atsSyncEvents
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as ATSSyncEvent),
+      atsWritebackActions: atsWritebackActions
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as ATSWritebackAction),
+      atsWritebackAttempts: atsWritebackAttempts
+        .sort((left, right) => left.position - right.position)
+        .map((row) => row.payload as ATSWritebackAttempt),
     };
   } catch (error) {
     throw new Error(
@@ -321,6 +423,16 @@ export async function saveRuntimeStoreState(state: RuntimeStoreState) {
       await tx.delete(webhookRecordsTable);
       await tx.delete(runtimeTraceEventsTable);
       await tx.delete(evaluationsTable);
+      await tx.delete(atsWritebackAttemptsTable);
+      await tx.delete(atsWritebackActionsTable);
+      await tx.delete(atsSyncEventsTable);
+      await tx.delete(atsTriggerRulesTable);
+      await tx.delete(atsExternalStagesTable);
+      await tx.delete(atsExternalApplicationsTable);
+      await tx.delete(atsExternalCandidatesTable);
+      await tx.delete(atsExternalJobsTable);
+      await tx.delete(atsSyncCursorsTable);
+      await tx.delete(atsConnectionsTable);
       await tx.delete(jobsTable);
 
       if (state.companies.length > 0) {
@@ -581,6 +693,152 @@ export async function saveRuntimeStoreState(state: RuntimeStoreState) {
           })),
         );
       }
+
+      if (state.atsConnections.length > 0) {
+        await tx.insert(atsConnectionsTable).values(
+          state.atsConnections.map((item, index) => ({
+            id: item.id,
+            companyId: item.companyId,
+            provider: item.provider,
+            status: item.status,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
+
+      if (state.atsSyncCursors.length > 0) {
+        await tx.insert(atsSyncCursorsTable).values(
+          state.atsSyncCursors.map((item, index) => ({
+            id: item.id,
+            companyId: item.companyId,
+            connectionId: item.connectionId,
+            provider: item.provider,
+            resource: item.resource,
+            updatedAt: item.updatedAt,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
+
+      if (state.atsExternalJobs.length > 0) {
+        await tx.insert(atsExternalJobsTable).values(
+          state.atsExternalJobs.map((item, index) => ({
+            id: item.id,
+            companyId: item.companyId,
+            connectionId: item.connectionId,
+            provider: item.provider,
+            externalId: item.externalId,
+            externalUpdatedAt: item.externalUpdatedAt,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
+
+      if (state.atsExternalCandidates.length > 0) {
+        await tx.insert(atsExternalCandidatesTable).values(
+          state.atsExternalCandidates.map((item, index) => ({
+            id: item.id,
+            companyId: item.companyId,
+            connectionId: item.connectionId,
+            provider: item.provider,
+            externalId: item.externalId,
+            externalUpdatedAt: item.externalUpdatedAt,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
+
+      if (state.atsExternalApplications.length > 0) {
+        await tx.insert(atsExternalApplicationsTable).values(
+          state.atsExternalApplications.map((item, index) => ({
+            id: item.id,
+            companyId: item.companyId,
+            connectionId: item.connectionId,
+            provider: item.provider,
+            externalId: item.externalId,
+            externalUpdatedAt: item.externalUpdatedAt,
+            status: item.status,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
+
+      if (state.atsExternalStages.length > 0) {
+        await tx.insert(atsExternalStagesTable).values(
+          state.atsExternalStages.map((item, index) => ({
+            id: item.id,
+            companyId: item.companyId,
+            connectionId: item.connectionId,
+            provider: item.provider,
+            externalId: item.externalId,
+            externalJobId: item.externalJobId,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
+
+      if (state.atsTriggerRules.length > 0) {
+        await tx.insert(atsTriggerRulesTable).values(
+          state.atsTriggerRules.map((item, index) => ({
+            id: item.id,
+            companyId: item.companyId,
+            connectionId: item.connectionId,
+            provider: item.provider,
+            externalStageId: item.externalStageId,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
+
+      if (state.atsSyncEvents.length > 0) {
+        await tx.insert(atsSyncEventsTable).values(
+          state.atsSyncEvents.map((item, index) => ({
+            id: item.id,
+            companyId: item.companyId,
+            connectionId: item.connectionId,
+            provider: item.provider,
+            idempotencyKey: item.idempotencyKey,
+            occurredAt: item.occurredAt,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
+
+      if (state.atsWritebackActions.length > 0) {
+        await tx.insert(atsWritebackActionsTable).values(
+          state.atsWritebackActions.map((item, index) => ({
+            id: item.id,
+            companyId: item.companyId,
+            connectionId: item.connectionId,
+            provider: item.provider,
+            status: item.status,
+            idempotencyKey: item.idempotencyKey,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
+
+      if (state.atsWritebackAttempts.length > 0) {
+        await tx.insert(atsWritebackAttemptsTable).values(
+          state.atsWritebackAttempts.map((item, index) => ({
+            id: item.id,
+            writebackActionId: item.writebackActionId,
+            attemptedAt: item.attemptedAt,
+            status: item.status,
+            position: index,
+            payload: item,
+          })),
+        );
+      }
     });
   } catch (error) {
     throw new Error(
@@ -612,6 +870,16 @@ export async function resetRuntimeStoreState() {
       webhookRecords: [],
       runtimeTraceEvents: [],
       evaluations: [],
+      atsConnections: [],
+      atsSyncCursors: [],
+      atsExternalJobs: [],
+      atsExternalCandidates: [],
+      atsExternalApplications: [],
+      atsExternalStages: [],
+      atsTriggerRules: [],
+      atsSyncEvents: [],
+      atsWritebackActions: [],
+      atsWritebackAttempts: [],
     });
     return;
   }
@@ -636,6 +904,16 @@ export async function resetRuntimeStoreState() {
   await db.delete(webhookRecordsTable);
   await db.delete(runtimeTraceEventsTable);
   await db.delete(evaluationsTable);
+  await db.delete(atsWritebackAttemptsTable);
+  await db.delete(atsWritebackActionsTable);
+  await db.delete(atsSyncEventsTable);
+  await db.delete(atsTriggerRulesTable);
+  await db.delete(atsExternalStagesTable);
+  await db.delete(atsExternalApplicationsTable);
+  await db.delete(atsExternalCandidatesTable);
+  await db.delete(atsExternalJobsTable);
+  await db.delete(atsSyncCursorsTable);
+  await db.delete(atsConnectionsTable);
   await db.delete(jobsTable);
   await ensureSeedJobs();
 }

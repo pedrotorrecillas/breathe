@@ -248,3 +248,109 @@ export const evaluationsTable = pgTable("evaluations", {
   position: integer("position").notNull(),
   payload: jsonb("payload").notNull(),
 });
+
+export const atsConnectionsTable = pgTable("ats_connections", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull(),
+  provider: text("provider").notNull(),
+  status: text("status").notNull(),
+  position: integer("position").notNull(),
+  payload: jsonb("payload").notNull(),
+});
+
+export const atsSyncCursorsTable = pgTable("ats_sync_cursors", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull(),
+  connectionId: text("connection_id").notNull(),
+  provider: text("provider").notNull(),
+  resource: text("resource").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  position: integer("position").notNull(),
+  payload: jsonb("payload").notNull(),
+});
+
+export const atsExternalJobsTable = pgTable("ats_external_jobs", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull(),
+  connectionId: text("connection_id").notNull(),
+  provider: text("provider").notNull(),
+  externalId: text("external_id").notNull(),
+  externalUpdatedAt: text("external_updated_at"),
+  position: integer("position").notNull(),
+  payload: jsonb("payload").notNull(),
+});
+
+export const atsExternalCandidatesTable = pgTable("ats_external_candidates", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull(),
+  connectionId: text("connection_id").notNull(),
+  provider: text("provider").notNull(),
+  externalId: text("external_id").notNull(),
+  externalUpdatedAt: text("external_updated_at"),
+  position: integer("position").notNull(),
+  payload: jsonb("payload").notNull(),
+});
+
+export const atsExternalApplicationsTable = pgTable("ats_external_applications", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull(),
+  connectionId: text("connection_id").notNull(),
+  provider: text("provider").notNull(),
+  externalId: text("external_id").notNull(),
+  externalUpdatedAt: text("external_updated_at"),
+  status: text("status").notNull(),
+  position: integer("position").notNull(),
+  payload: jsonb("payload").notNull(),
+});
+
+export const atsExternalStagesTable = pgTable("ats_external_stages", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull(),
+  connectionId: text("connection_id").notNull(),
+  provider: text("provider").notNull(),
+  externalId: text("external_id").notNull(),
+  externalJobId: text("external_job_id"),
+  position: integer("position").notNull(),
+  payload: jsonb("payload").notNull(),
+});
+
+export const atsTriggerRulesTable = pgTable("ats_trigger_rules", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull(),
+  connectionId: text("connection_id").notNull(),
+  provider: text("provider").notNull(),
+  externalStageId: text("external_stage_id").notNull(),
+  position: integer("position").notNull(),
+  payload: jsonb("payload").notNull(),
+});
+
+export const atsSyncEventsTable = pgTable("ats_sync_events", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull(),
+  connectionId: text("connection_id").notNull(),
+  provider: text("provider").notNull(),
+  idempotencyKey: text("idempotency_key").notNull(),
+  occurredAt: text("occurred_at").notNull(),
+  position: integer("position").notNull(),
+  payload: jsonb("payload").notNull(),
+});
+
+export const atsWritebackActionsTable = pgTable("ats_writeback_actions", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull(),
+  connectionId: text("connection_id").notNull(),
+  provider: text("provider").notNull(),
+  status: text("status").notNull(),
+  idempotencyKey: text("idempotency_key").notNull(),
+  position: integer("position").notNull(),
+  payload: jsonb("payload").notNull(),
+});
+
+export const atsWritebackAttemptsTable = pgTable("ats_writeback_attempts", {
+  id: text("id").primaryKey(),
+  writebackActionId: text("writeback_action_id").notNull(),
+  attemptedAt: text("attempted_at").notNull(),
+  status: text("status").notNull(),
+  position: integer("position").notNull(),
+  payload: jsonb("payload").notNull(),
+});
