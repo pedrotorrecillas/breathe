@@ -418,9 +418,9 @@ function applicationStageChanged(input: {
   return input.previous.externalStageId !== input.next.externalStageId;
 }
 
-function applicationWasArchived(input: {
-  previous: ATSCanonicalApplication | undefined;
-  next: ATSCanonicalApplication;
+function recordWasArchived(input: {
+  previous: { status: string } | undefined;
+  next: { status: string };
 }) {
   if (!input.previous) {
     return false;
@@ -543,6 +543,11 @@ export async function runATSSync(
       });
 
       for (const job of jobsPage.records) {
+        const previousJob = state.atsExternalJobs.find(
+          (item) =>
+            item.connectionId === connection.id &&
+            item.externalId === job.externalId,
+        );
         const record = canonicalJob({
           companyId: input.companyId,
           connectionId: connection.id,
@@ -577,6 +582,40 @@ export async function runATSSync(
             now: input.now,
             autoProcessWorkflowRequestIds,
           });
+        }
+
+        if (
+          recordWasArchived({
+            previous: previousJob,
+            next: record,
+          })
+        ) {
+          const archivedEvent = buildEvent({
+            companyId: input.companyId,
+            connectionId: connection.id,
+            provider: connection.provider,
+            eventType: "external_record_archived",
+            externalObjectType: "job",
+            externalObjectId: job.externalId,
+            externalJobId: job.externalId,
+            externalCandidateId: null,
+            externalStageId: null,
+            occurredAt: input.now,
+            externalUpdatedAt: eventUpdatedAt(job),
+            idempotencyDiscriminator: [
+              previousJob?.status ?? "none",
+              record.status,
+            ].join("->"),
+            payload: {
+              ...job.raw,
+              previousStatus: previousJob?.status ?? null,
+              status: record.status,
+            },
+          });
+
+          if (appendSyncEventOnce(state, archivedEvent)) {
+            result.createdEvents += 1;
+          }
         }
 
         const stages = await adapter.listStages({
@@ -639,6 +678,11 @@ export async function runATSSync(
         });
 
         if (candidate) {
+          const previousCandidate = state.atsExternalCandidates.find(
+            (item) =>
+              item.connectionId === connection.id &&
+              item.externalId === candidate.externalId,
+          );
           const candidateRecord = canonicalCandidate({
             companyId: input.companyId,
             connectionId: connection.id,
@@ -679,6 +723,40 @@ export async function runATSSync(
               autoProcessWorkflowRequestIds,
             });
           }
+
+          if (
+            recordWasArchived({
+              previous: previousCandidate,
+              next: candidateRecord,
+            })
+          ) {
+            const archivedEvent = buildEvent({
+              companyId: input.companyId,
+              connectionId: connection.id,
+              provider: connection.provider,
+              eventType: "external_record_archived",
+              externalObjectType: "candidate",
+              externalObjectId: candidate.externalId,
+              externalJobId: application.externalJobId,
+              externalCandidateId: candidate.externalId,
+              externalStageId: application.externalStageId,
+              occurredAt: input.now,
+              externalUpdatedAt: eventUpdatedAt(candidate),
+              idempotencyDiscriminator: [
+                previousCandidate?.status ?? "none",
+                candidateRecord.status,
+              ].join("->"),
+              payload: {
+                ...candidate.raw,
+                previousStatus: previousCandidate?.status ?? null,
+                status: candidateRecord.status,
+              },
+            });
+
+            if (appendSyncEventOnce(state, archivedEvent)) {
+              result.createdEvents += 1;
+            }
+          }
         }
 
         const applicationRecord = preserveInternalApplicationLinks({
@@ -698,7 +776,7 @@ export async function runATSSync(
           applicationRecord.status === "active";
 
         if (
-          applicationWasArchived({
+          recordWasArchived({
             previous: previousApplication,
             next: applicationRecord,
           })

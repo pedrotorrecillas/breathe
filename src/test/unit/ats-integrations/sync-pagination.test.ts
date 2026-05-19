@@ -237,6 +237,158 @@ describe("ATS sync pagination", () => {
     );
   });
 
+  it("emits an archive event when a known job is archived by the ATS", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsExternalJobs.push({
+      id: "ats_job_ats_conn_1_job_1",
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      externalId: "job_1",
+      externalUrl: null,
+      title: "Store Associate",
+      status: "active",
+      externalUpdatedAt: "2026-05-19T10:00:00.000Z",
+      lastSeenAt: "2026-05-19T10:00:00.000Z",
+      rawSnapshot: {},
+    });
+    await saveRuntimeStoreState(state);
+
+    listJobs.mockResolvedValue({
+      records: [
+        {
+          externalId: "job_1",
+          externalUrl: null,
+          title: "Store Associate",
+          status: "archived_external",
+          externalUpdatedAt: "2026-05-19T10:30:00.000Z",
+          raw: { archived: true },
+        },
+      ],
+      nextCursor: null,
+      hasMore: false,
+    });
+    listStages.mockResolvedValue([]);
+    listApplications.mockResolvedValue({
+      records: [],
+      nextCursor: null,
+      hasMore: false,
+    });
+
+    const result = await runATSSync({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      now: "2026-05-19T11:00:00.000Z",
+    });
+
+    expect(result.createdEvents).toBe(2);
+    const afterSync = await loadRuntimeStoreState();
+    expect(afterSync.atsExternalJobs[0]).toMatchObject({
+      status: "archived_external",
+    });
+    expect(afterSync.atsSyncEvents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          eventType: "external_record_archived",
+          externalObjectType: "job",
+          externalObjectId: "job_1",
+          externalJobId: "job_1",
+          externalCandidateId: null,
+          externalStageId: null,
+          payload: expect.objectContaining({
+            previousStatus: "active",
+            status: "archived_external",
+          }),
+        }),
+      ]),
+    );
+  });
+
+  it("emits an archive event when a known candidate is archived by the ATS", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsExternalCandidates.push({
+      id: "ats_candidate_ats_conn_1_candidate_1",
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      externalId: "candidate_1",
+      externalUrl: null,
+      fullName: "Ana Martin",
+      email: "ana@example.com",
+      phone: null,
+      status: "active",
+      externalUpdatedAt: "2026-05-19T10:00:00.000Z",
+      lastSeenAt: "2026-05-19T10:00:00.000Z",
+      rawSnapshot: {},
+    });
+    await saveRuntimeStoreState(state);
+
+    listJobs.mockResolvedValue({
+      records: [],
+      nextCursor: null,
+      hasMore: false,
+    });
+    listApplications.mockResolvedValue({
+      records: [
+        {
+          externalId: "app_1",
+          externalCandidateId: "candidate_1",
+          externalJobId: "job_1",
+          externalStageId: "stage_screen",
+          externalUrl: null,
+          candidateName: "Ana Martin",
+          candidateEmail: "ana@example.com",
+          candidatePhone: null,
+          jobTitle: "Store Associate",
+          stageName: "Screening",
+          stageCategory: "screening",
+          status: "active",
+          externalUpdatedAt: "2026-05-19T10:30:00.000Z",
+          raw: {},
+        },
+      ],
+      nextCursor: null,
+      hasMore: false,
+    });
+    getCandidate.mockResolvedValue({
+      externalId: "candidate_1",
+      externalUrl: null,
+      fullName: "Ana Martin",
+      email: "ana@example.com",
+      phone: null,
+      status: "archived_external",
+      externalUpdatedAt: "2026-05-19T10:30:00.000Z",
+      raw: { archived: true },
+    });
+
+    await runATSSync({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      now: "2026-05-19T11:00:00.000Z",
+    });
+
+    const afterSync = await loadRuntimeStoreState();
+    expect(afterSync.atsExternalCandidates[0]).toMatchObject({
+      status: "archived_external",
+    });
+    expect(afterSync.atsSyncEvents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          eventType: "external_record_archived",
+          externalObjectType: "candidate",
+          externalObjectId: "candidate_1",
+          externalJobId: "job_1",
+          externalCandidateId: "candidate_1",
+          externalStageId: "stage_screen",
+          payload: expect.objectContaining({
+            previousStatus: "active",
+            status: "archived_external",
+          }),
+        }),
+      ]),
+    );
+  });
+
   it("emits an archive event when a known application is archived by the ATS", async () => {
     const state = await loadRuntimeStoreState();
     state.atsExternalApplications.push({
