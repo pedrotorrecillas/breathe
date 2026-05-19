@@ -195,6 +195,24 @@ describe("ATS workflow requests", () => {
     });
   });
 
+  it("does not enqueue evaluation writebacks for externally archived ATS applications", () => {
+    const actions = enqueueATSWritebacksForEvaluation({
+      evaluation,
+      interviewRun,
+      atsConnections: [buildConnection()],
+      atsApplications: [
+        {
+          ...linkedApplication,
+          status: "archived_external",
+        },
+      ],
+      existingActions: [],
+      now: "2026-05-19T11:01:00.000Z",
+    });
+
+    expect(actions).toEqual([]);
+  });
+
   it("enqueues writebacks for every linked ATS application", () => {
     const secondLinkedApplication: ATSCanonicalApplication = {
       ...linkedApplication,

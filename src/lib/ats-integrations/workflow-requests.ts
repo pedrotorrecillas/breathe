@@ -301,9 +301,19 @@ export function enqueueATSWritebacksForEvaluation(input: {
   now: string;
 }): ATSWritebackAction[] {
   const linkedApplications = input.atsApplications.filter(
-    (application) =>
-      application.internalApplicationId === input.interviewRun.applicationId ||
-      application.internalCandidateId === input.interviewRun.candidateId,
+    (application) => {
+      if (
+        application.companyId !== input.evaluation.companyId ||
+        application.status !== "active"
+      ) {
+        return false;
+      }
+
+      return (
+        application.internalApplicationId === input.interviewRun.applicationId ||
+        application.internalCandidateId === input.interviewRun.candidateId
+      );
+    },
   );
 
   if (linkedApplications.length === 0) {
