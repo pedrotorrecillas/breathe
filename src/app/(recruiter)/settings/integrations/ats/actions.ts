@@ -1077,6 +1077,68 @@ export async function saveATSTriggerRuleAction(
   }
 }
 
+export async function saveATSTriggerRuleStatusAction(
+  formData: FormData,
+): Promise<void> {
+  try {
+    const recruiter = await requireAuthenticatedRecruiter();
+    requireATSAdmin(recruiterCanManageTeams(recruiter));
+    const triggerRuleId = String(formData.get("triggerRuleId") ?? "");
+    const enabledValue = String(formData.get("enabled") ?? "");
+
+    if (!triggerRuleId) {
+      throw new Error("Choose an ATS trigger rule to update.");
+    }
+
+    if (enabledValue !== "true" && enabledValue !== "false") {
+      throw new Error("Choose a supported ATS trigger rule status.");
+    }
+
+    const enabled = enabledValue === "true";
+    const state = await loadRuntimeStoreState();
+    const rule = state.atsTriggerRules.find(
+      (item) =>
+        item.id === triggerRuleId && item.companyId === recruiter.company.id,
+    );
+
+    if (!rule) {
+      throw new Error("ATS trigger rule not found.");
+    }
+
+    const now = new Date().toISOString();
+    state.atsTriggerRules = state.atsTriggerRules.map((item) =>
+      item.id === rule.id
+        ? {
+            ...item,
+            enabled,
+            updatedAt: now,
+          }
+        : item,
+    );
+
+    appendAuditEvent({
+      state,
+      recruiter,
+      action: "ats.trigger_rule_status_saved",
+      targetType: "ats_trigger_rule",
+      targetId: rule.id,
+      summary: "Saved ATS trigger rule status.",
+      metadata: {
+        provider: rule.provider,
+        enabled,
+      },
+    });
+    await saveRuntimeStoreState(state);
+    revalidatePath("/settings/integrations/ats");
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Could not save trigger rule status.",
+    );
+  }
+}
+
 export async function approveATSWorkflowRequestAction(
   formData: FormData,
 ): Promise<void> {

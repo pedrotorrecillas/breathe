@@ -434,6 +434,56 @@ describe("ATS settings page", () => {
     expect(screen.getByText("1 active")).toBeInTheDocument();
   });
 
+  it("renders pause and resume controls for configured ATS trigger rules", async () => {
+    const snapshot = buildATSSnapshot();
+    snapshot.triggerRules = [
+      {
+        id: "ats_rule_active",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        name: "Run Breathe at Breathe Screen",
+        enabled: true,
+        externalJobId: null,
+        externalStageId: "mock_stage_breathe_screen",
+        actions: ["import_candidate"],
+        requiresRecruiterApproval: true,
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+      {
+        id: "ats_rule_paused",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        name: "Run Breathe at Rejected",
+        enabled: false,
+        externalJobId: null,
+        externalStageId: "mock_stage_rejected",
+        actions: ["prepare_interview"],
+        requiresRecruiterApproval: true,
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+    ];
+    atsSnapshotState.snapshot = snapshot;
+
+    render(await ATSSettingsPage());
+
+    expect(
+      screen.getByText(/mock_stage_breathe_screen · enabled/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/mock_stage_rejected · paused/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: /^Pause$/i }).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getByRole("button", { name: /^Resume$/i }),
+    ).toBeInTheDocument();
+  });
+
   it("renders Zoho demo readiness from the current admin configuration", async () => {
     const snapshot = buildATSSnapshot();
     snapshot.connections.push({

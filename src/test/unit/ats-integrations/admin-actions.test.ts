@@ -1110,6 +1110,54 @@ describe("ATS admin actions", () => {
     expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
   });
 
+  it("saves the admin-selected trigger rule enabled status", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsTriggerRules = [
+      {
+        id: "ats_rule_1",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        name: "Run Breathe at Breathe Screen",
+        enabled: true,
+        externalJobId: null,
+        externalStageId: "Breathe Screen",
+        actions: ["import_candidate"],
+        requiresRecruiterApproval: true,
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { saveATSTriggerRuleStatusAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("triggerRuleId", "ats_rule_1");
+    formData.set("enabled", "false");
+
+    await saveATSTriggerRuleStatusAction(formData);
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsTriggerRules[0]).toMatchObject({
+      id: "ats_rule_1",
+      enabled: false,
+      updatedAt: expect.any(String),
+    });
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ats.trigger_rule_status_saved",
+        targetId: "ats_rule_1",
+        metadata: expect.objectContaining({
+          provider: "mock_ats",
+          enabled: false,
+        }),
+      }),
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith(
+      "/settings/integrations/ats",
+    );
+  });
+
   it("approves and processes queued ATS workflow requests", async () => {
     const { approveATSWorkflowRequestAction } =
       await import("@/app/(recruiter)/settings/integrations/ats/actions");
