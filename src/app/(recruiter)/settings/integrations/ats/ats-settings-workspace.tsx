@@ -39,6 +39,19 @@ function stageOptionLabel(input: {
     : `${input.stage.name} · ${input.stage.externalId}`;
 }
 
+function latestWritebackAttempt(input: {
+  actionId: string;
+  attempts: ATSAdminSnapshot["writebackAttempts"];
+}) {
+  return input.attempts
+    .filter((attempt) => attempt.writebackActionId === input.actionId)
+    .sort(
+      (left, right) =>
+        new Date(right.attemptedAt).getTime() -
+        new Date(left.attemptedAt).getTime(),
+    )[0];
+}
+
 const defaultWritebackPolicy = {
   reportMode: "candidate_note",
   moveToExternalStageId: null,
@@ -463,38 +476,53 @@ export function ATSSettingsWorkspace({
         </h2>
         <div className="mt-4 grid gap-3">
           {snapshot.writebackActions.length ? (
-            snapshot.writebackActions.map((action) => (
-              <div
-                key={action.id}
-                className="flex items-center justify-between gap-4 rounded-md border border-slate-200 px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-medium text-slate-950">
-                    {action.actionType}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {action.status} · {action.targetExternalCandidateId}
-                  </p>
+            snapshot.writebackActions.map((action) => {
+              const lastAttempt = latestWritebackAttempt({
+                actionId: action.id,
+                attempts: snapshot.writebackAttempts,
+              });
+
+              return (
+                <div
+                  key={action.id}
+                  className="flex items-center justify-between gap-4 rounded-md border border-slate-200 px-4 py-3"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-slate-950">
+                      {action.actionType}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {action.status} · {action.targetExternalCandidateId}
+                    </p>
+                    {lastAttempt ? (
+                      <p className="mt-1 text-xs text-slate-500">
+                        Last attempt: {lastAttempt.status}
+                        {lastAttempt.errorMessage
+                          ? ` · ${lastAttempt.errorMessage}`
+                          : ""}
+                      </p>
+                    ) : null}
+                  </div>
+                  {canManage &&
+                  (action.status === "queued" ||
+                    action.status === "retryable_error") ? (
+                    <form action={processATSWritebackActionAction}>
+                      <input
+                        type="hidden"
+                        name="writebackActionId"
+                        value={action.id}
+                      />
+                      <button
+                        type="submit"
+                        className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700"
+                      >
+                        {action.status === "retryable_error" ? "Retry" : "Send"}
+                      </button>
+                    </form>
+                  ) : null}
                 </div>
-                {canManage &&
-                (action.status === "queued" ||
-                  action.status === "retryable_error") ? (
-                  <form action={processATSWritebackActionAction}>
-                    <input
-                      type="hidden"
-                      name="writebackActionId"
-                      value={action.id}
-                    />
-                    <button
-                      type="submit"
-                      className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700"
-                    >
-                      {action.status === "retryable_error" ? "Retry" : "Send"}
-                    </button>
-                  </form>
-                ) : null}
-              </div>
-            ))
+              );
+            })
           ) : (
             <p className="text-sm text-slate-600">
               No ATS writeback actions queued yet.

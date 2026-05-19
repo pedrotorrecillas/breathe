@@ -87,6 +87,17 @@ vi.mock("@/lib/ats-integrations/connections", () => ({
         updatedAt: "2026-05-19T10:00:00.000Z",
       },
     ],
+    writebackAttempts: [
+      {
+        id: "ats_attempt_retry",
+        writebackActionId: "ats_writeback_retry",
+        attemptedAt: "2026-05-19T10:01:00.000Z",
+        status: "retryable_error",
+        providerStatusCode: 429,
+        providerResponse: { code: "RATE_LIMIT" },
+        errorMessage: "Zoho Recruit request failed with 429.",
+      },
+    ],
     externalJobs: [
       {
         id: "ats_job_1",
@@ -146,6 +157,9 @@ describe("ATS settings page", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /^Retry$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Last attempt: retryable_error · Zoho Recruit request failed with 429\./i),
     ).toBeInTheDocument();
     expect(
       screen.getAllByRole("option", { name: /Store Associate/i }).length,

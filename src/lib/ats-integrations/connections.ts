@@ -7,6 +7,7 @@ import type {
   ATSProviderKey,
   ATSTriggerRule,
   ATSWritebackAction,
+  ATSWritebackAttempt,
   ATSWorkflowRequest,
 } from "@/domain/ats-integrations/types";
 import type { AuthenticatedRecruiter } from "@/lib/auth/types";
@@ -23,6 +24,7 @@ export type ATSAdminSnapshot = {
   triggerRules: ATSTriggerRule[];
   workflowRequests: ATSWorkflowRequest[];
   writebackActions: ATSWritebackAction[];
+  writebackAttempts: ATSWritebackAttempt[];
   externalJobs: ATSCanonicalJob[];
   externalStages: ATSCanonicalStage[];
   availableProviders: ATSAvailableProvider[];
@@ -46,6 +48,12 @@ export async function getATSAdminSnapshot(
 ): Promise<ATSAdminSnapshot> {
   const state = await loadRuntimeStoreState();
   const companyId = recruiter.company.id;
+  const writebackActions = state.atsWritebackActions.filter(
+    (action) => action.companyId === companyId,
+  );
+  const writebackActionIds = new Set(
+    writebackActions.map((action) => action.id),
+  );
 
   return {
     connections: state.atsConnections.filter(
@@ -57,8 +65,9 @@ export async function getATSAdminSnapshot(
     workflowRequests: state.atsWorkflowRequests.filter(
       (request) => request.companyId === companyId,
     ),
-    writebackActions: state.atsWritebackActions.filter(
-      (action) => action.companyId === companyId,
+    writebackActions,
+    writebackAttempts: state.atsWritebackAttempts.filter((attempt) =>
+      writebackActionIds.has(attempt.writebackActionId),
     ),
     externalJobs: state.atsExternalJobs.filter(
       (job) => job.companyId === companyId,
