@@ -1,6 +1,7 @@
 import type {
   ATSProviderKey,
   ATSRawSnapshot,
+  ATSConnection,
   ATSWritebackAction,
   ATSWritebackActionType,
   ATSWritebackAttempt,
@@ -10,6 +11,7 @@ import { getATSAdapter } from "@/lib/ats-integrations/registry";
 import {
   loadRuntimeStoreState,
   saveRuntimeStoreState,
+  type RuntimeStoreState,
 } from "@/lib/db/runtime-store";
 
 type EnqueueATSWritebackInput = {
@@ -106,6 +108,23 @@ export async function processATSWritebackAction(
   input: ProcessATSWritebackActionInput,
 ) {
   const state = await loadRuntimeStoreState();
+  const processed = await processATSWritebackActionInState({
+    state,
+    writebackActionId: input.writebackActionId,
+    now: input.now,
+  });
+
+  await saveRuntimeStoreState(state);
+
+  return processed;
+}
+
+export async function processATSWritebackActionInState(input: {
+  state: RuntimeStoreState;
+  writebackActionId: string;
+  now: string;
+}) {
+  const state = input.state;
   const action = state.atsWritebackActions.find(
     (item) => item.id === input.writebackActionId,
   );
@@ -165,8 +184,6 @@ export async function processATSWritebackAction(
       : item,
   );
 
-  await saveRuntimeStoreState(state);
-
   return {
     action: state.atsWritebackActions.find((item) => item.id === action.id)!,
     attempt,
@@ -174,9 +191,7 @@ export async function processATSWritebackAction(
 }
 
 async function dispatchWriteback(input: {
-  connection: NonNullable<
-    Awaited<ReturnType<typeof loadRuntimeStoreState>>["atsConnections"][number]
-  >;
+  connection: ATSConnection;
   action: ATSWritebackAction;
 }): Promise<ATSWritebackResult> {
   try {

@@ -21,6 +21,7 @@ import {
   type RuntimeStoreState,
 } from "@/lib/db/runtime-store";
 import { enqueueATSWritebacksForEvaluation } from "@/lib/ats-integrations/workflow-requests";
+import { processATSWritebackActionInState } from "@/lib/ats-integrations/writeback";
 import { buildEvaluationSummary } from "@/lib/evaluation-summary";
 import { extractRequirementEvidenceFromTranscript } from "@/lib/evaluation-requirement-extraction";
 import { scoreEvaluationFromRequirementEvidence } from "@/lib/evaluation-scoring";
@@ -151,6 +152,31 @@ function syncApplicationFromInterviewRun(
       interviewRun.pipelineStage,
       interviewRun.metadata.callbackRequestedAt,
     );
+}
+
+function shouldAutoProcessATSWriteback(input: {
+  state: RuntimeStoreState;
+  writebackActionId: string;
+}) {
+  const action = input.state.atsWritebackActions.find(
+    (item) => item.id === input.writebackActionId,
+  );
+
+  if (!action) {
+    return false;
+  }
+
+  const connection = input.state.atsConnections.find(
+    (item) =>
+      item.id === action.connectionId &&
+      item.companyId === action.companyId &&
+      item.provider === action.provider,
+  );
+
+  return (
+    connection?.status === "active" &&
+    connection.writebackPolicy?.requiresRecruiterReview === false
+  );
 }
 
 function normalizeTranscriptResolution(
@@ -358,6 +384,22 @@ async function maybeGenerateInterviewEvaluation(input: {
   });
 
   input.state.atsWritebackActions.push(...writebackActions);
+  const autoProcessableWritebackIds = writebackActions
+    .map((action) => action.id)
+    .filter((writebackActionId) =>
+      shouldAutoProcessATSWriteback({
+        state: input.state,
+        writebackActionId,
+      }),
+    );
+
+  for (const writebackActionId of autoProcessableWritebackIds) {
+    await processATSWritebackActionInState({
+      state: input.state,
+      writebackActionId,
+      now: generatedAt.toISOString(),
+    });
+  }
 
   return evaluation;
 }

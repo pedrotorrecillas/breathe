@@ -12,7 +12,11 @@ import {
   saveInterviewEvaluation,
   submitPublicApplication,
 } from "@/lib/public-apply-submissions";
-import { saveStoredJob } from "@/lib/db/runtime-store";
+import {
+  loadRuntimeStoreState,
+  saveRuntimeStoreState,
+  saveStoredJob,
+} from "@/lib/db/runtime-store";
 
 describe("public apply submissions", () => {
   afterEach(async () => {
@@ -470,6 +474,107 @@ describe("public apply submissions", () => {
     expect(evaluation?.blocks[1]?.requirements).toHaveLength(1);
     expect(evaluation?.blocks[2]?.requirements).toHaveLength(1);
     expect((await getInterviewRunRuntimeSnapshot("run_1"))?.evaluation).toEqual(evaluation);
+  });
+
+  it("processes ATS evaluation writebacks automatically when recruiter review is disabled", async () => {
+    const submission = await submitPublicApplication({
+      jobId: "job_warehouse_madrid",
+      fullName: "Lucia Torres",
+      phone: "+34 600 123 456",
+      email: "lucia@example.com",
+      language: "en",
+      profileSource: {
+        linkedinUrl: "https://linkedin.com/in/lucia-torres",
+        cvAssetRef: null,
+        cvFileName: null,
+      },
+      legalAcceptance: {
+        acceptedAt: "2026-03-25T12:00:00.000Z",
+        termsVersion: publicApplyTermsVersion,
+      },
+    });
+
+    expect(submission.success).toBe(true);
+    if (!submission.success) {
+      return;
+    }
+
+    const seededState = await loadRuntimeStoreState();
+    seededState.atsConnections.push({
+      id: "ats_conn_1",
+      companyId: "company_seed_demo",
+      provider: "mock_ats",
+      status: "active",
+      displayName: "Mock ATS",
+      authMode: "mock",
+      secretRef: null,
+      externalAccountId: "mock_account_from_connection",
+      lastSyncAt: null,
+      lastError: null,
+      createdAt: "2026-03-25T12:00:00.000Z",
+      updatedAt: "2026-03-25T12:00:00.000Z",
+      writebackPolicy: {
+        reportMode: "candidate_note",
+        moveToExternalStageId: null,
+        requiresRecruiterReview: false,
+      },
+    });
+    seededState.atsExternalApplications.push({
+      id: "ats_app_1",
+      companyId: "company_seed_demo",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      externalId: "mock_app_1",
+      externalCandidateId: "mock_candidate_lucia",
+      externalJobId: "mock_job_warehouse",
+      externalStageId: "mock_stage_screen",
+      externalUrl: null,
+      internalCandidateId: submission.data.candidate.id,
+      internalApplicationId: submission.data.application.id,
+      internalJobId: submission.data.application.jobId,
+      candidateName: "Lucia Torres",
+      candidateEmail: "lucia@example.com",
+      candidatePhone: "+34600123456",
+      jobTitle: "Warehouse Operator",
+      stageName: "Screen",
+      stageCategory: "screening",
+      status: "active",
+      externalUpdatedAt: "2026-03-25T12:00:00.000Z",
+      lastSeenAt: "2026-03-25T12:00:00.000Z",
+      rawSnapshot: {},
+    });
+    await saveRuntimeStoreState(seededState);
+
+    const webhookResult = await receiveHappyRobotWebhook(
+      {
+        eventId: "evt_ats_auto_writeback",
+        interviewRunId: "run_1",
+        providerCallId: "hr_call_run_1",
+        status: "completed",
+        happenedAt: "2026-03-25T12:05:00.000Z",
+        transcript:
+          "I worked in a warehouse for four years and used handheld scanners daily. I communicate clearly with shift leads and can work nights.",
+      },
+      {
+        receivedAt: new Date("2026-03-25T12:05:01.000Z"),
+      },
+    );
+
+    expect(webhookResult.success).toBe(true);
+
+    const state = await loadRuntimeStoreState();
+    expect(state.atsWritebackActions).toHaveLength(1);
+    expect(state.atsWritebackActions[0]).toMatchObject({
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      status: "succeeded",
+      actionType: "candidate_note",
+    });
+    expect(state.atsWritebackAttempts).toHaveLength(1);
+    expect(state.atsWritebackAttempts[0]).toMatchObject({
+      writebackActionId: state.atsWritebackActions[0].id,
+      status: "succeeded",
+    });
   });
 
   it("stores and retrieves an evaluation for an existing interview run", async () => {
