@@ -169,6 +169,53 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("keeps separate trigger rules for the same stage on different external jobs", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsTriggerRules = [
+      {
+        id: "ats_rule_ats_conn_1_Breathe_Screen",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        name: "Run Breathe at Breathe Screen",
+        enabled: true,
+        externalJobId: "mock_job_1",
+        externalStageId: "Breathe Screen",
+        actions: ["prepare_interview"],
+        requiresRecruiterApproval: true,
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { saveATSTriggerRuleAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("externalStageId", "Breathe Screen");
+    formData.set("externalJobId", "mock_job_2");
+    formData.append("actions", "queue_interview");
+
+    await saveATSTriggerRuleAction(formData);
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsTriggerRules).toHaveLength(2);
+    expect(savedState.atsTriggerRules).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          externalJobId: "mock_job_1",
+          externalStageId: "Breathe Screen",
+          actions: ["prepare_interview"],
+        }),
+        expect.objectContaining({
+          externalJobId: "mock_job_2",
+          externalStageId: "Breathe Screen",
+          actions: ["queue_interview"],
+        }),
+      ]),
+    );
+  });
+
   it("rejects trigger rules without configured actions", async () => {
     const { saveATSTriggerRuleAction } =
       await import("@/app/(recruiter)/settings/integrations/ats/actions");

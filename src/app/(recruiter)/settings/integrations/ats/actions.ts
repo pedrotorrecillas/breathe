@@ -45,6 +45,20 @@ function parseTriggerActions(formData: FormData): ATSTriggerAction[] {
   return Array.from(new Set(selectedActions));
 }
 
+function sanitizeATSRulePart(value: string) {
+  return value.replace(/[^a-zA-Z0-9_]+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function buildTriggerRuleId(input: {
+  connectionId: string;
+  externalJobId: string | null;
+  externalStageId: string;
+}) {
+  return `ats_rule_${sanitizeATSRulePart(input.connectionId)}_${sanitizeATSRulePart(
+    input.externalJobId ?? "any_job",
+  )}_${sanitizeATSRulePart(input.externalStageId)}`;
+}
+
 export async function createMockATSConnectionAction(
   formData: FormData,
 ): Promise<void> {
@@ -267,10 +281,11 @@ export async function saveATSTriggerRuleAction(
 
     const now = new Date().toISOString();
     const rule = {
-      id: `ats_rule_${connectionId}_${externalStageId}`.replace(
-        /[^a-zA-Z0-9_]+/g,
-        "_",
-      ),
+      id: buildTriggerRuleId({
+        connectionId,
+        externalJobId,
+        externalStageId,
+      }),
       companyId: recruiter.company.id,
       connectionId,
       provider: connection.provider,
@@ -284,7 +299,12 @@ export async function saveATSTriggerRuleAction(
       updatedAt: now,
     };
     const existingIndex = state.atsTriggerRules.findIndex(
-      (item) => item.id === rule.id,
+      (item) =>
+        item.id === rule.id ||
+        (item.companyId === rule.companyId &&
+          item.connectionId === rule.connectionId &&
+          item.externalJobId === rule.externalJobId &&
+          item.externalStageId === rule.externalStageId),
     );
 
     if (existingIndex >= 0) {
