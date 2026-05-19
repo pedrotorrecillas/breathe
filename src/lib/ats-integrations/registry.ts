@@ -1,10 +1,11 @@
 import type { ATSProviderKey } from "@/domain/ats-integrations/types";
 import { mockATSAdapter } from "@/lib/ats-integrations/adapters/mock";
 import type { ATSAdapter } from "@/lib/ats-integrations/adapters/types";
+import { zohoRecruitAdapter } from "@/lib/ats-integrations/adapters/zoho-recruit";
 
 const adapters: Record<ATSProviderKey, ATSAdapter | null> = {
   mock_ats: mockATSAdapter,
-  zoho_recruit: null,
+  zoho_recruit: zohoRecruitAdapter,
   recruitee: null,
   ashby: null,
   teamtailor: null,
