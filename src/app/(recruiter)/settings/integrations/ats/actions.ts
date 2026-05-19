@@ -280,12 +280,36 @@ export async function createMockATSConnectionAction(
     const recruiter = await requireAuthenticatedRecruiter();
     requireATSAdmin(recruiterCanManageTeams(recruiter));
     const state = await loadRuntimeStoreState();
-    const connection = buildDefaultMockATSConnection({
+    const defaultConnection = buildDefaultMockATSConnection({
       companyId: recruiter.company.id,
       now: new Date().toISOString(),
     });
+    const existingConnection =
+      state.atsConnections.find(
+        (connection) =>
+          connection.companyId === recruiter.company.id &&
+          connection.provider === "mock_ats",
+      ) ?? null;
+    const connection = existingConnection
+      ? {
+          ...existingConnection,
+          status: defaultConnection.status,
+          syncMode: existingConnection.syncMode ?? defaultConnection.syncMode,
+          secretRef: defaultConnection.secretRef,
+          externalAccountId: defaultConnection.externalAccountId,
+          lastError: null,
+          updatedAt: defaultConnection.updatedAt,
+        }
+      : defaultConnection;
+    const existingIndex = state.atsConnections.findIndex(
+      (item) => item.id === connection.id,
+    );
 
-    state.atsConnections.push(connection);
+    if (existingIndex >= 0) {
+      state.atsConnections[existingIndex] = connection;
+    } else {
+      state.atsConnections.push(connection);
+    }
     appendAuditEvent({
       state,
       recruiter,
@@ -317,12 +341,35 @@ export async function createZohoEnvConnectionAction(
     const recruiter = await requireAuthenticatedRecruiter();
     requireATSAdmin(recruiterCanManageTeams(recruiter));
     const state = await loadRuntimeStoreState();
-    const connection = buildDefaultZohoDemoConnection({
+    const defaultConnection = buildDefaultZohoDemoConnection({
       companyId: recruiter.company.id,
       now: new Date().toISOString(),
     });
+    const existingConnection =
+      state.atsConnections.find(
+        (connection) =>
+          connection.companyId === recruiter.company.id &&
+          connection.provider === "zoho_recruit",
+      ) ?? null;
+    const connection = existingConnection
+      ? {
+          ...existingConnection,
+          status: defaultConnection.status,
+          syncMode: existingConnection.syncMode ?? defaultConnection.syncMode,
+          secretRef: defaultConnection.secretRef,
+          lastError: defaultConnection.lastError,
+          updatedAt: defaultConnection.updatedAt,
+        }
+      : defaultConnection;
+    const existingIndex = state.atsConnections.findIndex(
+      (item) => item.id === connection.id,
+    );
 
-    state.atsConnections.push(connection);
+    if (existingIndex >= 0) {
+      state.atsConnections[existingIndex] = connection;
+    } else {
+      state.atsConnections.push(connection);
+    }
     appendAuditEvent({
       state,
       recruiter,

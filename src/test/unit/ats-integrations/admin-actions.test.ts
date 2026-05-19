@@ -211,6 +211,69 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("updates the existing Mock ATS connection instead of creating duplicates", async () => {
+    const { createMockATSConnectionAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+
+    await createMockATSConnectionAction(new FormData());
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    const mockConnections = savedState.atsConnections.filter(
+      (connection: { provider: string }) => connection.provider === "mock_ats",
+    );
+    expect(mockConnections).toHaveLength(1);
+    expect(mockConnections[0]).toMatchObject({
+      id: "ats_conn_1",
+      provider: "mock_ats",
+      status: "active",
+      syncMode: "manual",
+      externalAccountId: "mock_account",
+      lastError: null,
+      createdAt: "2026-05-19T10:00:00.000Z",
+    });
+  });
+
+  it("updates the existing Zoho demo connection instead of creating duplicates", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "zoho-token");
+    const state = await mockLoadRuntimeStoreState();
+    state.atsConnections.push({
+      id: "ats_conn_zoho_existing",
+      companyId: "company_1",
+      provider: "zoho_recruit",
+      status: "error",
+      syncMode: "scheduled",
+      displayName: "Zoho Recruit demo",
+      authMode: "env_token",
+      secretRef: "env:ZOHO_RECRUIT_ACCESS_TOKEN",
+      externalAccountId: "zoho_existing",
+      lastSyncAt: "2026-05-19T10:00:00.000Z",
+      lastError: "Old missing token error.",
+      createdAt: "2026-05-19T09:00:00.000Z",
+      updatedAt: "2026-05-19T10:00:00.000Z",
+    });
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { createZohoEnvConnectionAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+
+    await createZohoEnvConnectionAction(new FormData());
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    const zohoConnections = savedState.atsConnections.filter(
+      (connection: { provider: string }) =>
+        connection.provider === "zoho_recruit",
+    );
+    expect(zohoConnections).toHaveLength(1);
+    expect(zohoConnections[0]).toMatchObject({
+      id: "ats_conn_zoho_existing",
+      status: "active",
+      secretRef: "env:ZOHO_RECRUIT_ACCESS_TOKEN",
+      externalAccountId: "zoho_existing",
+      lastSyncAt: "2026-05-19T10:00:00.000Z",
+      lastError: null,
+      createdAt: "2026-05-19T09:00:00.000Z",
+    });
+  });
+
   it("configures Zoho demo trigger and writeback defaults in one admin action", async () => {
     vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "zoho-token");
     const { configureZohoDemoDefaultsAction } =
