@@ -407,6 +407,67 @@ function preserveInternalApplicationLinks(input: {
   };
 }
 
+function linkInternalRecordsForATSApplication(input: {
+  state: RuntimeStoreState;
+  next: ATSCanonicalApplication;
+}): ATSCanonicalApplication {
+  if (
+    input.next.internalCandidateId &&
+    input.next.internalApplicationId &&
+    input.next.internalJobId
+  ) {
+    return input.next;
+  }
+
+  const normalizedEmail = normalizeEmail(input.next.candidateEmail);
+  const normalizedPhone = normalizePhone(input.next.candidatePhone);
+  const candidateMatches = input.state.candidates.filter(
+    (candidate) =>
+      candidate.companyId === input.next.companyId &&
+      ((normalizedEmail && candidate.normalizedEmail === normalizedEmail) ||
+        (normalizedPhone && candidate.normalizedPhone === normalizedPhone)),
+  );
+  const jobMatches = input.state.jobs.filter(
+    (job) =>
+      job.companyId === input.next.companyId &&
+      job.title === input.next.jobTitle,
+  );
+  const matchedCandidate =
+    candidateMatches.length === 1 ? candidateMatches[0] : null;
+  const matchedJob = jobMatches.length === 1 ? jobMatches[0] : null;
+  const applicationMatches =
+    matchedCandidate && matchedJob
+      ? input.state.applications.filter(
+          (application) =>
+            application.companyId === input.next.companyId &&
+            application.candidateId === matchedCandidate.id &&
+            application.jobId === matchedJob.id,
+        )
+      : [];
+  const matchedApplication =
+    applicationMatches.length === 1 ? applicationMatches[0] : null;
+
+  if (!matchedCandidate && !matchedJob && !matchedApplication) {
+    return input.next;
+  }
+
+  return {
+    ...input.next,
+    internalCandidateId:
+      input.next.internalCandidateId ??
+      matchedApplication?.candidateId ??
+      matchedCandidate?.id ??
+      null,
+    internalApplicationId:
+      input.next.internalApplicationId ?? matchedApplication?.id ?? null,
+    internalJobId:
+      input.next.internalJobId ??
+      matchedApplication?.jobId ??
+      matchedJob?.id ??
+      null,
+  };
+}
+
 function applicationStageChanged(input: {
   previous: ATSCanonicalApplication | undefined;
   next: ATSCanonicalApplication;
@@ -759,14 +820,17 @@ export async function runATSSync(
           }
         }
 
-        const applicationRecord = preserveInternalApplicationLinks({
-          previous: previousApplication,
-          next: canonicalApplication({
-            companyId: input.companyId,
-            connectionId: connection.id,
-            provider: connection.provider,
-            now: input.now,
-            record: application,
+        const applicationRecord = linkInternalRecordsForATSApplication({
+          state,
+          next: preserveInternalApplicationLinks({
+            previous: previousApplication,
+            next: canonicalApplication({
+              companyId: input.companyId,
+              connectionId: connection.id,
+              provider: connection.provider,
+              now: input.now,
+              record: application,
+            }),
           }),
         });
         if (upsertById(state.atsExternalApplications, applicationRecord)) {
