@@ -33,6 +33,11 @@ export type ATSCandidateLookupInput = {
   externalCandidateId: string;
 };
 
+export type ATSWritebackInput = {
+  connection: ATSConnection;
+  action: ATSWritebackAction;
+};
+
 export type ATSSyncPage<TRecord> = {
   records: TRecord[];
   nextCursor: string | null;
@@ -107,5 +112,5 @@ export type ATSAdapter = {
   getCandidate(
     input: ATSCandidateLookupInput,
   ): Promise<ATSProviderCandidate | null>;
-  writeback(input: ATSWritebackAction): Promise<ATSWritebackResult>;
+  writeback(input: ATSWritebackInput): Promise<ATSWritebackResult>;
 };

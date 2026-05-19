@@ -174,9 +174,14 @@ export type ATSAdapter = {
   getCandidate(
     input: ATSCandidateLookupInput,
   ): Promise<ATSProviderCandidate | null>;
-  writeback(input: ATSWritebackAction): Promise<ATSWritebackResult>;
+  writeback(input: ATSWritebackInput): Promise<ATSWritebackResult>;
 };
 ```
+
+`ATSWritebackInput` must include the active `ATSConnection` and the
+provider-neutral `ATSWritebackAction`; adapters should never reconstruct fake
+connections or depend on global provider state when the connection record is
+available.
 
 Adapters also declare capabilities:
 

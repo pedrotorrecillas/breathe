@@ -89,7 +89,8 @@ const mockApplications: ATSProviderApplication[] = [
     externalCandidateId: "mock_candidate_ana",
     externalJobId: "mock_job_store_associate",
     externalStageId: "mock_stage_breathe_screen",
-    externalUrl: "https://mock-ats.test/candidates/ana/applications/store-associate",
+    externalUrl:
+      "https://mock-ats.test/candidates/ana/applications/store-associate",
     candidateName: "Ana Martin",
     candidateEmail: "ana@example.com",
     candidatePhone: "+34600000000",
@@ -115,12 +116,16 @@ function page<TRecord>(records: TRecord[]): ATSSyncPage<TRecord> {
   };
 }
 
-function mockWritebackResponse(input: ATSWritebackAction) {
+function mockWritebackResponse(input: {
+  action: ATSWritebackAction;
+  externalAccountId: string | null;
+}) {
   return {
-    actionType: input.actionType,
-    targetExternalCandidateId: input.targetExternalCandidateId,
-    targetExternalApplicationId: input.targetExternalApplicationId,
-    acceptedAt: input.updatedAt,
+    externalAccountId: input.externalAccountId,
+    actionType: input.action.actionType,
+    targetExternalCandidateId: input.action.targetExternalCandidateId,
+    targetExternalApplicationId: input.action.targetExternalApplicationId,
+    acceptedAt: input.action.updatedAt,
   };
 }
 
@@ -164,7 +169,10 @@ export const mockATSAdapter: ATSAdapter = {
     return {
       status: "succeeded",
       providerStatusCode: 200,
-      providerResponse: mockWritebackResponse(input),
+      providerResponse: mockWritebackResponse({
+        action: input.action,
+        externalAccountId: input.connection.externalAccountId,
+      }),
       errorMessage: null,
     };
   },

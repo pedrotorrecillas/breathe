@@ -22,7 +22,7 @@ describe("ATS writeback queue", () => {
       displayName: "Mock ATS",
       authMode: "mock",
       secretRef: null,
-      externalAccountId: "mock_account",
+      externalAccountId: "mock_account_from_connection",
       lastSyncAt: null,
       lastError: null,
       createdAt: "2026-05-19T10:00:00.000Z",
@@ -73,5 +73,8 @@ describe("ATS writeback queue", () => {
     expect(state.atsWritebackActions).toHaveLength(1);
     expect(state.atsWritebackActions[0].status).toBe("succeeded");
     expect(state.atsWritebackAttempts).toHaveLength(1);
+    expect(state.atsWritebackAttempts[0].providerResponse).toMatchObject({
+      externalAccountId: "mock_account_from_connection",
+    });
   });
 });

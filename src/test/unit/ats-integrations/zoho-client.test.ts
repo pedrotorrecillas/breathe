@@ -84,22 +84,25 @@ describe("Zoho Recruit client", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await zohoRecruitAdapter.writeback({
-      id: "ats_writeback_1",
-      companyId: "company_1",
-      connectionId: "ats_conn_zoho",
-      provider: "zoho_recruit",
-      actionType: "candidate_note",
-      targetExternalCandidateId: "58431000000054321",
-      targetExternalApplicationId: "58431000000054321",
-      targetExternalJobId: "58431000000012345",
-      targetExternalStageId: null,
-      sourceObjectType: "evaluation",
-      sourceObjectId: "eval_1",
-      status: "queued",
-      idempotencyKey: "key",
-      payload: { body: "Breathe interview summary" },
-      createdAt: "2026-05-19T12:00:00.000Z",
-      updatedAt: "2026-05-19T12:00:00.000Z",
+      connection: zohoConnection,
+      action: {
+        id: "ats_writeback_1",
+        companyId: "company_1",
+        connectionId: "ats_conn_zoho",
+        provider: "zoho_recruit",
+        actionType: "candidate_note",
+        targetExternalCandidateId: "58431000000054321",
+        targetExternalApplicationId: "58431000000054321",
+        targetExternalJobId: "58431000000012345",
+        targetExternalStageId: null,
+        sourceObjectType: "evaluation",
+        sourceObjectId: "eval_1",
+        status: "queued",
+        idempotencyKey: "key",
+        payload: { body: "Breathe interview summary" },
+        createdAt: "2026-05-19T12:00:00.000Z",
+        updatedAt: "2026-05-19T12:00:00.000Z",
+      },
     });
 
     expect(fetchMock).toHaveBeenCalledWith(

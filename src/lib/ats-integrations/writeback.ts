@@ -130,8 +130,11 @@ export async function processATSWritebackAction(
 
   const adapter = getATSAdapter(action.provider);
   const providerResult = await adapter.writeback({
-    ...action,
-    updatedAt: input.now,
+    connection,
+    action: {
+      ...action,
+      updatedAt: input.now,
+    },
   });
   const attempt: ATSWritebackAttempt = {
     id: writebackAttemptId({

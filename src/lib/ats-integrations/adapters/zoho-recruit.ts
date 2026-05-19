@@ -119,22 +119,10 @@ export const zohoRecruitAdapter: ATSAdapter = {
     return record ? mapZohoCandidateToProviderCandidate(record) : null;
   },
   async writeback(input) {
-    const client = createZohoRecruitClient({
-      id: input.connectionId,
-      companyId: input.companyId,
-      provider: input.provider,
-      status: "active",
-      displayName: "Zoho Recruit",
-      authMode: "env_token",
-      secretRef: "env:ZOHO_RECRUIT_ACCESS_TOKEN",
-      externalAccountId: null,
-      lastSyncAt: null,
-      lastError: null,
-      createdAt: input.createdAt,
-      updatedAt: input.updatedAt,
-    });
+    const client = createZohoRecruitClient(input.connection);
+    const action = input.action;
 
-    if (input.actionType === "application_stage_move") {
+    if (action.actionType === "application_stage_move") {
       const response = await client.request<Record<string, unknown>>(
         "/recruit/v2/Candidates/status",
         {
@@ -142,8 +130,8 @@ export const zohoRecruitAdapter: ATSAdapter = {
           body: JSON.stringify({
             data: [
               {
-                ids: [input.targetExternalCandidateId],
-                Candidate_Status: input.targetExternalStageId,
+                ids: [action.targetExternalCandidateId],
+                Candidate_Status: action.targetExternalStageId,
                 comments: "Updated by Breathe.",
               },
             ],
@@ -160,8 +148,8 @@ export const zohoRecruitAdapter: ATSAdapter = {
     }
 
     if (
-      input.actionType === "candidate_note" ||
-      input.actionType === "status_comment"
+      action.actionType === "candidate_note" ||
+      action.actionType === "status_comment"
     ) {
       const response = await client.request<Record<string, unknown>>(
         "/recruit/v2/Notes",
@@ -171,8 +159,8 @@ export const zohoRecruitAdapter: ATSAdapter = {
             data: [
               {
                 Note_Title: "Breathe interview report",
-                Note_Content: bodyFromWriteback(input),
-                Parent_Id: input.targetExternalCandidateId,
+                Note_Content: bodyFromWriteback(action),
+                Parent_Id: action.targetExternalCandidateId,
                 se_module: "Candidates",
               },
             ],
@@ -192,7 +180,7 @@ export const zohoRecruitAdapter: ATSAdapter = {
       status: "skipped",
       providerStatusCode: null,
       providerResponse: {},
-      errorMessage: `Zoho Recruit adapter does not support ${input.actionType}.`,
+      errorMessage: `Zoho Recruit adapter does not support ${action.actionType}.`,
     };
   },
 };
