@@ -8,6 +8,7 @@ import {
   type ATSSyncEvent,
 } from "@/domain/ats-integrations/types";
 import { getATSAdapter } from "@/lib/ats-integrations/registry";
+import { runATSSync } from "@/lib/ats-integrations/sync";
 import {
   loadRuntimeStoreState,
   saveRuntimeStoreState,
@@ -87,7 +88,12 @@ async function persistWebhookEvent(input: {
   });
 
   if (!connection) {
-    return { persisted: false, duplicate: false };
+    return {
+      persisted: false,
+      duplicate: false,
+      companyId: null,
+      connectionId: null,
+    };
   }
 
   const eventId = webhookEventId(input.payload, input.body);
@@ -107,7 +113,12 @@ async function persistWebhookEvent(input: {
   );
 
   if (duplicate) {
-    return { persisted: true, duplicate: true };
+    return {
+      persisted: true,
+      duplicate: true,
+      companyId: connection.companyId,
+      connectionId: connection.id,
+    };
   }
 
   state.atsSyncEvents.push({
@@ -129,7 +140,12 @@ async function persistWebhookEvent(input: {
 
   await saveRuntimeStoreState(state);
 
-  return { persisted: true, duplicate: false };
+  return {
+    persisted: true,
+    duplicate: false,
+    companyId: connection.companyId,
+    connectionId: connection.id,
+  };
 }
 
 export async function POST(request: Request, context: ATSWebhookRouteContext) {
@@ -186,12 +202,42 @@ export async function POST(request: Request, context: ATSWebhookRouteContext) {
     payload: webhookPayload,
     body,
   });
+  const sync =
+    persistence.persisted &&
+    !persistence.duplicate &&
+    persistence.companyId &&
+    persistence.connectionId
+      ? await runATSSync({
+          companyId: persistence.companyId,
+          connectionId: persistence.connectionId,
+          now: new Date().toISOString(),
+        })
+          .then((result) => ({
+            status: "succeeded" as const,
+            result,
+            errorMessage: null,
+          }))
+          .catch((error) => ({
+            status: "failed" as const,
+            result: null,
+            errorMessage:
+              error instanceof Error ? error.message : "ATS webhook sync failed.",
+          }))
+      : {
+          status: "skipped" as const,
+          result: null,
+          errorMessage: persistence.duplicate
+            ? "Duplicate webhook event."
+            : "No active ATS connection matched the webhook.",
+        };
 
   return NextResponse.json(
     {
       status: "accepted",
       provider,
-      ...persistence,
+      persisted: persistence.persisted,
+      duplicate: persistence.duplicate,
+      sync,
     },
     { status: 202 },
   );
