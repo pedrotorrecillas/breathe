@@ -117,6 +117,46 @@ function latestWritebackAttempt(input: {
     )[0];
 }
 
+function latestZohoNoteFallbackAttempt(input: {
+  snapshot: ATSAdminSnapshot;
+  connectionId: string | null;
+}) {
+  if (!input.connectionId) {
+    return null;
+  }
+
+  const zohoNoteWritebackIds = new Set(
+    input.snapshot.writebackActions
+      .filter(
+        (action) =>
+          action.connectionId === input.connectionId &&
+          action.provider === "zoho_recruit" &&
+          (action.actionType === "candidate_note" ||
+            action.actionType === "status_comment"),
+      )
+      .map((action) => action.id),
+  );
+
+  return (
+    input.snapshot.writebackAttempts
+      .filter(
+        (attempt) =>
+          zohoNoteWritebackIds.has(attempt.writebackActionId) &&
+          attempt.status === "skipped" &&
+          Boolean(
+            attempt.errorMessage
+              ?.toLowerCase()
+              .includes("notes module"),
+          ),
+      )
+      .sort(
+        (left, right) =>
+          new Date(right.attemptedAt).getTime() -
+          new Date(left.attemptedAt).getTime(),
+      )[0] ?? null
+  );
+}
+
 function applicationStageLabel(
   application: ATSAdminSnapshot["externalApplications"][number],
 ) {
@@ -270,6 +310,10 @@ export function ATSSettingsWorkspace({
     connectionId: zohoConnection?.id ?? null,
   });
   const zohoWritebackIsReady = zohoDemoWritebackReady(zohoConnection);
+  const zohoNoteFallbackAttempt = latestZohoNoteFallbackAttempt({
+    snapshot,
+    connectionId: zohoConnection?.id ?? null,
+  });
   const zohoSyncReady = Boolean(zohoConnection?.lastSyncAt);
 
   return (
@@ -513,6 +557,18 @@ export function ATSSettingsWorkspace({
               {zohoConnection?.lastSyncAt
                 ? `Last sync: ${zohoConnection.lastSyncAt}`
                 : "Run Sync now after credentials are valid"}
+            </p>
+          </div>
+          <div className="rounded-md border border-slate-200 px-4 py-3">
+            <p className="text-sm font-medium text-slate-950">
+              {zohoNoteFallbackAttempt
+                ? "Notes fallback active"
+                : "Notes fallback armed"}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {zohoNoteFallbackAttempt
+                ? `Last skipped note: ${zohoNoteFallbackAttempt.attemptedAt}`
+                : "Skipped note writebacks stay visible if Zoho blocks Notes"}
             </p>
           </div>
         </div>

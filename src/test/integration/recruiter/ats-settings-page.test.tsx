@@ -538,4 +538,64 @@ describe("ATS settings page", () => {
       screen.getByText(/Last sync: 2026-05-19T12:00:00.000Z/i),
     ).toBeInTheDocument();
   });
+
+  it("surfaces Zoho note fallback status in demo readiness", async () => {
+    const snapshot = buildATSSnapshot();
+    snapshot.connections.push({
+      id: "ats_conn_zoho",
+      companyId: "company_1",
+      provider: "zoho_recruit",
+      status: "active",
+      syncMode: "manual",
+      displayName: "Zoho Recruit demo",
+      authMode: "env_token",
+      secretRef: "env:ZOHO_RECRUIT_REFRESH_TOKEN",
+      externalAccountId: "zoho_demo",
+      lastSyncAt: "2026-05-19T12:00:00.000Z",
+      lastError: null,
+      createdAt: "2026-05-19T10:00:00.000Z",
+      updatedAt: "2026-05-19T11:00:00.000Z",
+      writebackPolicy: {
+        reportMode: "candidate_note",
+        moveToExternalStageId: "Interview Completed",
+        requiresRecruiterReview: false,
+      },
+    });
+    snapshot.writebackActions.push({
+      id: "ats_writeback_zoho_note_fallback",
+      companyId: "company_1",
+      connectionId: "ats_conn_zoho",
+      provider: "zoho_recruit",
+      actionType: "candidate_note",
+      targetExternalCandidateId: "58431000000054321",
+      targetExternalApplicationId: "58431000000054321",
+      targetExternalJobId: null,
+      targetExternalStageId: null,
+      sourceObjectType: "evaluation",
+      sourceObjectId: "eval_zoho",
+      status: "skipped",
+      idempotencyKey: "zoho_note_fallback",
+      payload: { body: "Breathe interview summary" },
+      createdAt: "2026-05-19T12:02:00.000Z",
+      updatedAt: "2026-05-19T12:03:00.000Z",
+    });
+    snapshot.writebackAttempts.push({
+      id: "ats_attempt_zoho_note_fallback",
+      writebackActionId: "ats_writeback_zoho_note_fallback",
+      attemptedAt: "2026-05-19T12:03:00.000Z",
+      status: "skipped",
+      providerStatusCode: 200,
+      providerResponse: { code: "NO_PERMISSION" },
+      errorMessage:
+        "Zoho Recruit note writeback skipped because the Notes module is not available for this account.",
+    });
+    atsSnapshotState.snapshot = snapshot;
+
+    render(await ATSSettingsPage());
+
+    expect(screen.getByText("Notes fallback active")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Last skipped note: 2026-05-19T12:03:00.000Z/i),
+    ).toBeInTheDocument();
+  });
 });
