@@ -418,6 +418,21 @@ function applicationStageChanged(input: {
   return input.previous.externalStageId !== input.next.externalStageId;
 }
 
+function applicationWasArchived(input: {
+  previous: ATSCanonicalApplication | undefined;
+  next: ATSCanonicalApplication;
+}) {
+  if (!input.previous) {
+    return false;
+  }
+
+  return (
+    input.previous.status === "active" &&
+    (input.next.status === "archived_external" ||
+      input.next.status === "deleted_external")
+  );
+}
+
 function refreshLinkedCandidateProfileFromATS(input: {
   state: RuntimeStoreState;
   atsApplication: ATSCanonicalApplication | undefined;
@@ -678,6 +693,42 @@ export async function runATSSync(
         if (upsertById(state.atsExternalApplications, applicationRecord)) {
           result.importedApplications += 1;
         }
+        const applicationCanTriggerWorkflow =
+          applicationRecord.status === "active";
+
+        if (
+          applicationWasArchived({
+            previous: previousApplication,
+            next: applicationRecord,
+          })
+        ) {
+          const archivedEvent = buildEvent({
+            companyId: input.companyId,
+            connectionId: connection.id,
+            provider: connection.provider,
+            eventType: "external_record_archived",
+            externalObjectType: "application",
+            externalObjectId: application.externalId,
+            externalJobId: application.externalJobId,
+            externalCandidateId: application.externalCandidateId,
+            externalStageId: application.externalStageId,
+            occurredAt: input.now,
+            externalUpdatedAt: eventUpdatedAt(application),
+            idempotencyDiscriminator: [
+              previousApplication?.status ?? "none",
+              applicationRecord.status,
+            ].join("->"),
+            payload: {
+              ...application.raw,
+              previousStatus: previousApplication?.status ?? null,
+              status: applicationRecord.status,
+            },
+          });
+
+          if (appendSyncEventOnce(state, archivedEvent)) {
+            result.createdEvents += 1;
+          }
+        }
 
         if (
           applicationStageChanged({
@@ -721,12 +772,14 @@ export async function runATSSync(
               atsApplication: applicationRecord,
               externalStageId: application.externalStageId,
             });
-            result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
-              state,
-              event: stageChangedEvent,
-              now: input.now,
-              autoProcessWorkflowRequestIds,
-            });
+            if (applicationCanTriggerWorkflow) {
+              result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
+                state,
+                event: stageChangedEvent,
+                now: input.now,
+                autoProcessWorkflowRequestIds,
+              });
+            }
           }
         }
 
@@ -747,12 +800,14 @@ export async function runATSSync(
 
         if (appendSyncEventOnce(state, applicationSeenEvent)) {
           result.createdEvents += 1;
-          result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
-            state,
-            event: applicationSeenEvent,
-            now: input.now,
-            autoProcessWorkflowRequestIds,
-          });
+          if (applicationCanTriggerWorkflow) {
+            result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
+              state,
+              event: applicationSeenEvent,
+              now: input.now,
+              autoProcessWorkflowRequestIds,
+            });
+          }
         }
       }
 

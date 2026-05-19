@@ -237,6 +237,110 @@ describe("ATS sync pagination", () => {
     );
   });
 
+  it("emits an archive event when a known application is archived by the ATS", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsExternalApplications.push({
+      id: "ats_application_ats_conn_1_app_1",
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      externalId: "app_1",
+      externalCandidateId: "candidate_1",
+      externalJobId: "job_1",
+      externalStageId: "stage_screen",
+      externalUrl: null,
+      internalCandidateId: "candidate_existing",
+      internalApplicationId: "application_existing",
+      internalJobId: "job_existing",
+      candidateName: "Ana Martin",
+      candidateEmail: "ana@example.com",
+      candidatePhone: null,
+      jobTitle: "Store Associate",
+      stageName: "Screening",
+      stageCategory: "screening",
+      status: "active",
+      externalUpdatedAt: "2026-05-19T10:00:00.000Z",
+      lastSeenAt: "2026-05-19T10:00:00.000Z",
+      rawSnapshot: {},
+    });
+    state.atsTriggerRules.push({
+      id: "ats_rule_screen",
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      name: "Run screen",
+      enabled: true,
+      externalJobId: "job_1",
+      externalStageId: "stage_screen",
+      actions: ["import_candidate"],
+      requiresRecruiterApproval: true,
+      createdAt: "2026-05-19T10:00:00.000Z",
+      updatedAt: "2026-05-19T10:00:00.000Z",
+    });
+    await saveRuntimeStoreState(state);
+
+    listJobs.mockResolvedValue({
+      records: [],
+      nextCursor: null,
+      hasMore: false,
+    });
+    listApplications.mockResolvedValue({
+      records: [
+        {
+          externalId: "app_1",
+          externalCandidateId: "candidate_1",
+          externalJobId: "job_1",
+          externalStageId: "stage_screen",
+          externalUrl: null,
+          candidateName: "Ana Martin",
+          candidateEmail: "ana@example.com",
+          candidatePhone: null,
+          jobTitle: "Store Associate",
+          stageName: "Screening",
+          stageCategory: "screening",
+          status: "archived_external",
+          externalUpdatedAt: "2026-05-19T10:30:00.000Z",
+          raw: { archived: true },
+        },
+      ],
+      nextCursor: null,
+      hasMore: false,
+    });
+    getCandidate.mockResolvedValue(null);
+
+    const result = await runATSSync({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      now: "2026-05-19T11:00:00.000Z",
+    });
+
+    expect(result.createdEvents).toBe(2);
+    const afterSync = await loadRuntimeStoreState();
+    expect(afterSync.atsExternalApplications[0]).toMatchObject({
+      status: "archived_external",
+      internalCandidateId: "candidate_existing",
+      internalApplicationId: "application_existing",
+      internalJobId: "job_existing",
+    });
+    expect(afterSync.atsSyncEvents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          eventType: "external_record_archived",
+          externalObjectType: "application",
+          externalObjectId: "app_1",
+          externalJobId: "job_1",
+          externalCandidateId: "candidate_1",
+          externalStageId: "stage_screen",
+          payload: expect.objectContaining({
+            previousStatus: "active",
+            status: "archived_external",
+          }),
+        }),
+      ]),
+    );
+    expect(afterSync.atsWorkflowRequests).toHaveLength(0);
+  });
+
   it("creates workflow requests for reused external application ids on different connections", async () => {
     const state = await loadRuntimeStoreState();
     state.atsConnections.push({
