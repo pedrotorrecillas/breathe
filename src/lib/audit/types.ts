@@ -7,6 +7,7 @@ export type AuditAction =
   | "profile.updated"
   | "company.updated"
   | "ats.connection_created"
+  | "ats.connection_tested"
   | "ats.manual_sync"
   | "ats.trigger_rule_saved"
   | "ats.writeback_policy_saved"

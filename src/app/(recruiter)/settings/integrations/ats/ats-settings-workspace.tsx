@@ -13,6 +13,7 @@ import {
   runManualATSSyncAction,
   saveATSTriggerRuleAction,
   saveATSWritebackPolicyAction,
+  testATSConnectionAction,
 } from "./actions";
 
 function providerLabel(providers: ATSAvailableProvider[], provider: string) {
@@ -86,21 +87,41 @@ export function ATSSettingsWorkspace({
                         ? "Available"
                         : "Planned adapter"}
                   </p>
+                  {connection?.lastError ? (
+                    <p className="mt-1 max-w-xl text-xs text-rose-700">
+                      {connection.lastError}
+                    </p>
+                  ) : null}
                 </div>
                 {connection && canManage ? (
-                  <form action={runManualATSSyncAction}>
-                    <input
-                      type="hidden"
-                      name="connectionId"
-                      value={connection.id}
-                    />
-                    <button
-                      type="submit"
-                      className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700"
-                    >
-                      Sync now
-                    </button>
-                  </form>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <form action={testATSConnectionAction}>
+                      <input
+                        type="hidden"
+                        name="connectionId"
+                        value={connection.id}
+                      />
+                      <button
+                        type="submit"
+                        className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700"
+                      >
+                        Test
+                      </button>
+                    </form>
+                    <form action={runManualATSSyncAction}>
+                      <input
+                        type="hidden"
+                        name="connectionId"
+                        value={connection.id}
+                      />
+                      <button
+                        type="submit"
+                        className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700"
+                      >
+                        Sync now
+                      </button>
+                    </form>
+                  </div>
                 ) : (
                   <span className="text-xs font-medium text-slate-500">
                     {provider.provider}

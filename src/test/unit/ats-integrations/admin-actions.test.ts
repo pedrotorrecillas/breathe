@@ -8,6 +8,7 @@ const mockSaveRuntimeStoreState = vi.fn();
 const mockRevalidatePath = vi.fn();
 const mockProcessATSWorkflowRequest = vi.fn();
 const mockProcessATSWritebackAction = vi.fn();
+const mockValidateConnection = vi.fn();
 
 vi.mock("next/cache", () => ({
   revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args),
@@ -40,6 +41,13 @@ vi.mock("@/lib/ats-integrations/workflow-requests", () => ({
 vi.mock("@/lib/ats-integrations/writeback", () => ({
   processATSWritebackAction: (...args: unknown[]) =>
     mockProcessATSWritebackAction(...args),
+}));
+
+vi.mock("@/lib/ats-integrations/registry", () => ({
+  getATSAdapter: () => ({
+    validateConnection: (...args: unknown[]) =>
+      mockValidateConnection(...args),
+  }),
 }));
 
 const recruiterFixture = {
@@ -132,6 +140,11 @@ describe("ATS admin actions", () => {
         status: "succeeded",
       },
     });
+    mockValidateConnection.mockResolvedValue({
+      ok: true,
+      externalAccountId: "mock_account_verified",
+      message: "Mock ATS connection is available.",
+    });
   });
 
   it("saves configurable trigger actions and recruiter approval", async () => {
@@ -210,6 +223,71 @@ describe("ATS admin actions", () => {
       expect.objectContaining({
         action: "ats.writeback_action_processed",
         targetId: "ats_writeback_1",
+      }),
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith(
+      "/settings/integrations/ats",
+    );
+  });
+
+  it("tests an ATS connection and stores the provider health result", async () => {
+    const { testATSConnectionAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+
+    await testATSConnectionAction(formData);
+
+    expect(mockValidateConnection).toHaveBeenCalledWith({
+      connection: expect.objectContaining({ id: "ats_conn_1" }),
+    });
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsConnections[0]).toMatchObject({
+      id: "ats_conn_1",
+      status: "active",
+      externalAccountId: "mock_account_verified",
+      lastError: null,
+    });
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ats.connection_tested",
+        targetId: "ats_conn_1",
+        metadata: expect.objectContaining({
+          ok: true,
+          message: "Mock ATS connection is available.",
+        }),
+      }),
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith(
+      "/settings/integrations/ats",
+    );
+  });
+
+  it("stores provider validation failures on the connection", async () => {
+    mockValidateConnection.mockRejectedValue(
+      new Error("ZOHO_RECRUIT_ACCESS_TOKEN is required."),
+    );
+    const { testATSConnectionAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+
+    await testATSConnectionAction(formData);
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsConnections[0]).toMatchObject({
+      id: "ats_conn_1",
+      status: "error",
+      lastError: "ZOHO_RECRUIT_ACCESS_TOKEN is required.",
+    });
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ats.connection_tested",
+        targetId: "ats_conn_1",
+        metadata: expect.objectContaining({
+          ok: false,
+          message: "ZOHO_RECRUIT_ACCESS_TOKEN is required.",
+        }),
       }),
     );
     expect(mockRevalidatePath).toHaveBeenCalledWith(

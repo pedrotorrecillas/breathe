@@ -20,6 +20,7 @@ import {
 import { recruiterCanManageTeams } from "@/lib/team-access";
 import { processATSWorkflowRequest } from "@/lib/ats-integrations/workflow-requests";
 import { processATSWritebackAction } from "@/lib/ats-integrations/writeback";
+import { getATSAdapter } from "@/lib/ats-integrations/registry";
 
 const atsTriggerActions: ATSTriggerAction[] = [
   "import_candidate",
@@ -154,6 +155,78 @@ export async function runManualATSSyncAction(
   } catch (error) {
     throw new Error(
       error instanceof Error ? error.message : "Could not sync ATS.",
+    );
+  }
+}
+
+export async function testATSConnectionAction(
+  formData: FormData,
+): Promise<void> {
+  try {
+    const recruiter = await requireAuthenticatedRecruiter();
+    requireATSAdmin(recruiterCanManageTeams(recruiter));
+    const connectionId = String(formData.get("connectionId") ?? "");
+
+    if (!connectionId) {
+      throw new Error("Choose an ATS connection to test.");
+    }
+
+    const state = await loadRuntimeStoreState();
+    const connection = state.atsConnections.find(
+      (item) =>
+        item.id === connectionId && item.companyId === recruiter.company.id,
+    );
+
+    if (!connection) {
+      throw new Error("ATS connection not found.");
+    }
+
+    const adapter = getATSAdapter(connection.provider);
+    const check = await adapter
+      .validateConnection({ connection })
+      .catch((error: unknown) => ({
+        ok: false,
+        externalAccountId: null,
+        message:
+          error instanceof Error
+            ? error.message
+            : "ATS provider validation failed.",
+      }));
+    const now = new Date().toISOString();
+
+    state.atsConnections = state.atsConnections.map((item) =>
+      item.id === connection.id
+        ? {
+            ...item,
+            status: check.ok ? "active" : "error",
+            externalAccountId:
+              check.externalAccountId ?? item.externalAccountId,
+            lastError: check.ok ? null : check.message,
+            updatedAt: now,
+          }
+        : item,
+    );
+
+    appendAuditEvent({
+      state,
+      recruiter,
+      action: "ats.connection_tested",
+      targetType: "ats_connection",
+      targetId: connection.id,
+      summary: "Tested ATS integration connection.",
+      metadata: {
+        provider: connection.provider,
+        ok: check.ok,
+        message: check.message,
+      },
+    });
+    await saveRuntimeStoreState(state);
+    revalidatePath("/settings/integrations/ats");
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Could not test ATS connection.",
     );
   }
 }
