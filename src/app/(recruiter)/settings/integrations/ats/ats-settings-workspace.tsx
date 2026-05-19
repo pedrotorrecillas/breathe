@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo, useState } from "react";
+
 import type {
   ATSAdminSnapshot,
   ATSAvailableProvider,
@@ -22,6 +24,21 @@ function providerLabel(providers: ATSAvailableProvider[], provider: string) {
   );
 }
 
+function stageOptionLabel(input: {
+  stage: ATSAdminSnapshot["externalStages"][number];
+  jobs: ATSAdminSnapshot["externalJobs"];
+}) {
+  const job = input.jobs.find(
+    (item) =>
+      item.connectionId === input.stage.connectionId &&
+      item.externalId === input.stage.externalJobId,
+  );
+
+  return job
+    ? `${input.stage.name} · ${job.title}`
+    : `${input.stage.name} · ${input.stage.externalId}`;
+}
+
 export function ATSSettingsWorkspace({
   snapshot,
   canManage,
@@ -29,6 +46,33 @@ export function ATSSettingsWorkspace({
   snapshot: ATSAdminSnapshot;
   canManage: boolean;
 }) {
+  const firstConnectionId = snapshot.connections[0]?.id ?? "";
+  const [triggerConnectionId, setTriggerConnectionId] =
+    useState(firstConnectionId);
+  const [writebackConnectionId, setWritebackConnectionId] =
+    useState(firstConnectionId);
+  const triggerJobs = useMemo(
+    () =>
+      snapshot.externalJobs.filter(
+        (job) => job.connectionId === triggerConnectionId,
+      ),
+    [snapshot.externalJobs, triggerConnectionId],
+  );
+  const triggerStages = useMemo(
+    () =>
+      snapshot.externalStages.filter(
+        (stage) => stage.connectionId === triggerConnectionId,
+      ),
+    [snapshot.externalStages, triggerConnectionId],
+  );
+  const writebackStages = useMemo(
+    () =>
+      snapshot.externalStages.filter(
+        (stage) => stage.connectionId === writebackConnectionId,
+      ),
+    [snapshot.externalStages, writebackConnectionId],
+  );
+
   return (
     <div className="grid gap-5">
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -142,6 +186,8 @@ export function ATSSettingsWorkspace({
           <form action={saveATSTriggerRuleAction} className="mt-4 grid gap-3">
             <select
               name="connectionId"
+              value={triggerConnectionId}
+              onChange={(event) => setTriggerConnectionId(event.target.value)}
               className="rounded-md border border-slate-300 px-3 py-2 text-sm"
               aria-label="Trigger connection"
             >
@@ -154,16 +200,48 @@ export function ATSSettingsWorkspace({
                 </option>
               ))}
             </select>
-            <input
-              name="externalStageId"
-              placeholder="External stage or status"
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
-            <input
-              name="externalJobId"
-              placeholder="External job ID, optional"
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
+            {triggerStages.length ? (
+              <select
+                name="externalStageId"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                aria-label="External trigger stage"
+              >
+                {triggerStages.map((stage) => (
+                  <option key={stage.id} value={stage.externalId}>
+                    {stageOptionLabel({
+                      stage,
+                      jobs: snapshot.externalJobs,
+                    })}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                name="externalStageId"
+                placeholder="External stage or status"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
+            )}
+            {triggerJobs.length ? (
+              <select
+                name="externalJobId"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                aria-label="External trigger job"
+              >
+                <option value="">Any imported job</option>
+                {triggerJobs.map((job) => (
+                  <option key={job.id} value={job.externalId}>
+                    {job.title}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                name="externalJobId"
+                placeholder="External job ID, optional"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
+            )}
             <div className="grid gap-2 rounded-md border border-slate-200 p-3">
               {[
                 ["import_candidate", "Import candidate"],
@@ -252,6 +330,8 @@ export function ATSSettingsWorkspace({
           >
             <select
               name="connectionId"
+              value={writebackConnectionId}
+              onChange={(event) => setWritebackConnectionId(event.target.value)}
               className="rounded-md border border-slate-300 px-3 py-2 text-sm"
               aria-label="Writeback connection"
             >
@@ -273,11 +353,29 @@ export function ATSSettingsWorkspace({
               <option value="status_comment">Status comment</option>
               <option value="disabled">Disabled</option>
             </select>
-            <input
-              name="moveToExternalStageId"
-              placeholder="Move to external stage after evaluation"
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
+            {writebackStages.length ? (
+              <select
+                name="moveToExternalStageId"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                aria-label="Writeback target stage"
+              >
+                <option value="">Do not move stage</option>
+                {writebackStages.map((stage) => (
+                  <option key={stage.id} value={stage.externalId}>
+                    {stageOptionLabel({
+                      stage,
+                      jobs: snapshot.externalJobs,
+                    })}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                name="moveToExternalStageId"
+                placeholder="Move to external stage after evaluation"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
+            )}
             <button
               type="submit"
               className="w-fit rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700"

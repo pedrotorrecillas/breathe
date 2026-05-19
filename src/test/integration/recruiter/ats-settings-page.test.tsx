@@ -44,10 +44,56 @@ vi.mock("@/lib/team-access", () => ({
 
 vi.mock("@/lib/ats-integrations/connections", () => ({
   getATSAdminSnapshot: vi.fn(async () => ({
-    connections: [],
+    connections: [
+      {
+        id: "ats_conn_1",
+        companyId: "company_1",
+        provider: "mock_ats",
+        status: "active",
+        displayName: "Mock ATS",
+        authMode: "mock",
+        secretRef: null,
+        externalAccountId: "mock_account",
+        lastSyncAt: null,
+        lastError: null,
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+    ],
     triggerRules: [],
     workflowRequests: [],
     writebackActions: [],
+    externalJobs: [
+      {
+        id: "ats_job_1",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalId: "mock_job_store_associate",
+        externalUrl: null,
+        title: "Store Associate",
+        status: "active",
+        externalUpdatedAt: null,
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ],
+    externalStages: [
+      {
+        id: "ats_stage_1",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalJobId: "mock_job_store_associate",
+        externalId: "mock_stage_breathe_screen",
+        name: "Breathe Screen",
+        category: "screening",
+        position: 1,
+        status: "active",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ],
     availableProviders: [
       { provider: "mock_ats", label: "Mock ATS", implemented: true },
       { provider: "zoho_recruit", label: "Zoho Recruit", implemented: true },
@@ -67,12 +113,19 @@ describe("ATS settings page", () => {
       screen.getByRole("button", { name: /Add Zoho Recruit/i }),
     ).toBeInTheDocument();
     expect(screen.getByText(/Stage triggers/i)).toBeInTheDocument();
-    expect(screen.getByText(/Writeback policy/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Writeback policy/i).length).toBeGreaterThan(0);
     expect(
       screen.getByRole("heading", { name: /ATS-triggered work/i }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: /ATS outbound queue/i }),
     ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("option", { name: /Store Associate/i }).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole("option", { name: /Breathe Screen/i }).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /^Test$/i })).toBeInTheDocument();
   });
 });
