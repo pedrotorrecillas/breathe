@@ -383,6 +383,14 @@ function eventUpdatedAt(record: ProviderRecord) {
   return record.externalUpdatedAt ?? null;
 }
 
+function normalizeEmail(value: string | null) {
+  return value?.trim().toLowerCase() || null;
+}
+
+function normalizePhone(value: string | null) {
+  return value?.replace(/[^\d+]/g, "") || "";
+}
+
 function preserveInternalApplicationLinks(input: {
   previous: ATSCanonicalApplication | undefined;
   next: ATSCanonicalApplication;
@@ -408,6 +416,37 @@ function applicationStageChanged(input: {
   }
 
   return input.previous.externalStageId !== input.next.externalStageId;
+}
+
+function refreshLinkedCandidateProfileFromATS(input: {
+  state: RuntimeStoreState;
+  atsApplication: ATSCanonicalApplication | undefined;
+  candidate: ATSCanonicalCandidate;
+}) {
+  const internalCandidateId = input.atsApplication?.internalCandidateId;
+
+  if (!internalCandidateId) {
+    return;
+  }
+
+  input.state.candidates = input.state.candidates.map((candidate) => {
+    if (
+      candidate.id !== internalCandidateId ||
+      candidate.companyId !== input.candidate.companyId ||
+      candidate.source !== "ats"
+    ) {
+      return candidate;
+    }
+
+    return {
+      ...candidate,
+      fullName: input.candidate.fullName,
+      phone: input.candidate.phone ?? "",
+      normalizedPhone: normalizePhone(input.candidate.phone),
+      email: input.candidate.email,
+      normalizedEmail: normalizeEmail(input.candidate.email),
+    };
+  });
 }
 
 type RunATSSyncConnection = RuntimeStoreState["atsConnections"][number];
@@ -573,6 +612,11 @@ export async function runATSSync(
       });
 
       for (const application of applicationsPage.records) {
+        const previousApplication = state.atsExternalApplications.find(
+          (item) =>
+            item.connectionId === connection.id &&
+            item.externalId === application.externalId,
+        );
         const candidate = await adapter.getCandidate({
           connection,
           externalCandidateId: application.externalCandidateId,
@@ -589,6 +633,11 @@ export async function runATSSync(
           if (upsertById(state.atsExternalCandidates, candidateRecord)) {
             result.importedCandidates += 1;
           }
+          refreshLinkedCandidateProfileFromATS({
+            state,
+            atsApplication: previousApplication,
+            candidate: candidateRecord,
+          });
 
           const candidateEvent = buildEvent({
             companyId: input.companyId,
@@ -616,11 +665,6 @@ export async function runATSSync(
           }
         }
 
-        const previousApplication = state.atsExternalApplications.find(
-          (item) =>
-            item.connectionId === connection.id &&
-            item.externalId === application.externalId,
-        );
         const applicationRecord = preserveInternalApplicationLinks({
           previous: previousApplication,
           next: canonicalApplication({

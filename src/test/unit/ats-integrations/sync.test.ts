@@ -228,6 +228,67 @@ describe("ATS sync", () => {
     });
   });
 
+  it("refreshes linked ATS-sourced candidate profiles from provider candidate data", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsExternalApplications.push({
+      id: "ats_application_ats_conn_1_mock_app_ana_store_associate",
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      externalId: "mock_app_ana_store_associate",
+      externalCandidateId: "mock_candidate_ana",
+      externalJobId: "mock_job_store_associate",
+      externalStageId: "mock_stage_breathe_screen",
+      externalUrl:
+        "https://mock.example/applications/mock_app_ana_store_associate",
+      internalCandidateId: "candidate_existing",
+      internalApplicationId: "application_existing",
+      internalJobId: "job_existing",
+      candidateName: "Old Name",
+      candidateEmail: "old@example.com",
+      candidatePhone: "+34999000000",
+      jobTitle: "Store Associate",
+      stageName: "Breathe Screen",
+      stageCategory: "screening",
+      status: "active",
+      externalUpdatedAt: "2026-05-19T08:00:00.000Z",
+      lastSeenAt: "2026-05-19T10:00:00.000Z",
+      rawSnapshot: { providerStageId: "mock_stage_breathe_screen" },
+    });
+    state.candidates.push({
+      id: "candidate_existing",
+      companyId: "company_1",
+      fullName: "Old Name",
+      phone: "+34999000000",
+      normalizedPhone: "+34999000000",
+      email: "old@example.com",
+      normalizedEmail: "old@example.com",
+      linkedinUrl: null,
+      cvAssetRef: null,
+      locale: "es",
+      source: "ats",
+      consentAcceptedAt: null,
+    });
+    await saveRuntimeStoreState(state);
+
+    await runATSSync({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      now: "2026-05-19T11:00:00.000Z",
+    });
+
+    const afterSync = await loadRuntimeStoreState();
+    expect(afterSync.candidates).toHaveLength(1);
+    expect(afterSync.candidates[0]).toMatchObject({
+      fullName: "Ana Martin",
+      email: "ana@example.com",
+      normalizedEmail: "ana@example.com",
+      phone: "+34600000000",
+      normalizedPhone: "+34600000000",
+      source: "ats",
+    });
+  });
+
   it("auto-processes workflow requests when the trigger rule does not require approval", async () => {
     const state = await loadRuntimeStoreState();
     state.jobs.push({
