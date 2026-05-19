@@ -19,7 +19,10 @@ import {
   type RuntimeStoreState,
 } from "@/lib/db/runtime-store";
 import { evaluateATSTriggerRules } from "@/lib/ats-integrations/triggers";
-import { buildATSWorkflowRequestsForEvent } from "@/lib/ats-integrations/workflow-requests";
+import {
+  buildATSWorkflowRequestsForEvent,
+  processATSWorkflowRequest,
+} from "@/lib/ats-integrations/workflow-requests";
 
 export type RunATSSyncResult = {
   importedJobs: number;
@@ -157,6 +160,7 @@ function appendWorkflowRequestsForEvent(input: {
   state: RuntimeStoreState;
   event: ATSSyncEvent;
   now: string;
+  autoProcessWorkflowRequestIds: string[];
 }) {
   if (input.event.externalObjectType !== "application") {
     return 0;
@@ -191,6 +195,9 @@ function appendWorkflowRequestsForEvent(input: {
     }
 
     input.state.atsWorkflowRequests.push(request);
+    if (!request.requiresRecruiterApproval) {
+      input.autoProcessWorkflowRequestIds.push(request.id);
+    }
     createdCount += 1;
   }
 
@@ -424,6 +431,7 @@ export async function runATSSync(
       createdEvents: 0,
       createdWorkflowRequests: 0,
     };
+    const autoProcessWorkflowRequestIds: string[] = [];
 
     let jobsCursor: string | null = getStoredSyncCursor({
       state,
@@ -473,6 +481,7 @@ export async function runATSSync(
             state,
             event: jobEvent,
             now: input.now,
+            autoProcessWorkflowRequestIds,
           });
         }
 
@@ -563,6 +572,7 @@ export async function runATSSync(
               state,
               event: candidateEvent,
               now: input.now,
+              autoProcessWorkflowRequestIds,
             });
           }
         }
@@ -626,6 +636,7 @@ export async function runATSSync(
               state,
               event: stageChangedEvent,
               now: input.now,
+              autoProcessWorkflowRequestIds,
             });
           }
         }
@@ -651,6 +662,7 @@ export async function runATSSync(
             state,
             event: applicationSeenEvent,
             now: input.now,
+            autoProcessWorkflowRequestIds,
           });
         }
       }
@@ -682,6 +694,14 @@ export async function runATSSync(
     );
 
     await saveRuntimeStoreState(state);
+
+    for (const workflowRequestId of autoProcessWorkflowRequestIds) {
+      await processATSWorkflowRequest({
+        workflowRequestId,
+        now: input.now,
+        approved: true,
+      });
+    }
 
     return result;
   } catch (error) {

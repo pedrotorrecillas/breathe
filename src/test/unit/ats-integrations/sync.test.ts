@@ -155,6 +155,64 @@ describe("ATS sync", () => {
     });
   });
 
+  it("auto-processes workflow requests when the trigger rule does not require approval", async () => {
+    const state = await loadRuntimeStoreState();
+    state.jobs.push({
+      id: "job_1",
+      companyId: "company_1",
+      title: "Store Associate",
+      summary: "Retail role",
+      location: "Madrid",
+      status: "active",
+      interviewLanguage: "es",
+      createdAt: "2026-05-19T09:00:00.000Z",
+      publishedAt: "2026-05-19T09:00:00.000Z",
+      expiresAt: null,
+      publicApplyPath: "/apply/job_1",
+      pipeline: {
+        applicants: 0,
+        interviewed: 0,
+        shortlisted: 0,
+        hired: 0,
+        rejected: 0,
+      },
+      requirements: [],
+      interviewLimits: {
+        maxInterviews: null,
+        outstandingCap: null,
+        greatCap: null,
+      },
+    });
+    state.atsTriggerRules = state.atsTriggerRules.map((rule) => ({
+      ...rule,
+      actions: ["import_candidate", "prepare_interview", "queue_interview"],
+      requiresRecruiterApproval: false,
+    }));
+    await saveRuntimeStoreState(state);
+
+    const result = await runATSSync({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      now: "2026-05-19T11:00:00.000Z",
+    });
+
+    expect(result.createdWorkflowRequests).toBe(1);
+    const afterSync = await loadRuntimeStoreState();
+    expect(afterSync.atsWorkflowRequests[0]).toMatchObject({
+      status: "completed",
+      internalCandidateId: expect.any(String),
+      internalApplicationId: expect.any(String),
+    });
+    expect(afterSync.candidates).toHaveLength(1);
+    expect(afterSync.applications).toHaveLength(1);
+    expect(afterSync.interviewPreparationPackages).toHaveLength(1);
+    expect(afterSync.interviewRuns).toHaveLength(1);
+    expect(afterSync.interviewRuns[0]).toMatchObject({
+      status: "queued",
+      provider: "happyrobot",
+    });
+  });
+
   it("marks the connection as errored when provider sync fails", async () => {
     const state = await loadRuntimeStoreState();
     state.atsConnections = state.atsConnections.map((connection) =>
