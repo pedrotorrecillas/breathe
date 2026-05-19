@@ -731,6 +731,16 @@ export async function saveATSConnectionStatusAction(
       throw new Error("ATS connection not found.");
     }
 
+    if (
+      status === "active" &&
+      connection.status !== "paused" &&
+      connection.status !== "active"
+    ) {
+      throw new Error(
+        "Test the ATS connection before reactivating an errored connection.",
+      );
+    }
+
     state.atsConnections = state.atsConnections.map((item) =>
       item.id === connection.id
         ? {

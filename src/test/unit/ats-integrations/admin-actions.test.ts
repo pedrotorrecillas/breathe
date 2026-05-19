@@ -1126,6 +1126,26 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("requires testing an errored connection before reactivating it", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsConnections[0].status = "error";
+    state.atsConnections[0].lastError =
+      "ZOHO_RECRUIT_ACCESS_TOKEN is required.";
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { saveATSConnectionStatusAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("status", "active");
+
+    await expect(saveATSConnectionStatusAction(formData)).rejects.toThrow(
+      "Test the ATS connection before reactivating an errored connection.",
+    );
+    expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
+    expect(mockAppendAuditEvent).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
   it("rejects webhook sync mode when the adapter does not support webhooks", async () => {
     mockAdapterCapabilities = {
       ...mockAdapterCapabilities,
