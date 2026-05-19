@@ -27,6 +27,14 @@ describe("ATS writeback queue", () => {
       lastError: null,
       createdAt: "2026-05-19T10:00:00.000Z",
       updatedAt: "2026-05-19T10:00:00.000Z",
+      writebackPolicy: {
+        reportMode: "candidate_note",
+        moveToExternalStageId: null,
+        stageMoveMappings: {
+          interviewed: "mock_stage_interview_completed",
+        },
+        requiresRecruiterReview: false,
+      },
     });
     await saveRuntimeStoreState(state);
   });
@@ -163,6 +171,18 @@ describe("ATS writeback queue", () => {
       lastSeenAt: "2026-05-19T10:00:00.000Z",
       rawSnapshot: {},
     });
+    state.applications.push({
+      id: "app_1",
+      companyId: "company_1",
+      candidateId: "candidate_1",
+      jobId: "job_1",
+      source: "ats",
+      stage: "applicant",
+      submittedAt: "2026-05-19T10:00:00.000Z",
+      needsHumanReviewAt: null,
+      legalAcceptance: null,
+      recruiterOutcomeNote: null,
+    });
     await saveRuntimeStoreState(state);
 
     const queued = await enqueueATSWriteback({
@@ -195,6 +215,9 @@ describe("ATS writeback queue", () => {
         previousExternalStageId: "mock_stage_breathe_screen",
         writebackActionId: queued.id,
       }),
+    });
+    expect(after.applications[0]).toMatchObject({
+      stage: "interviewed",
     });
   });
 

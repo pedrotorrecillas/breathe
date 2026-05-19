@@ -9,6 +9,7 @@ import type {
   ATSStageCategory,
 } from "@/domain/ats-integrations/types";
 import { getATSAdapter } from "@/lib/ats-integrations/registry";
+import { internalStageForExternalStage } from "@/lib/ats-integrations/stage-mappings";
 import {
   loadRuntimeStoreState,
   saveRuntimeStoreState,
@@ -74,6 +75,7 @@ function writebackAttemptId(input: {
 
 function updateCanonicalApplicationAfterStageMove(input: {
   state: RuntimeStoreState;
+  connection: ATSConnection;
   action: ATSWritebackAction;
   now: string;
 }) {
@@ -85,8 +87,14 @@ function updateCanonicalApplicationAfterStageMove(input: {
     return;
   }
 
-  input.state.atsExternalApplications =
-    input.state.atsExternalApplications.map((application) => {
+  const mappedInternalStage = internalStageForExternalStage({
+    connection: input.connection,
+    externalStageId: input.action.targetExternalStageId,
+  });
+  let linkedInternalApplicationId: string | null = null;
+
+  input.state.atsExternalApplications = input.state.atsExternalApplications.map(
+    (application) => {
       if (
         application.companyId !== input.action.companyId ||
         application.connectionId !== input.action.connectionId ||
@@ -107,6 +115,7 @@ function updateCanonicalApplicationAfterStageMove(input: {
       const stageName = targetStage?.name ?? input.action.targetExternalStageId;
       const stageCategory: ATSStageCategory =
         targetStage?.category ?? application.stageCategory;
+      linkedInternalApplicationId = application.internalApplicationId;
 
       return {
         ...application,
@@ -122,7 +131,24 @@ function updateCanonicalApplicationAfterStageMove(input: {
           writebackUpdatedAt: input.now,
         },
       };
-    });
+    },
+  );
+
+  if (mappedInternalStage && linkedInternalApplicationId) {
+    input.state.applications = input.state.applications.map((application) =>
+      application.id === linkedInternalApplicationId &&
+      application.companyId === input.action.companyId
+        ? {
+            ...application,
+            stage: mappedInternalStage,
+            needsHumanReviewAt:
+              mappedInternalStage === "needs_human"
+                ? (application.needsHumanReviewAt ?? input.now)
+                : application.needsHumanReviewAt,
+          }
+        : application,
+    );
+  }
 }
 
 export async function enqueueATSWriteback(
@@ -246,6 +272,7 @@ export async function processATSWritebackActionInState(input: {
   if (providerResult.status === "succeeded") {
     updateCanonicalApplicationAfterStageMove({
       state,
+      connection,
       action,
       now: input.now,
     });
