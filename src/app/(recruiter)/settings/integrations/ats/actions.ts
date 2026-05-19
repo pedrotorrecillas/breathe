@@ -557,6 +557,12 @@ export async function configureZohoDemoDefaultsAction(
     });
     await saveRuntimeStoreState(state);
     if (connection.status === "active") {
+      await runATSSync({
+        companyId: recruiter.company.id,
+        connectionId: connection.id,
+        now,
+      });
+
       for (const workflowRequestId of autoProcessWorkflowRequestIds) {
         await processATSWorkflowRequest({
           workflowRequestId,

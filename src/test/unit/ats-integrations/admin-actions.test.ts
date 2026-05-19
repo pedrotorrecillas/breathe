@@ -11,6 +11,7 @@ const mockRevalidatePath = vi.fn();
 const mockProcessATSWorkflowRequest = vi.fn();
 const mockProcessATSWritebackAction = vi.fn();
 const mockValidateConnection = vi.fn();
+const mockRunATSSync = vi.fn();
 let mockAdapterCapabilities = {
   supportsWebhooks: true,
   supportsPolling: true,
@@ -48,6 +49,10 @@ vi.mock("@/lib/db/runtime-store", () => ({
 vi.mock("@/lib/ats-integrations/workflow-requests", () => ({
   processATSWorkflowRequest: (...args: unknown[]) =>
     mockProcessATSWorkflowRequest(...args),
+}));
+
+vi.mock("@/lib/ats-integrations/sync", () => ({
+  runATSSync: (...args: unknown[]) => mockRunATSSync(...args),
 }));
 
 vi.mock("@/lib/ats-integrations/writeback", () => ({
@@ -178,6 +183,14 @@ describe("ATS admin actions", () => {
       ok: true,
       externalAccountId: "mock_account_verified",
       message: "Mock ATS connection is available.",
+    });
+    mockRunATSSync.mockResolvedValue({
+      importedJobs: 1,
+      importedCandidates: 1,
+      importedApplications: 1,
+      importedStages: 6,
+      createdEvents: 3,
+      createdWorkflowRequests: 1,
     });
   });
 
@@ -368,6 +381,25 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("runs an initial Zoho sync after configuring demo defaults with validated credentials", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "zoho-token");
+    const { configureZohoDemoDefaultsAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+
+    await configureZohoDemoDefaultsAction(new FormData());
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    const zohoConnection = savedState.atsConnections.find(
+      (connection: { provider: string }) =>
+        connection.provider === "zoho_recruit",
+    );
+    expect(mockRunATSSync).toHaveBeenCalledWith({
+      companyId: "company_1",
+      connectionId: zohoConnection.id,
+      now: expect.any(String),
+    });
+  });
+
   it("backfills and auto-processes existing Zoho demo applications when configuring defaults", async () => {
     vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "zoho-token");
     const state = await mockLoadRuntimeStoreState();
@@ -510,6 +542,7 @@ describe("ATS admin actions", () => {
       requiresRecruiterApproval: false,
       status: "queued",
     });
+    expect(mockRunATSSync).not.toHaveBeenCalled();
     expect(mockProcessATSWorkflowRequest).not.toHaveBeenCalled();
   });
 
@@ -593,6 +626,7 @@ describe("ATS admin actions", () => {
       requiresRecruiterApproval: false,
       status: "queued",
     });
+    expect(mockRunATSSync).not.toHaveBeenCalled();
     expect(mockProcessATSWorkflowRequest).not.toHaveBeenCalled();
     expect(mockAppendAuditEvent).toHaveBeenCalledWith(
       expect.objectContaining({
