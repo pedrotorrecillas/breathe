@@ -98,7 +98,8 @@ describe("ATS sync", () => {
       externalCandidateId: "mock_candidate_ana",
       externalJobId: "mock_job_store_associate",
       externalStageId: "mock_stage_new",
-      externalUrl: "https://mock.example/applications/mock_app_ana_store_associate",
+      externalUrl:
+        "https://mock.example/applications/mock_app_ana_store_associate",
       internalCandidateId: "candidate_existing",
       internalApplicationId: "application_existing",
       internalJobId: "job_existing",
@@ -151,6 +152,38 @@ describe("ATS sync", () => {
       internalCandidateId: "candidate_existing",
       internalApplicationId: "application_existing",
       internalJobId: "job_existing",
+    });
+  });
+
+  it("marks the connection as errored when provider sync fails", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsConnections = state.atsConnections.map((connection) =>
+      connection.id === "ats_conn_1"
+        ? {
+            ...connection,
+            provider: "recruitee",
+            displayName: "Recruitee",
+            lastError: null,
+          }
+        : connection,
+    );
+    await saveRuntimeStoreState(state);
+
+    await expect(
+      runATSSync({
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        now: "2026-05-19T11:00:00.000Z",
+      }),
+    ).rejects.toThrow("ATS provider recruitee is not implemented yet.");
+
+    const afterFailure = await loadRuntimeStoreState();
+    expect(afterFailure.atsConnections[0]).toMatchObject({
+      id: "ats_conn_1",
+      status: "error",
+      lastSyncAt: null,
+      lastError: "ATS provider recruitee is not implemented yet.",
+      updatedAt: "2026-05-19T11:00:00.000Z",
     });
   });
 });
