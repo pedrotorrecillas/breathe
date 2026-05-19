@@ -442,7 +442,7 @@ export async function configureZohoDemoDefaultsAction(
       companyId: recruiter.company.id,
       now,
     });
-    const connection = existingConnection
+    let connection = existingConnection
       ? {
           ...existingConnection,
           status: defaultConnection.status,
@@ -456,6 +456,34 @@ export async function configureZohoDemoDefaultsAction(
           ...defaultConnection,
           writebackPolicy: zohoDemoWritebackPolicy,
         };
+    if (connection.status === "active") {
+      const adapter = getATSAdapter(connection.provider);
+      const check = await adapter
+        .validateConnection({ connection })
+        .catch((error: unknown) => ({
+          ok: false,
+          externalAccountId: null,
+          message:
+            error instanceof Error
+              ? error.message
+              : "ATS provider validation failed.",
+        }));
+
+      connection = {
+        ...connection,
+        status: check.ok ? "active" : "error",
+        externalAccountId:
+          check.externalAccountId ?? connection.externalAccountId,
+        lastError: check.ok ? null : check.message,
+      };
+    }
+
+    const credentialStatus =
+      defaultConnection.status === "active"
+        ? connection.status === "active"
+          ? "validated"
+          : "invalid"
+        : "missing";
     const rule = {
       id: buildTriggerRuleId({
         connectionId: connection.id,
@@ -522,7 +550,7 @@ export async function configureZohoDemoDefaultsAction(
       summary: "Configured Zoho Recruit demo ATS defaults.",
       metadata: {
         provider: connection.provider,
-        credentialStatus: connection.status === "active" ? "present" : "missing",
+        credentialStatus,
         triggerStage: zohoDemoTriggerStageId,
         writebackStage: zohoDemoWritebackStageId,
       },

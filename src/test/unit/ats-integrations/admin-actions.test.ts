@@ -513,6 +513,97 @@ describe("ATS admin actions", () => {
     expect(mockProcessATSWorkflowRequest).not.toHaveBeenCalled();
   });
 
+  it("does not auto-process Zoho demo backfills when configured credentials fail validation", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "bad-token");
+    mockValidateConnection.mockRejectedValue(
+      new Error("Zoho Recruit request failed with 401."),
+    );
+    const state = await mockLoadRuntimeStoreState();
+    state.atsConnections.push({
+      id: "ats_conn_zoho",
+      companyId: "company_1",
+      provider: "zoho_recruit",
+      status: "active",
+      displayName: "Zoho Recruit demo",
+      authMode: "env_token",
+      secretRef: "env:ZOHO_RECRUIT_ACCESS_TOKEN",
+      externalAccountId: "zoho_demo",
+      lastSyncAt: "2026-05-19T10:00:00.000Z",
+      lastError: null,
+      createdAt: "2026-05-19T10:00:00.000Z",
+      updatedAt: "2026-05-19T10:00:00.000Z",
+    });
+    state.atsExternalApplications = [
+      {
+        id: "ats_application_zoho",
+        companyId: "company_1",
+        connectionId: "ats_conn_zoho",
+        provider: "zoho_recruit",
+        externalId: "58431000000054321:58431000000012345",
+        externalCandidateId: "58431000000054321",
+        externalJobId: "58431000000012345",
+        externalStageId: "Breathe Screen",
+        externalUrl: null,
+        internalCandidateId: null,
+        internalApplicationId: null,
+        internalJobId: null,
+        candidateName: "Ana Martin",
+        candidateEmail: "ana@example.com",
+        candidatePhone: "+34600000000",
+        jobTitle: "Store Associate",
+        stageName: "Breathe Screen",
+        stageCategory: "screening",
+        status: "active",
+        externalUpdatedAt: "2026-05-19T10:05:00.000Z",
+        lastSeenAt: "2026-05-19T10:05:00.000Z",
+        rawSnapshot: { Candidate_Status: "Breathe Screen" },
+      },
+    ];
+    state.atsSyncEvents = [];
+    state.atsWorkflowRequests = [];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { configureZohoDemoDefaultsAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+
+    await configureZohoDemoDefaultsAction(new FormData());
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    const zohoConnection = savedState.atsConnections.find(
+      (connection: { id: string }) => connection.id === "ats_conn_zoho",
+    );
+    expect(mockValidateConnection).toHaveBeenCalledWith({
+      connection: expect.objectContaining({
+        id: "ats_conn_zoho",
+        provider: "zoho_recruit",
+        status: "active",
+      }),
+    });
+    expect(zohoConnection).toMatchObject({
+      status: "error",
+      lastError: "Zoho Recruit request failed with 401.",
+      writebackPolicy: {
+        reportMode: "candidate_note",
+        moveToExternalStageId: "Interview Completed",
+      },
+    });
+    expect(savedState.atsWorkflowRequests).toHaveLength(1);
+    expect(savedState.atsWorkflowRequests[0]).toMatchObject({
+      connectionId: "ats_conn_zoho",
+      provider: "zoho_recruit",
+      requiresRecruiterApproval: false,
+      status: "queued",
+    });
+    expect(mockProcessATSWorkflowRequest).not.toHaveBeenCalled();
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ats.zoho_demo_configured",
+        metadata: expect.objectContaining({
+          credentialStatus: "invalid",
+        }),
+      }),
+    );
+  });
+
   it("saves configurable trigger actions and recruiter approval", async () => {
     const { saveATSTriggerRuleAction } =
       await import("@/app/(recruiter)/settings/integrations/ats/actions");
