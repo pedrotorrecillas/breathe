@@ -82,6 +82,20 @@ function latestWritebackAttempt(input: {
     )[0];
 }
 
+function applicationStageLabel(
+  application: ATSAdminSnapshot["externalApplications"][number],
+) {
+  if (application.jobTitle && application.stageName) {
+    return `${application.jobTitle} · ${application.stageName}`;
+  }
+
+  if (application.jobTitle) {
+    return application.jobTitle;
+  }
+
+  return application.stageName ?? application.externalStageId ?? "No stage";
+}
+
 const defaultWritebackPolicy = {
   reportMode: "candidate_note",
   moveToExternalStageId: null,
@@ -277,6 +291,56 @@ export function ATSSettingsWorkspace({
               </div>
             );
           })}
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="ops-kicker text-slate-500">Imported candidates</p>
+            <h2 className="mt-2 text-lg font-semibold text-slate-950">
+              Imported ATS applications
+            </h2>
+          </div>
+          <span className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600">
+            {snapshot.externalApplications.length} synced
+          </span>
+        </div>
+        <div className="mt-4 grid gap-3">
+          {snapshot.externalApplications.length ? (
+            snapshot.externalApplications.map((application) => (
+              <div
+                key={application.id}
+                className="flex items-center justify-between gap-4 rounded-md border border-slate-200 px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-slate-950">
+                    {application.candidateName}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {applicationStageLabel(application)}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {providerLabel(
+                      snapshot.availableProviders,
+                      application.provider,
+                    )}{" "}
+                    · {application.externalId}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600">
+                  {application.internalCandidateId
+                    ? "Linked to Breathe candidate"
+                    : "External only"}
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-slate-600">
+              No imported ATS applications yet. Run a sync to populate this
+              list.
+            </p>
+          )}
         </div>
       </section>
 

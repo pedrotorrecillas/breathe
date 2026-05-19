@@ -94,6 +94,32 @@ function buildATSSnapshot() {
         rawSnapshot: {},
       },
     ],
+    externalApplications: [
+      {
+        id: "ats_app_1",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalId: "mock_app_ana",
+        externalCandidateId: "mock_candidate_ana",
+        externalJobId: "mock_job_store_associate",
+        externalStageId: "mock_stage_breathe_screen",
+        externalUrl: null,
+        internalCandidateId: "candidate_1",
+        internalApplicationId: "application_1",
+        internalJobId: "job_1",
+        candidateName: "Ana Gomez",
+        candidateEmail: "ana@example.com",
+        candidatePhone: null,
+        jobTitle: "Store Associate",
+        stageName: "Breathe Screen",
+        stageCategory: "screening",
+        status: "active",
+        externalUpdatedAt: null,
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ],
     availableProviders: [
       {
         provider: "mock_ats",
@@ -218,6 +244,12 @@ describe("ATS settings page", () => {
       "mock_stage_breathe_screen",
     );
     expect(screen.getByRole("button", { name: /^Test$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /Imported ATS applications/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Ana Gomez/i)).toBeInTheDocument();
+    expect(screen.getByText(/Store Associate · Breathe Screen/i)).toBeInTheDocument();
+    expect(screen.getByText(/Linked to Breathe candidate/i)).toBeInTheDocument();
   });
 
   it("does not offer candidate note writeback when the selected provider does not support notes", async () => {

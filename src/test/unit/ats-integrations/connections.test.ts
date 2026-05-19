@@ -78,6 +78,56 @@ describe("ATS admin snapshot", () => {
         rawSnapshot: {},
       },
     );
+    state.atsExternalApplications.push(
+      {
+        id: "ats_app_1",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalId: "mock_app_ana",
+        externalCandidateId: "mock_candidate_ana",
+        externalJobId: "mock_job_store_associate",
+        externalStageId: "mock_stage_breathe_screen",
+        externalUrl: null,
+        internalCandidateId: "candidate_1",
+        internalApplicationId: "application_1",
+        internalJobId: "job_1",
+        candidateName: "Ana Gomez",
+        candidateEmail: "ana@example.com",
+        candidatePhone: null,
+        jobTitle: "Store Associate",
+        stageName: "Breathe Screen",
+        stageCategory: "screening",
+        status: "active",
+        externalUpdatedAt: null,
+        lastSeenAt: "2026-05-19T10:01:00.000Z",
+        rawSnapshot: {},
+      },
+      {
+        id: "ats_app_other_company",
+        companyId: "company_2",
+        connectionId: "ats_conn_2",
+        provider: "mock_ats",
+        externalId: "mock_app_other",
+        externalCandidateId: "mock_candidate_other",
+        externalJobId: "mock_job_other",
+        externalStageId: "mock_stage_other",
+        externalUrl: null,
+        internalCandidateId: null,
+        internalApplicationId: null,
+        internalJobId: null,
+        candidateName: "Other Candidate",
+        candidateEmail: null,
+        candidatePhone: null,
+        jobTitle: "Other Company Job",
+        stageName: "Other Company Stage",
+        stageCategory: "screening",
+        status: "active",
+        externalUpdatedAt: null,
+        lastSeenAt: "2026-05-19T10:01:00.000Z",
+        rawSnapshot: {},
+      },
+    );
     await saveRuntimeStoreState(state);
 
     const snapshot = await getATSAdminSnapshot(recruiter);
@@ -91,6 +141,14 @@ describe("ATS admin snapshot", () => {
     expect(snapshot.externalStages[0]).toMatchObject({
       externalId: "mock_stage_breathe_screen",
       name: "Breathe Screen",
+    });
+    expect(snapshot.externalApplications).toHaveLength(1);
+    expect(snapshot.externalApplications[0]).toMatchObject({
+      externalId: "mock_app_ana",
+      candidateName: "Ana Gomez",
+      jobTitle: "Store Associate",
+      stageName: "Breathe Screen",
+      internalCandidateId: "candidate_1",
     });
   });
 });

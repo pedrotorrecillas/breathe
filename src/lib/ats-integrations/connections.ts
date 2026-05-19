@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import type {
+  ATSCanonicalApplication,
   ATSCanonicalJob,
   ATSCanonicalStage,
   ATSConnection,
@@ -30,6 +31,7 @@ export type ATSAdminSnapshot = {
   writebackAttempts: ATSWritebackAttempt[];
   externalJobs: ATSCanonicalJob[];
   externalStages: ATSCanonicalStage[];
+  externalApplications: ATSCanonicalApplication[];
   availableProviders: ATSAvailableProvider[];
 };
 
@@ -95,6 +97,9 @@ export async function getATSAdminSnapshot(
     ),
     externalStages: state.atsExternalStages.filter(
       (stage) => stage.companyId === companyId,
+    ),
+    externalApplications: state.atsExternalApplications.filter(
+      (application) => application.companyId === companyId,
     ),
     availableProviders: listATSAvailableProviders(),
   };
