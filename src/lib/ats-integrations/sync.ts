@@ -845,13 +845,13 @@ export async function runATSSync(
 
           if (appendSyncEventOnce(state, stageChangedEvent)) {
             result.createdEvents += 1;
-            applyMappedATSStageToLinkedApplication({
-              state,
-              connection,
-              atsApplication: applicationRecord,
-              externalStageId: application.externalStageId,
-            });
             if (applicationCanTriggerWorkflow) {
+              applyMappedATSStageToLinkedApplication({
+                state,
+                connection,
+                atsApplication: applicationRecord,
+                externalStageId: application.externalStageId,
+              });
               result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
                 state,
                 event: stageChangedEvent,
