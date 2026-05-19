@@ -200,6 +200,32 @@ describe("ATS workflow request processing", () => {
     });
   });
 
+  it("does not process approved workflow requests when the ATS connection is missing", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsConnections = [];
+    await saveRuntimeStoreState(state);
+
+    await expect(
+      processATSWorkflowRequest({
+        workflowRequestId: "ats_workflow_1",
+        now: "2026-05-19T10:03:00.000Z",
+        approved: true,
+      }),
+    ).rejects.toThrow("ATS connection not found for workflow request.");
+
+    const after = await loadRuntimeStoreState();
+    expect(after.candidates).toHaveLength(0);
+    expect(after.applications).toHaveLength(0);
+    expect(after.interviewPreparationPackages).toHaveLength(0);
+    expect(after.interviewRuns).toHaveLength(0);
+    expect(after.atsWorkflowRequests[0]).toMatchObject({
+      status: "queued",
+      internalCandidateId: null,
+      internalApplicationId: null,
+      updatedAt: "2026-05-19T10:01:00.000Z",
+    });
+  });
+
   it("skips approved workflow requests when the ATS application was archived before processing", async () => {
     const state = await loadRuntimeStoreState();
     state.atsExternalApplications[0] = {
