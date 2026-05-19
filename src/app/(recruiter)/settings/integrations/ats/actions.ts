@@ -6,6 +6,7 @@ import { appendAuditEvent } from "@/lib/audit/log";
 import type {
   ATSSyncMode,
   ATSTriggerAction,
+  ATSWorkflowRequest,
   ATSWritebackPolicy,
 } from "@/domain/ats-integrations/types";
 import { requireAuthenticatedRecruiter } from "@/lib/auth/server";
@@ -457,6 +458,7 @@ export async function saveATSTriggerRuleAction(
 
     state.atsWorkflowRequests = state.atsWorkflowRequests ?? [];
     state.atsSyncEvents = state.atsSyncEvents ?? [];
+    const autoProcessWorkflowRequestIds: string[] = [];
 
     const matchingApplications = (state.atsExternalApplications ?? []).filter(
       (application) =>
@@ -520,7 +522,7 @@ export async function saveATSTriggerRuleAction(
         );
       }
 
-      state.atsWorkflowRequests.push({
+      const workflowRequest: ATSWorkflowRequest = {
         id: `ats_workflow_${syncEvent.id}_${rule.id}`,
         companyId: rule.companyId,
         connectionId: rule.connectionId,
@@ -535,7 +537,12 @@ export async function saveATSTriggerRuleAction(
         status: "queued",
         createdAt: now,
         updatedAt: now,
-      });
+      };
+
+      state.atsWorkflowRequests.push(workflowRequest);
+      if (!workflowRequest.requiresRecruiterApproval) {
+        autoProcessWorkflowRequestIds.push(workflowRequest.id);
+      }
     }
 
     appendAuditEvent({
@@ -551,6 +558,13 @@ export async function saveATSTriggerRuleAction(
       },
     });
     await saveRuntimeStoreState(state);
+    for (const workflowRequestId of autoProcessWorkflowRequestIds) {
+      await processATSWorkflowRequest({
+        workflowRequestId,
+        now,
+        approved: true,
+      });
+    }
     revalidatePath("/settings/integrations/ats");
   } catch (error) {
     throw new Error(

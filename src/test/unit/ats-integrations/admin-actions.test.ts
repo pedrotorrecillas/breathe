@@ -291,6 +291,58 @@ describe("ATS admin actions", () => {
     });
   });
 
+  it("auto-processes backfilled workflow requests when recruiter approval is disabled", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsWorkflowRequests = [];
+    state.atsExternalApplications = [
+      {
+        id: "ats_app_imported",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalId: "mock_app_imported",
+        externalCandidateId: "mock_candidate_ana",
+        externalJobId: "mock_job_1",
+        externalStageId: "mock_stage_screen",
+        externalUrl: null,
+        internalCandidateId: null,
+        internalApplicationId: null,
+        internalJobId: null,
+        candidateName: "Ana Martin",
+        candidateEmail: "ana@example.com",
+        candidatePhone: "+34600000000",
+        jobTitle: "Store Associate",
+        stageName: "Screen",
+        stageCategory: "screening",
+        status: "active",
+        externalUpdatedAt: "2026-05-19T10:00:00.000Z",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { saveATSTriggerRuleAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("externalStageId", "mock_stage_screen");
+    formData.append("actions", "import_candidate");
+
+    await saveATSTriggerRuleAction(formData);
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsWorkflowRequests).toHaveLength(1);
+    expect(savedState.atsWorkflowRequests[0]).toMatchObject({
+      requiresRecruiterApproval: false,
+      status: "queued",
+    });
+    expect(mockProcessATSWorkflowRequest).toHaveBeenCalledWith({
+      workflowRequestId: savedState.atsWorkflowRequests[0].id,
+      now: expect.any(String),
+      approved: true,
+    });
+  });
+
   it("keeps separate trigger rules for the same stage on different external jobs", async () => {
     const state = await mockLoadRuntimeStoreState();
     state.atsTriggerRules = [
