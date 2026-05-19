@@ -144,6 +144,15 @@ function resultFromZohoWritebackResponse(
   };
 }
 
+function terminalWritebackError(errorMessage: string): ATSWritebackResult {
+  return {
+    status: "terminal_error",
+    providerStatusCode: null,
+    providerResponse: {},
+    errorMessage,
+  };
+}
+
 export const zohoRecruitAdapter: ATSAdapter = {
   provider: "zoho_recruit",
   capabilities: {
@@ -286,6 +295,18 @@ export const zohoRecruitAdapter: ATSAdapter = {
     const action = input.action;
 
     if (action.actionType === "application_stage_move") {
+      if (!action.targetExternalCandidateId) {
+        return terminalWritebackError(
+          "Zoho Recruit stage move requires targetExternalCandidateId.",
+        );
+      }
+
+      if (!action.targetExternalStageId) {
+        return terminalWritebackError(
+          "Zoho Recruit stage move requires targetExternalStageId.",
+        );
+      }
+
       const response = await client.request<Record<string, unknown>>(
         "/recruit/v2/Candidates/status",
         {
@@ -303,6 +324,12 @@ export const zohoRecruitAdapter: ATSAdapter = {
       action.actionType === "candidate_note" ||
       action.actionType === "status_comment"
     ) {
+      if (!action.targetExternalCandidateId) {
+        return terminalWritebackError(
+          "Zoho Recruit writeback requires targetExternalCandidateId.",
+        );
+      }
+
       const response = await client.request<Record<string, unknown>>(
         "/recruit/v2/Notes",
         {
