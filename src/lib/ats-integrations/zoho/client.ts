@@ -81,7 +81,10 @@ async function refreshZohoRecruitAccessToken(config: ZohoRecruitConfig) {
     );
   }
 
-  return tokenResponse.access_token;
+  return {
+    accessToken: tokenResponse.access_token,
+    apiBaseUrl: tokenResponse.api_domain ?? config.apiBaseUrl,
+  };
 }
 
 export function createZohoRecruitClient(
@@ -89,12 +92,17 @@ export function createZohoRecruitClient(
   config = getZohoRecruitConfigFromEnv(),
 ): ZohoRecruitClient {
   let accessToken = config.accessToken;
+  let apiBaseUrl = config.apiBaseUrl;
 
   return {
     async request<TResponse>(path: string, init?: RequestInit) {
-      accessToken ??= await refreshZohoRecruitAccessToken(config);
+      if (!accessToken) {
+        const refreshedToken = await refreshZohoRecruitAccessToken(config);
+        accessToken = refreshedToken.accessToken;
+        apiBaseUrl = refreshedToken.apiBaseUrl;
+      }
 
-      const response = await fetch(joinUrl(config.apiBaseUrl, path), {
+      const response = await fetch(joinUrl(apiBaseUrl, path), {
         ...init,
         headers: {
           Accept: "application/json",

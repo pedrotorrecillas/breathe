@@ -50,7 +50,7 @@ describe("Zoho Recruit client", () => {
       clientId: "client_id",
       clientSecret: "client_secret",
       accountsBaseUrl: "https://accounts.zoho.eu",
-      apiBaseUrl: "https://recruit.zoho.eu",
+      apiBaseUrl: "https://recruit.zoho.com",
     });
 
     await client.request("/recruit/v2/Job_Openings?per_page=1", {
