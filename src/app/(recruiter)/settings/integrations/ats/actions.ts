@@ -47,6 +47,20 @@ const atsInternalStageKeys: ATSInternalStageKey[] = [
   "needs_human",
 ];
 
+const zohoDemoTriggerStageId = "Breathe Screen";
+const zohoDemoWritebackStageId = "Interview Completed";
+const zohoDemoWritebackPolicy: ATSWritebackPolicy = {
+  reportMode: "candidate_note",
+  moveToExternalStageId: zohoDemoWritebackStageId,
+  stageMoveMappings: {
+    interviewed: "Interview Completed",
+    shortlisted: "Shortlisted",
+    hired: "Hired",
+    rejected: "Rejected",
+  },
+  requiresRecruiterReview: false,
+};
+
 function requireATSAdmin(canManage: boolean) {
   if (!canManage) {
     throw new Error("Only admins and owners can manage ATS integrations.");
@@ -206,6 +220,116 @@ export async function createZohoEnvConnectionAction(
       error instanceof Error
         ? error.message
         : "Could not create ATS connection.",
+    );
+  }
+}
+
+export async function configureZohoDemoDefaultsAction(
+  formData: FormData,
+): Promise<void> {
+  void formData;
+
+  try {
+    const recruiter = await requireAuthenticatedRecruiter();
+    requireATSAdmin(recruiterCanManageTeams(recruiter));
+    const state = await loadRuntimeStoreState();
+    const now = new Date().toISOString();
+    const existingConnection =
+      state.atsConnections.find(
+        (connection) =>
+          connection.companyId === recruiter.company.id &&
+          connection.provider === "zoho_recruit",
+      ) ?? null;
+    const defaultConnection = buildDefaultZohoDemoConnection({
+      companyId: recruiter.company.id,
+      now,
+    });
+    const connection = existingConnection
+      ? {
+          ...existingConnection,
+          status: defaultConnection.status,
+          syncMode: "manual" as const,
+          secretRef: defaultConnection.secretRef,
+          lastError: defaultConnection.lastError,
+          writebackPolicy: zohoDemoWritebackPolicy,
+          updatedAt: now,
+        }
+      : {
+          ...defaultConnection,
+          writebackPolicy: zohoDemoWritebackPolicy,
+        };
+    const rule = {
+      id: buildTriggerRuleId({
+        connectionId: connection.id,
+        externalJobId: null,
+        externalStageId: zohoDemoTriggerStageId,
+      }),
+      companyId: recruiter.company.id,
+      connectionId: connection.id,
+      provider: "zoho_recruit" as const,
+      name: `Run Breathe at ${zohoDemoTriggerStageId}`,
+      enabled: true,
+      externalJobId: null,
+      externalStageId: zohoDemoTriggerStageId,
+      actions: [
+        "import_candidate",
+        "prepare_interview",
+        "queue_interview",
+      ] satisfies ATSTriggerAction[],
+      requiresRecruiterApproval: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const existingConnectionIndex = state.atsConnections.findIndex(
+      (item) => item.id === connection.id,
+    );
+
+    if (existingConnectionIndex >= 0) {
+      state.atsConnections[existingConnectionIndex] = connection;
+    } else {
+      state.atsConnections.push(connection);
+    }
+
+    const existingRuleIndex = state.atsTriggerRules.findIndex(
+      (item) =>
+        item.id === rule.id ||
+        (item.companyId === rule.companyId &&
+          item.connectionId === rule.connectionId &&
+          item.externalJobId === rule.externalJobId &&
+          item.externalStageId === rule.externalStageId),
+    );
+
+    if (existingRuleIndex >= 0) {
+      state.atsTriggerRules[existingRuleIndex] = {
+        ...state.atsTriggerRules[existingRuleIndex],
+        ...rule,
+        createdAt: state.atsTriggerRules[existingRuleIndex].createdAt,
+      };
+    } else {
+      state.atsTriggerRules.push(rule);
+    }
+
+    appendAuditEvent({
+      state,
+      recruiter,
+      action: "ats.zoho_demo_configured",
+      targetType: "ats_connection",
+      targetId: connection.id,
+      summary: "Configured Zoho Recruit demo ATS defaults.",
+      metadata: {
+        provider: connection.provider,
+        credentialStatus: connection.status === "active" ? "present" : "missing",
+        triggerStage: zohoDemoTriggerStageId,
+        writebackStage: zohoDemoWritebackStageId,
+      },
+    });
+    await saveRuntimeStoreState(state);
+    revalidatePath("/settings/integrations/ats");
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Could not configure Zoho demo defaults.",
     );
   }
 }

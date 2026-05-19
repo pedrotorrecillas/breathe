@@ -14,6 +14,7 @@ import type {
 import {
   createMockATSConnectionAction,
   createZohoEnvConnectionAction,
+  configureZohoDemoDefaultsAction,
   approveATSWorkflowRequestAction,
   processATSWritebackActionAction,
   runManualATSSyncAction,
@@ -205,6 +206,14 @@ export function ATSSettingsWorkspace({
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700"
               >
                 Add Zoho Recruit
+              </button>
+            </form>
+            <form action={configureZohoDemoDefaultsAction}>
+              <button
+                type="submit"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700"
+              >
+                Configure Zoho demo
               </button>
             </form>
           </div>

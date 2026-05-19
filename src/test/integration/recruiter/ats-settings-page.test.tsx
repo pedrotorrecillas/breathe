@@ -229,6 +229,9 @@ describe("ATS settings page", () => {
     expect(
       screen.getByRole("button", { name: /Add Zoho Recruit/i }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Configure Zoho demo/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Stage triggers/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Writeback policy/i).length).toBeGreaterThan(0);
     expect(

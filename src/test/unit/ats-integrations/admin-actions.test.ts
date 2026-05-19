@@ -201,6 +201,60 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("configures Zoho demo trigger and writeback defaults in one admin action", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "zoho-token");
+    const { configureZohoDemoDefaultsAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+
+    await configureZohoDemoDefaultsAction(new FormData());
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    const zohoConnection = savedState.atsConnections.find(
+      (connection: { provider: string }) =>
+        connection.provider === "zoho_recruit",
+    );
+
+    expect(zohoConnection).toMatchObject({
+      provider: "zoho_recruit",
+      status: "active",
+      syncMode: "manual",
+      writebackPolicy: {
+        reportMode: "candidate_note",
+        moveToExternalStageId: "Interview Completed",
+        stageMoveMappings: {
+          interviewed: "Interview Completed",
+          shortlisted: "Shortlisted",
+          hired: "Hired",
+          rejected: "Rejected",
+        },
+        requiresRecruiterReview: false,
+      },
+    });
+    expect(savedState.atsTriggerRules).toEqual([
+      expect.objectContaining({
+        connectionId: zohoConnection.id,
+        provider: "zoho_recruit",
+        externalJobId: null,
+        externalStageId: "Breathe Screen",
+        actions: ["import_candidate", "prepare_interview", "queue_interview"],
+        requiresRecruiterApproval: false,
+      }),
+    ]);
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ats.zoho_demo_configured",
+        targetId: zohoConnection.id,
+        metadata: expect.objectContaining({
+          triggerStage: "Breathe Screen",
+          writebackStage: "Interview Completed",
+        }),
+      }),
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith(
+      "/settings/integrations/ats",
+    );
+  });
+
   it("saves configurable trigger actions and recruiter approval", async () => {
     const { saveATSTriggerRuleAction } =
       await import("@/app/(recruiter)/settings/integrations/ats/actions");

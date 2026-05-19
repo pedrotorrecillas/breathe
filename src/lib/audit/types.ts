@@ -8,6 +8,7 @@ export type AuditAction =
   | "company.updated"
   | "ats.connection_created"
   | "ats.connection_tested"
+  | "ats.zoho_demo_configured"
   | "ats.sync_mode_saved"
   | "ats.manual_sync"
   | "ats.trigger_rule_saved"
