@@ -64,7 +64,7 @@ export const zohoRecruitAdapter: ATSAdapter = {
       hasMore: false,
     };
   },
-  async listStages(_input) {
+  async listStages() {
     return [
       "New",
       "Breathe Screen",
