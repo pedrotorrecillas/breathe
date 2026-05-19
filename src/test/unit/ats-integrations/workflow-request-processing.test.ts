@@ -390,7 +390,7 @@ describe("ATS workflow request processing", () => {
     });
   });
 
-  it("queues an interview for dispatch requests without calling the runtime provider directly", async () => {
+  it("dispatches an interview when requested by the ATS trigger", async () => {
     const state = await loadRuntimeStoreState();
     state.atsWorkflowRequests[0] = {
       ...state.atsWorkflowRequests[0],
@@ -406,13 +406,27 @@ describe("ATS workflow request processing", () => {
 
     const after = await loadRuntimeStoreState();
     expect(after.interviewPreparationPackages).toHaveLength(1);
+    expect(after.dispatchRequests).toHaveLength(1);
+    expect(after.dispatchPayloads).toHaveLength(1);
+    expect(after.dispatchResponses).toHaveLength(1);
     expect(after.interviewRuns).toHaveLength(1);
     expect(after.interviewRuns[0]).toMatchObject({
       provider: "happyrobot",
       status: "queued",
       dispatch: {
-        dispatchedAt: null,
+        dispatchedAt: "2026-05-19T10:05:00.000Z",
+        providerCallId: `hr_call_${after.interviewRuns[0].id}`,
+        providerAgentId: "gala-v1",
       },
+    });
+    expect(after.dispatchRequests[0]).toMatchObject({
+      interviewRunId: after.interviewRuns[0].id,
+      candidateId: after.candidates[0].id,
+      applicationId: after.applications[0].id,
+    });
+    expect(after.dispatchResponses[0]).toMatchObject({
+      interviewRunId: after.interviewRuns[0].id,
+      success: true,
     });
   });
 });

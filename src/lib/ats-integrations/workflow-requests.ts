@@ -25,6 +25,7 @@ import {
   saveRuntimeStoreState,
 } from "@/lib/db/runtime-store";
 import { buildEvaluationSummary } from "@/lib/evaluation-summary";
+import { executeHappyRobotDispatch } from "@/lib/happyrobot-orchestration";
 import { createInterviewPreparationPackage } from "@/lib/interview-preparation";
 
 function sanitizeIdPart(value: string) {
@@ -598,6 +599,40 @@ export async function processATSWorkflowRequest(input: {
           now: input.now,
         }),
       );
+    }
+  }
+
+  if (request.requestedActions.includes("dispatch_interview")) {
+    const interviewRun =
+      state.interviewRuns.find((item) => item.applicationId === application.id) ??
+      null;
+
+    if (interviewRun && !interviewRun.dispatch.providerCallId) {
+      const dispatchExecution = await executeHappyRobotDispatch({
+        interviewRun,
+        candidate,
+        job: linkedJob,
+        now: new Date(input.now),
+      });
+      const preparationIndex = state.interviewPreparationPackages.findIndex(
+        (item) => item.id === dispatchExecution.interviewPackage.id,
+      );
+
+      if (preparationIndex >= 0) {
+        state.interviewPreparationPackages[preparationIndex] =
+          dispatchExecution.interviewPackage;
+      } else {
+        state.interviewPreparationPackages.push(
+          dispatchExecution.interviewPackage,
+        );
+      }
+
+      state.interviewRuns = state.interviewRuns.map((item) =>
+        item.id === interviewRun.id ? dispatchExecution.interviewRun : item,
+      );
+      state.dispatchRequests.push(dispatchExecution.callRequest);
+      state.dispatchPayloads.push(dispatchExecution.dispatchPayload);
+      state.dispatchResponses.push(dispatchExecution.dispatchResponse);
     }
   }
 
