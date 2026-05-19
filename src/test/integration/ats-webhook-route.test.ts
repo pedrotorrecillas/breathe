@@ -29,4 +29,19 @@ describe("ATS webhook route", () => {
 
     expect(response.status).toBe(202);
   });
+
+  it("rejects providers that do not support webhooks", async () => {
+    const response = await POST(
+      new Request("http://test.local/api/ats/webhooks/zoho_recruit", {
+        method: "POST",
+        body: JSON.stringify({ id: "evt_1" }),
+      }),
+      { params: Promise.resolve({ provider: "zoho_recruit" }) },
+    );
+
+    expect(response.status).toBe(501);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "ATS provider does not support webhooks.",
+    });
+  });
 });
