@@ -274,11 +274,15 @@ function canonicalStage(input: {
   now: string;
   record: ATSProviderStage;
 }): ATSCanonicalStage {
+  const scopedExternalId = input.record.externalJobId
+    ? `${input.record.externalJobId}:${input.record.externalId}`
+    : input.record.externalId;
+
   return {
     id: canonicalRecordId(
       "ats_stage",
       input.connectionId,
-      input.record.externalId,
+      scopedExternalId,
     ),
     companyId: input.companyId,
     connectionId: input.connectionId,

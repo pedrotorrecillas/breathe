@@ -164,6 +164,79 @@ describe("ATS sync pagination", () => {
     ).toEqual(["app_1", "app_2"]);
   });
 
+  it("keeps job-scoped stages separate when providers reuse stage ids", async () => {
+    listJobs.mockResolvedValue({
+      records: [
+        {
+          externalId: "job_1",
+          externalUrl: null,
+          title: "Store Associate",
+          status: "active",
+          externalUpdatedAt: "2026-05-19T10:00:00.000Z",
+          raw: {},
+        },
+        {
+          externalId: "job_2",
+          externalUrl: null,
+          title: "Warehouse Lead",
+          status: "active",
+          externalUpdatedAt: "2026-05-19T10:01:00.000Z",
+          raw: {},
+        },
+      ],
+      nextCursor: null,
+      hasMore: false,
+    });
+    listStages
+      .mockResolvedValueOnce([
+        {
+          externalId: "screening",
+          externalJobId: "job_1",
+          name: "Screening",
+          category: "screening",
+          position: 1,
+          raw: {},
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          externalId: "screening",
+          externalJobId: "job_2",
+          name: "Screening",
+          category: "screening",
+          position: 1,
+          raw: {},
+        },
+      ]);
+    listApplications.mockResolvedValue({
+      records: [],
+      nextCursor: null,
+      hasMore: false,
+    });
+
+    const result = await runATSSync({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      now: "2026-05-19T11:00:00.000Z",
+    });
+
+    expect(result.importedStages).toBe(2);
+    const state = await loadRuntimeStoreState();
+    expect(state.atsExternalStages).toHaveLength(2);
+    expect(state.atsExternalStages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          externalId: "screening",
+          externalJobId: "job_1",
+        }),
+        expect.objectContaining({
+          externalId: "screening",
+          externalJobId: "job_2",
+        }),
+      ]),
+    );
+  });
+
   it("starts sync from persisted cursors and stores the next checkpoint", async () => {
     const state = await loadRuntimeStoreState();
     state.atsSyncCursors.push(
