@@ -6,8 +6,10 @@ import type {
   ATSAdminSnapshot,
   ATSAvailableProvider,
 } from "@/lib/ats-integrations/connections";
-import type { ATSWritebackPolicy } from "@/domain/ats-integrations/types";
-import type { CandidatePipelineStage } from "@/domain/candidates/types";
+import type {
+  ATSInternalStageKey,
+  ATSWritebackPolicy,
+} from "@/domain/ats-integrations/types";
 
 import {
   createMockATSConnectionAction,
@@ -106,7 +108,7 @@ const defaultWritebackPolicy: ATSWritebackPolicy = {
 };
 
 const stageMoveMappingOptions: Array<{
-  stage: CandidatePipelineStage;
+  stage: ATSInternalStageKey;
   label: string;
 }> = [
   { stage: "applicant", label: "Applicant" },

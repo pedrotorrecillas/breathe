@@ -6,10 +6,10 @@ import { appendAuditEvent } from "@/lib/audit/log";
 import type {
   ATSSyncMode,
   ATSTriggerAction,
+  ATSInternalStageKey,
   ATSWorkflowRequest,
   ATSWritebackPolicy,
 } from "@/domain/ats-integrations/types";
-import type { CandidatePipelineStage } from "@/domain/candidates/types";
 import { requireAuthenticatedRecruiter } from "@/lib/auth/server";
 import {
   buildDefaultMockATSConnection,
@@ -38,7 +38,7 @@ const atsSyncModes: ATSSyncMode[] = [
   "webhook_plus_polling",
 ];
 
-const candidatePipelineStages: CandidatePipelineStage[] = [
+const atsInternalStageKeys: ATSInternalStageKey[] = [
   "applicant",
   "interviewed",
   "shortlisted",
@@ -79,10 +79,10 @@ function buildTriggerRuleId(input: {
 
 function parseStageMoveMappings(
   formData: FormData,
-): Partial<Record<CandidatePipelineStage, string>> {
-  const mappings: Partial<Record<CandidatePipelineStage, string>> = {};
+): Partial<Record<ATSInternalStageKey, string>> {
+  const mappings: Partial<Record<ATSInternalStageKey, string>> = {};
 
-  for (const stage of candidatePipelineStages) {
+  for (const stage of atsInternalStageKeys) {
     const externalStageId = String(
       formData.get(`stageMoveMapping:${stage}`) ?? "",
     ).trim();
@@ -96,9 +96,9 @@ function parseStageMoveMappings(
 }
 
 function stageMappingValues(
-  mappings: Partial<Record<CandidatePipelineStage, string>>,
+  mappings: Partial<Record<ATSInternalStageKey, string>>,
 ) {
-  return candidatePipelineStages
+  return atsInternalStageKeys
     .map((stage) => mappings[stage])
     .filter((value): value is string => Boolean(value));
 }

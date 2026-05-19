@@ -1,6 +1,7 @@
 import type {
   ATSCanonicalApplication,
   ATSConnection,
+  ATSInternalStageKey,
   ATSWritebackAction,
 } from "@/domain/ats-integrations/types";
 import type {
@@ -105,7 +106,9 @@ export function buildATSStageMoveWritebacksForApplicationStageChange(input: {
       }
 
       const targetExternalStageId =
-        connection.writebackPolicy?.stageMoveMappings?.[input.nextStage] ??
+        connection.writebackPolicy?.stageMoveMappings?.[
+          input.nextStage as ATSInternalStageKey
+        ] ??
         null;
 
       if (!targetExternalStageId) {

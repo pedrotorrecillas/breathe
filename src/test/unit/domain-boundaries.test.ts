@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import type {
   CandidateApplication,
@@ -14,6 +16,18 @@ import type {
 } from "@/domain/runtime/happyrobot/types";
 
 describe("domain boundaries", () => {
+  it("keeps the ATS domain independent from product domains", () => {
+    const atsTypes = readFileSync(
+      join(process.cwd(), "src/domain/ats-integrations/types.ts"),
+      "utf8",
+    );
+
+    expect(atsTypes).not.toMatch(/@\/domain\/candidates/);
+    expect(atsTypes).not.toMatch(/@\/domain\/jobs/);
+    expect(atsTypes).not.toMatch(/@\/domain\/interviews/);
+    expect(atsTypes).not.toMatch(/@\/domain\/evaluations/);
+  });
+
   it("exposes coherent domain shapes for the Breathe MVP", () => {
     const candidate: CandidateProfile = {
       id: "cand_1",

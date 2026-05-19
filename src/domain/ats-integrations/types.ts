@@ -1,5 +1,4 @@
 import type { EntityId, ISODateTimeString } from "@/domain/shared/types";
-import type { CandidatePipelineStage } from "@/domain/candidates/types";
 
 export const atsProviderKeys = [
   "mock_ats",
@@ -225,9 +224,17 @@ export type ATSWritebackAction = {
 export type ATSWritebackPolicy = {
   reportMode: "candidate_note" | "status_comment" | "disabled";
   moveToExternalStageId: string | null;
-  stageMoveMappings?: Partial<Record<CandidatePipelineStage, string | null>>;
+  stageMoveMappings?: Partial<Record<ATSInternalStageKey, string | null>>;
   requiresRecruiterReview: boolean;
 };
+
+export type ATSInternalStageKey =
+  | "applicant"
+  | "interviewed"
+  | "shortlisted"
+  | "hired"
+  | "rejected"
+  | "needs_human";
 
 export type ATSWritebackAttempt = {
   id: EntityId;
