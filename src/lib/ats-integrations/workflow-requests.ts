@@ -464,6 +464,25 @@ export async function processATSWorkflowRequest(input: {
     };
   }
 
+  if (atsApplication.status !== "active") {
+    const skippedRequest = {
+      ...request,
+      status: "skipped" as const,
+      updatedAt: input.now,
+    };
+    state.atsWorkflowRequests = state.atsWorkflowRequests.map((item) =>
+      item.id === request.id ? skippedRequest : item,
+    );
+    await saveRuntimeStoreState(state);
+
+    return {
+      status: "skipped",
+      request: skippedRequest,
+      candidateId: request.internalCandidateId,
+      applicationId: request.internalApplicationId,
+    };
+  }
+
   const linkedJob =
     state.jobs.find(
       (job) =>

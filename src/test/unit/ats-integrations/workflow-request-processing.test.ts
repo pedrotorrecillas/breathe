@@ -140,6 +140,46 @@ describe("ATS workflow request processing", () => {
     });
   });
 
+  it("skips approved workflow requests when the ATS application was archived before processing", async () => {
+    const state = await loadRuntimeStoreState();
+    state.atsExternalApplications[0] = {
+      ...state.atsExternalApplications[0],
+      status: "archived_external",
+    };
+    state.atsWorkflowRequests[0] = {
+      ...state.atsWorkflowRequests[0],
+      requestedActions: [
+        "import_candidate",
+        "prepare_interview",
+        "queue_interview",
+      ],
+    };
+    await saveRuntimeStoreState(state);
+
+    const result = await processATSWorkflowRequest({
+      workflowRequestId: "ats_workflow_1",
+      now: "2026-05-19T10:03:00.000Z",
+      approved: true,
+    });
+
+    expect(result).toMatchObject({
+      status: "skipped",
+      candidateId: null,
+      applicationId: null,
+    });
+    const after = await loadRuntimeStoreState();
+    expect(after.atsWorkflowRequests[0]).toMatchObject({
+      status: "skipped",
+      internalCandidateId: null,
+      internalApplicationId: null,
+      updatedAt: "2026-05-19T10:03:00.000Z",
+    });
+    expect(after.candidates).toHaveLength(0);
+    expect(after.applications).toHaveLength(0);
+    expect(after.interviewPreparationPackages).toHaveLength(0);
+    expect(after.interviewRuns).toHaveLength(0);
+  });
+
   it("uses admin stage mappings when importing the linked Breathe application", async () => {
     const state = await loadRuntimeStoreState();
     state.atsConnections[0] = {
