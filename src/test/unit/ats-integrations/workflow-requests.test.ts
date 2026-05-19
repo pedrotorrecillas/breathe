@@ -213,6 +213,19 @@ describe("ATS workflow requests", () => {
     expect(actions).toEqual([]);
   });
 
+  it("does not enqueue evaluation writebacks for paused ATS connections", () => {
+    const actions = enqueueATSWritebacksForEvaluation({
+      evaluation,
+      interviewRun,
+      atsConnections: [buildConnection({ status: "paused" })],
+      atsApplications: [linkedApplication],
+      existingActions: [],
+      now: "2026-05-19T11:01:00.000Z",
+    });
+
+    expect(actions).toEqual([]);
+  });
+
   it("enqueues writebacks for every linked ATS application", () => {
     const secondLinkedApplication: ATSCanonicalApplication = {
       ...linkedApplication,
