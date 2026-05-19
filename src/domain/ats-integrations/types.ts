@@ -24,11 +24,14 @@ export type ATSConnectionStatus = "draft" | "active" | "paused" | "error";
 
 export type ATSAuthMode = "oauth" | "api_token" | "env_token" | "mock";
 
+export type ATSSyncMode = "manual" | "scheduled" | "webhook_plus_polling";
+
 export type ATSConnection = {
   id: EntityId;
   companyId: EntityId;
   provider: ATSProviderKey;
   status: ATSConnectionStatus;
+  syncMode?: ATSSyncMode;
   displayName: string;
   authMode: ATSAuthMode;
   secretRef: string | null;

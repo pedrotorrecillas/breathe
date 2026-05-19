@@ -239,4 +239,24 @@ describe("ATS settings page", () => {
       "disabled",
     );
   });
+
+  it("does not offer webhook sync for providers without webhook support", async () => {
+    const snapshot = buildATSSnapshot();
+    snapshot.connections[0] = {
+      ...snapshot.connections[0],
+      provider: "zoho_recruit",
+      displayName: "Zoho Recruit demo",
+      syncMode: "scheduled",
+    };
+    atsSnapshotState.snapshot = snapshot;
+
+    render(await ATSSettingsPage());
+
+    expect(
+      screen.getByLabelText("Sync mode for Zoho Recruit"),
+    ).toHaveValue("scheduled");
+    expect(
+      screen.queryByRole("option", { name: "Webhook plus polling" }),
+    ).not.toBeInTheDocument();
+  });
 });

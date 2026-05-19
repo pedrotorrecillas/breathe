@@ -483,6 +483,48 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("saves the admin-selected sync mode on the ATS connection", async () => {
+    const { saveATSSyncModeAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("syncMode", "scheduled");
+
+    await saveATSSyncModeAction(formData);
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsConnections[0]).toMatchObject({
+      id: "ats_conn_1",
+      syncMode: "scheduled",
+    });
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ats.sync_mode_saved",
+        targetId: "ats_conn_1",
+        metadata: expect.objectContaining({
+          syncMode: "scheduled",
+        }),
+      }),
+    );
+  });
+
+  it("rejects webhook sync mode when the adapter does not support webhooks", async () => {
+    mockAdapterCapabilities = {
+      ...mockAdapterCapabilities,
+      supportsWebhooks: false,
+    };
+    const { saveATSSyncModeAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("syncMode", "webhook_plus_polling");
+
+    await expect(saveATSSyncModeAction(formData)).rejects.toThrow(
+      "Selected ATS provider does not support webhook sync.",
+    );
+    expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
+  });
+
   it("stores provider validation failures on the connection", async () => {
     mockValidateConnection.mockRejectedValue(
       new Error("ZOHO_RECRUIT_ACCESS_TOKEN is required."),

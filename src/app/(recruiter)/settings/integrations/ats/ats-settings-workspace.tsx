@@ -13,6 +13,7 @@ import {
   approveATSWorkflowRequestAction,
   processATSWritebackActionAction,
   runManualATSSyncAction,
+  saveATSSyncModeAction,
   saveATSTriggerRuleAction,
   saveATSWritebackPolicyAction,
   testATSConnectionAction,
@@ -29,6 +30,28 @@ function providerCapabilities(
   provider: string,
 ) {
   return providers.find((item) => item.provider === provider)?.capabilities;
+}
+
+function syncModeOptions(input: {
+  capabilities: ReturnType<typeof providerCapabilities>;
+}) {
+  const options = [{ value: "manual", label: "Manual" }];
+
+  if (input.capabilities?.supportsPolling) {
+    options.push({ value: "scheduled", label: "Scheduled polling" });
+  }
+
+  if (
+    input.capabilities?.supportsWebhooks &&
+    input.capabilities.supportsPolling
+  ) {
+    options.push({
+      value: "webhook_plus_polling",
+      label: "Webhook plus polling",
+    });
+  }
+
+  return options;
 }
 
 function stageOptionLabel(input: {
@@ -161,6 +184,11 @@ export function ATSSettingsWorkspace({
             const connection = snapshot.connections.find(
               (item) => item.provider === provider.provider,
             );
+            const capabilities = providerCapabilities(
+              snapshot.availableProviders,
+              provider.provider,
+            );
+            const connectionSyncMode = connection?.syncMode ?? "manual";
 
             return (
               <div
@@ -185,7 +213,35 @@ export function ATSSettingsWorkspace({
                   ) : null}
                 </div>
                 {connection && canManage ? (
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                    <form
+                      action={saveATSSyncModeAction}
+                      className="flex items-center gap-2"
+                    >
+                      <input
+                        type="hidden"
+                        name="connectionId"
+                        value={connection.id}
+                      />
+                      <select
+                        name="syncMode"
+                        defaultValue={connectionSyncMode}
+                        aria-label={`Sync mode for ${provider.label}`}
+                        className="rounded-md border border-slate-300 px-2 py-2 text-xs text-slate-700"
+                      >
+                        {syncModeOptions({ capabilities }).map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="submit"
+                        className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700"
+                      >
+                        Save sync
+                      </button>
+                    </form>
                     <form action={testATSConnectionAction}>
                       <input
                         type="hidden"
