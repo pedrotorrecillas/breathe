@@ -925,6 +925,15 @@ export async function processATSWritebackActionAction(
       targetId: writebackActionId,
       summary: "Processed ATS writeback action.",
       metadata: {
+        processingMode: "manual_recruiter_review",
+        connectionId: processed.action.connectionId,
+        actionType: processed.action.actionType,
+        sourceObjectType: processed.action.sourceObjectType,
+        sourceObjectId: processed.action.sourceObjectId,
+        targetExternalCandidateId: processed.action.targetExternalCandidateId,
+        targetExternalApplicationId:
+          processed.action.targetExternalApplicationId,
+        targetExternalStageId: processed.action.targetExternalStageId,
         status: processed.action.status,
         attemptId: processed.attempt.id,
         attemptStatus: processed.attempt.status,

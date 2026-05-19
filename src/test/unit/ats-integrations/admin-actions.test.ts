@@ -155,6 +155,14 @@ describe("ATS admin actions", () => {
       action: {
         id: "ats_writeback_1",
         companyId: "company_1",
+        connectionId: "ats_conn_1",
+        actionType: "candidate_note",
+        targetExternalCandidateId: "mock_candidate_ana",
+        targetExternalApplicationId: "mock_app_1",
+        targetExternalJobId: "mock_job_1",
+        targetExternalStageId: null,
+        sourceObjectType: "evaluation",
+        sourceObjectId: "eval_1",
         status: "succeeded",
       },
       attempt: {
@@ -726,6 +734,16 @@ describe("ATS admin actions", () => {
       expect.objectContaining({
         action: "ats.writeback_action_processed",
         targetId: "ats_writeback_1",
+        metadata: expect.objectContaining({
+          processingMode: "manual_recruiter_review",
+          connectionId: "ats_conn_1",
+          actionType: "candidate_note",
+          sourceObjectType: "evaluation",
+          sourceObjectId: "eval_1",
+          targetExternalCandidateId: "mock_candidate_ana",
+          targetExternalApplicationId: "mock_app_1",
+          targetExternalStageId: null,
+        }),
       }),
     );
     expect(mockRevalidatePath).toHaveBeenCalledWith(
