@@ -1,0 +1,166 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { ATSAdapter } from "@/lib/ats-integrations/adapters/types";
+
+const listJobs = vi.fn();
+const listStages = vi.fn();
+const listApplications = vi.fn();
+const getCandidate = vi.fn();
+
+vi.mock("@/lib/ats-integrations/registry", () => ({
+  getATSAdapter: () =>
+    ({
+      provider: "mock_ats",
+      capabilities: {
+        supportsWebhooks: false,
+        supportsPolling: true,
+        supportsCandidateNotes: true,
+        supportsReportLinks: false,
+        supportsStageMove: true,
+        supportsCustomFields: false,
+        supportsAttachments: false,
+      },
+      validateConnection: vi.fn(),
+      listJobs,
+      listStages,
+      listApplications,
+      getCandidate,
+      writeback: vi.fn(),
+    }) satisfies ATSAdapter,
+}));
+
+import { runATSSync } from "@/lib/ats-integrations/sync";
+import {
+  loadRuntimeStoreState,
+  resetRuntimeStoreState,
+  saveRuntimeStoreState,
+} from "@/lib/db/runtime-store";
+
+describe("ATS sync pagination", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    await resetRuntimeStoreState();
+    const state = await loadRuntimeStoreState();
+    state.atsConnections.push({
+      id: "ats_conn_1",
+      companyId: "company_1",
+      provider: "mock_ats",
+      status: "active",
+      displayName: "Mock ATS",
+      authMode: "mock",
+      secretRef: null,
+      externalAccountId: "mock_account",
+      lastSyncAt: null,
+      lastError: null,
+      createdAt: "2026-05-19T10:00:00.000Z",
+      updatedAt: "2026-05-19T10:00:00.000Z",
+    });
+    await saveRuntimeStoreState(state);
+  });
+
+  it("imports every job and application page exposed by the adapter", async () => {
+    listJobs
+      .mockResolvedValueOnce({
+        records: [
+          {
+            externalId: "job_1",
+            externalUrl: null,
+            title: "Store Associate",
+            status: "active",
+            externalUpdatedAt: "2026-05-19T10:00:00.000Z",
+            raw: {},
+          },
+        ],
+        nextCursor: "jobs_page_2",
+        hasMore: true,
+      })
+      .mockResolvedValueOnce({
+        records: [
+          {
+            externalId: "job_2",
+            externalUrl: null,
+            title: "Warehouse Lead",
+            status: "active",
+            externalUpdatedAt: "2026-05-19T10:01:00.000Z",
+            raw: {},
+          },
+        ],
+        nextCursor: null,
+        hasMore: false,
+      });
+    listStages.mockResolvedValue([]);
+    listApplications
+      .mockResolvedValueOnce({
+        records: [
+          {
+            externalId: "app_1",
+            externalCandidateId: "candidate_1",
+            externalJobId: "job_1",
+            externalStageId: "stage_screen",
+            externalUrl: null,
+            candidateName: "Ana Martin",
+            candidateEmail: "ana@example.com",
+            candidatePhone: null,
+            jobTitle: "Store Associate",
+            stageName: "Breathe Screen",
+            stageCategory: "screening",
+            status: "active",
+            externalUpdatedAt: "2026-05-19T10:00:00.000Z",
+            raw: {},
+          },
+        ],
+        nextCursor: "applications_page_2",
+        hasMore: true,
+      })
+      .mockResolvedValueOnce({
+        records: [
+          {
+            externalId: "app_2",
+            externalCandidateId: "candidate_2",
+            externalJobId: "job_2",
+            externalStageId: "stage_screen",
+            externalUrl: null,
+            candidateName: "Luis Vera",
+            candidateEmail: "luis@example.com",
+            candidatePhone: null,
+            jobTitle: "Warehouse Lead",
+            stageName: "Breathe Screen",
+            stageCategory: "screening",
+            status: "active",
+            externalUpdatedAt: "2026-05-19T10:01:00.000Z",
+            raw: {},
+          },
+        ],
+        nextCursor: null,
+        hasMore: false,
+      });
+    getCandidate.mockResolvedValue(null);
+
+    const result = await runATSSync({
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      now: "2026-05-19T11:00:00.000Z",
+    });
+
+    expect(result.importedJobs).toBe(2);
+    expect(result.importedApplications).toBe(2);
+    expect(listJobs).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ cursor: "jobs_page_2" }),
+    );
+    expect(listApplications).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ cursor: "applications_page_2" }),
+    );
+    const state = await loadRuntimeStoreState();
+    expect(state.atsExternalJobs.map((job) => job.externalId)).toEqual([
+      "job_1",
+      "job_2",
+    ]);
+    expect(
+      state.atsExternalApplications.map(
+        (application) => application.externalId,
+      ),
+    ).toEqual(["app_1", "app_2"]);
+  });
+});

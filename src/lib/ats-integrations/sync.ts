@@ -370,145 +370,196 @@ export async function runATSSync(
       createdWorkflowRequests: 0,
     };
 
-    const jobsPage = await adapter.listJobs({
-      connection,
-      cursor: null,
-      limit: 200,
-    });
-    for (const job of jobsPage.records) {
-      const record = canonicalJob({
-        companyId: input.companyId,
-        connectionId: connection.id,
-        provider: connection.provider,
-        now: input.now,
-        record: job,
-      });
-      if (upsertById(state.atsExternalJobs, record)) {
-        result.importedJobs += 1;
-      }
+    let jobsCursor: string | null = null;
+    let hasMoreJobs = true;
 
-      const jobEvent = buildEvent({
-        companyId: input.companyId,
-        connectionId: connection.id,
-        provider: connection.provider,
-        eventType: "job_seen",
-        externalObjectType: "job",
-        externalObjectId: job.externalId,
-        externalJobId: job.externalId,
-        externalCandidateId: null,
-        externalStageId: null,
-        occurredAt: input.now,
-        externalUpdatedAt: eventUpdatedAt(job),
-        payload: job.raw,
-      });
-
-      if (appendSyncEventOnce(state, jobEvent)) {
-        result.createdEvents += 1;
-        result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
-          state,
-          event: jobEvent,
-          now: input.now,
-        });
-      }
-
-      const stages = await adapter.listStages({
+    while (hasMoreJobs) {
+      const jobsPage = await adapter.listJobs({
         connection,
-        externalJobId: job.externalId,
+        cursor: jobsCursor,
+        limit: 200,
       });
 
-      for (const stage of stages) {
-        const stageRecord = canonicalStage({
+      for (const job of jobsPage.records) {
+        const record = canonicalJob({
           companyId: input.companyId,
           connectionId: connection.id,
           provider: connection.provider,
           now: input.now,
-          record: stage,
+          record: job,
         });
-        if (upsertById(state.atsExternalStages, stageRecord)) {
-          result.importedStages += 1;
-        }
-      }
-    }
-
-    const applicationsPage = await adapter.listApplications({
-      connection,
-      cursor: null,
-      limit: 200,
-    });
-
-    for (const application of applicationsPage.records) {
-      const candidate = await adapter.getCandidate({
-        connection,
-        externalCandidateId: application.externalCandidateId,
-      });
-
-      if (candidate) {
-        const candidateRecord = canonicalCandidate({
-          companyId: input.companyId,
-          connectionId: connection.id,
-          provider: connection.provider,
-          now: input.now,
-          record: candidate,
-        });
-        if (upsertById(state.atsExternalCandidates, candidateRecord)) {
-          result.importedCandidates += 1;
+        if (upsertById(state.atsExternalJobs, record)) {
+          result.importedJobs += 1;
         }
 
-        const candidateEvent = buildEvent({
+        const jobEvent = buildEvent({
           companyId: input.companyId,
           connectionId: connection.id,
           provider: connection.provider,
-          eventType: "candidate_seen",
-          externalObjectType: "candidate",
-          externalObjectId: candidate.externalId,
-          externalJobId: application.externalJobId,
-          externalCandidateId: candidate.externalId,
-          externalStageId: application.externalStageId,
+          eventType: "job_seen",
+          externalObjectType: "job",
+          externalObjectId: job.externalId,
+          externalJobId: job.externalId,
+          externalCandidateId: null,
+          externalStageId: null,
           occurredAt: input.now,
-          externalUpdatedAt: eventUpdatedAt(candidate),
-          payload: candidate.raw,
+          externalUpdatedAt: eventUpdatedAt(job),
+          payload: job.raw,
         });
 
-        if (appendSyncEventOnce(state, candidateEvent)) {
+        if (appendSyncEventOnce(state, jobEvent)) {
           result.createdEvents += 1;
           result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
             state,
-            event: candidateEvent,
+            event: jobEvent,
             now: input.now,
           });
         }
+
+        const stages = await adapter.listStages({
+          connection,
+          externalJobId: job.externalId,
+        });
+
+        for (const stage of stages) {
+          const stageRecord = canonicalStage({
+            companyId: input.companyId,
+            connectionId: connection.id,
+            provider: connection.provider,
+            now: input.now,
+            record: stage,
+          });
+          if (upsertById(state.atsExternalStages, stageRecord)) {
+            result.importedStages += 1;
+          }
+        }
       }
 
-      const previousApplication = state.atsExternalApplications.find(
-        (item) =>
-          item.connectionId === connection.id &&
-          item.externalId === application.externalId,
-      );
-      const applicationRecord = preserveInternalApplicationLinks({
-        previous: previousApplication,
-        next: canonicalApplication({
-          companyId: input.companyId,
-          connectionId: connection.id,
-          provider: connection.provider,
-          now: input.now,
-          record: application,
-        }),
+      jobsCursor = jobsPage.nextCursor;
+      hasMoreJobs = jobsPage.hasMore && Boolean(jobsCursor);
+    }
+
+    let applicationsCursor: string | null = null;
+    let hasMoreApplications = true;
+
+    while (hasMoreApplications) {
+      const applicationsPage = await adapter.listApplications({
+        connection,
+        cursor: applicationsCursor,
+        limit: 200,
       });
-      if (upsertById(state.atsExternalApplications, applicationRecord)) {
-        result.importedApplications += 1;
-      }
 
-      if (
-        applicationStageChanged({
+      for (const application of applicationsPage.records) {
+        const candidate = await adapter.getCandidate({
+          connection,
+          externalCandidateId: application.externalCandidateId,
+        });
+
+        if (candidate) {
+          const candidateRecord = canonicalCandidate({
+            companyId: input.companyId,
+            connectionId: connection.id,
+            provider: connection.provider,
+            now: input.now,
+            record: candidate,
+          });
+          if (upsertById(state.atsExternalCandidates, candidateRecord)) {
+            result.importedCandidates += 1;
+          }
+
+          const candidateEvent = buildEvent({
+            companyId: input.companyId,
+            connectionId: connection.id,
+            provider: connection.provider,
+            eventType: "candidate_seen",
+            externalObjectType: "candidate",
+            externalObjectId: candidate.externalId,
+            externalJobId: application.externalJobId,
+            externalCandidateId: candidate.externalId,
+            externalStageId: application.externalStageId,
+            occurredAt: input.now,
+            externalUpdatedAt: eventUpdatedAt(candidate),
+            payload: candidate.raw,
+          });
+
+          if (appendSyncEventOnce(state, candidateEvent)) {
+            result.createdEvents += 1;
+            result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
+              state,
+              event: candidateEvent,
+              now: input.now,
+            });
+          }
+        }
+
+        const previousApplication = state.atsExternalApplications.find(
+          (item) =>
+            item.connectionId === connection.id &&
+            item.externalId === application.externalId,
+        );
+        const applicationRecord = preserveInternalApplicationLinks({
           previous: previousApplication,
-          next: applicationRecord,
-        })
-      ) {
-        const stageChangedEvent = buildEvent({
+          next: canonicalApplication({
+            companyId: input.companyId,
+            connectionId: connection.id,
+            provider: connection.provider,
+            now: input.now,
+            record: application,
+          }),
+        });
+        if (upsertById(state.atsExternalApplications, applicationRecord)) {
+          result.importedApplications += 1;
+        }
+
+        if (
+          applicationStageChanged({
+            previous: previousApplication,
+            next: applicationRecord,
+          })
+        ) {
+          const stageChangedEvent = buildEvent({
+            companyId: input.companyId,
+            connectionId: connection.id,
+            provider: connection.provider,
+            eventType: "application_stage_changed",
+            externalObjectType: "application",
+            externalObjectId: application.externalId,
+            externalJobId: application.externalJobId,
+            externalCandidateId: application.externalCandidateId,
+            externalStageId: application.externalStageId,
+            occurredAt: input.now,
+            externalUpdatedAt: eventUpdatedAt(application),
+            idempotencyDiscriminator: [
+              previousApplication?.externalStageId ?? "none",
+              application.externalStageId ?? "none",
+            ].join("->"),
+            payload: {
+              ...application.raw,
+              previousExternalStageId:
+                previousApplication?.externalStageId ?? null,
+              previousStageName: previousApplication?.stageName ?? null,
+              previousStageCategory: previousApplication?.stageCategory ?? null,
+              externalStageId: application.externalStageId,
+              stageName: application.stageName,
+              stageCategory: application.stageCategory,
+            },
+          });
+
+          if (appendSyncEventOnce(state, stageChangedEvent)) {
+            result.createdEvents += 1;
+            result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
+              state,
+              event: stageChangedEvent,
+              now: input.now,
+            });
+          }
+        }
+
+        const applicationSeenEvent = buildEvent({
           companyId: input.companyId,
           connectionId: connection.id,
           provider: connection.provider,
-          eventType: "application_stage_changed",
+          eventType: "application_seen",
           externalObjectType: "application",
           externalObjectId: application.externalId,
           externalJobId: application.externalJobId,
@@ -516,55 +567,22 @@ export async function runATSSync(
           externalStageId: application.externalStageId,
           occurredAt: input.now,
           externalUpdatedAt: eventUpdatedAt(application),
-          idempotencyDiscriminator: [
-            previousApplication?.externalStageId ?? "none",
-            application.externalStageId ?? "none",
-          ].join("->"),
-          payload: {
-            ...application.raw,
-            previousExternalStageId:
-              previousApplication?.externalStageId ?? null,
-            previousStageName: previousApplication?.stageName ?? null,
-            previousStageCategory: previousApplication?.stageCategory ?? null,
-            externalStageId: application.externalStageId,
-            stageName: application.stageName,
-            stageCategory: application.stageCategory,
-          },
+          payload: application.raw,
         });
 
-        if (appendSyncEventOnce(state, stageChangedEvent)) {
+        if (appendSyncEventOnce(state, applicationSeenEvent)) {
           result.createdEvents += 1;
           result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
             state,
-            event: stageChangedEvent,
+            event: applicationSeenEvent,
             now: input.now,
           });
         }
       }
 
-      const applicationSeenEvent = buildEvent({
-        companyId: input.companyId,
-        connectionId: connection.id,
-        provider: connection.provider,
-        eventType: "application_seen",
-        externalObjectType: "application",
-        externalObjectId: application.externalId,
-        externalJobId: application.externalJobId,
-        externalCandidateId: application.externalCandidateId,
-        externalStageId: application.externalStageId,
-        occurredAt: input.now,
-        externalUpdatedAt: eventUpdatedAt(application),
-        payload: application.raw,
-      });
-
-      if (appendSyncEventOnce(state, applicationSeenEvent)) {
-        result.createdEvents += 1;
-        result.createdWorkflowRequests += appendWorkflowRequestsForEvent({
-          state,
-          event: applicationSeenEvent,
-          now: input.now,
-        });
-      }
+      applicationsCursor = applicationsPage.nextCursor;
+      hasMoreApplications =
+        applicationsPage.hasMore && Boolean(applicationsCursor);
     }
 
     state.atsConnections = state.atsConnections.map((item) =>
