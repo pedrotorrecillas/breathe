@@ -101,6 +101,49 @@ function applicationStageLabel(
   return application.stageName ?? application.externalStageId ?? "No stage";
 }
 
+const zohoDemoTriggerStageId = "Breathe Screen";
+const zohoDemoWritebackStageId = "Interview Completed";
+const zohoDemoTriggerActions = [
+  "import_candidate",
+  "prepare_interview",
+  "queue_interview",
+];
+
+function zohoDemoTriggerReady(input: {
+  snapshot: ATSAdminSnapshot;
+  connectionId: string | null;
+}) {
+  return input.snapshot.triggerRules.some(
+    (rule) =>
+      rule.provider === "zoho_recruit" &&
+      rule.enabled &&
+      (!input.connectionId || rule.connectionId === input.connectionId) &&
+      rule.externalStageId === zohoDemoTriggerStageId &&
+      zohoDemoTriggerActions.every((action) =>
+        rule.actions.includes(action as (typeof rule.actions)[number]),
+      ),
+  );
+}
+
+function zohoDemoWritebackReady(
+  connection: ATSAdminSnapshot["connections"][number] | null,
+) {
+  const policy = connection?.writebackPolicy;
+
+  return Boolean(
+    policy &&
+      policy.reportMode !== "disabled" &&
+      policy.moveToExternalStageId === zohoDemoWritebackStageId &&
+      policy.requiresRecruiterReview === false,
+  );
+}
+
+function readinessStatusClass(isReady: boolean) {
+  return isReady
+    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+    : "border-amber-200 bg-amber-50 text-amber-800";
+}
+
 const defaultWritebackPolicy: ATSWritebackPolicy = {
   reportMode: "candidate_note",
   moveToExternalStageId: null,
@@ -174,6 +217,17 @@ export function ATSSettingsWorkspace({
       ),
     [snapshot.externalStages, writebackConnectionId],
   );
+  const zohoConnection =
+    snapshot.connections.find(
+      (connection) => connection.provider === "zoho_recruit",
+    ) ?? null;
+  const zohoConnectionReady = zohoConnection?.status === "active";
+  const zohoTriggerReady = zohoDemoTriggerReady({
+    snapshot,
+    connectionId: zohoConnection?.id ?? null,
+  });
+  const zohoWritebackIsReady = zohoDemoWritebackReady(zohoConnection);
+  const zohoSyncReady = Boolean(zohoConnection?.lastSyncAt);
 
   return (
     <div className="grid gap-5">
@@ -317,6 +371,70 @@ export function ATSSettingsWorkspace({
               </div>
             );
           })}
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="ops-kicker text-slate-500">Demo health</p>
+            <h2 className="mt-2 text-lg font-semibold text-slate-950">
+              Zoho demo readiness
+            </h2>
+          </div>
+          <span
+            className={`rounded-full border px-3 py-1 text-xs font-medium ${readinessStatusClass(
+              zohoConnectionReady &&
+                zohoTriggerReady &&
+                zohoWritebackIsReady &&
+                zohoSyncReady,
+            )}`}
+          >
+            {zohoConnectionReady &&
+            zohoTriggerReady &&
+            zohoWritebackIsReady &&
+            zohoSyncReady
+              ? "Ready"
+              : "Needs setup"}
+          </span>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="rounded-md border border-slate-200 px-4 py-3">
+            <p className="text-sm font-medium text-slate-950">
+              {zohoConnectionReady ? "Connection active" : "Connection missing"}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {zohoConnection
+                ? `${zohoConnection.displayName} · ${zohoConnection.status}`
+                : "No Zoho Recruit connection"}
+            </p>
+          </div>
+          <div className="rounded-md border border-slate-200 px-4 py-3">
+            <p className="text-sm font-medium text-slate-950">
+              {zohoTriggerReady ? "Trigger ready" : "Trigger missing"}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {zohoDemoTriggerStageId} · {zohoDemoTriggerActions.join(", ")}
+            </p>
+          </div>
+          <div className="rounded-md border border-slate-200 px-4 py-3">
+            <p className="text-sm font-medium text-slate-950">
+              {zohoWritebackIsReady ? "Writeback ready" : "Writeback incomplete"}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Note plus stage move to {zohoDemoWritebackStageId}
+            </p>
+          </div>
+          <div className="rounded-md border border-slate-200 px-4 py-3">
+            <p className="text-sm font-medium text-slate-950">
+              {zohoSyncReady ? "Synced" : "Not synced"}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {zohoConnection?.lastSyncAt
+                ? `Last sync: ${zohoConnection.lastSyncAt}`
+                : "Run Sync now after credentials are valid"}
+            </p>
+          </div>
         </div>
       </section>
 
