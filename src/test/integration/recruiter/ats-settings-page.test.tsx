@@ -26,6 +26,9 @@ function buildATSSnapshot() {
         writebackPolicy: {
           reportMode: "status_comment",
           moveToExternalStageId: "mock_stage_breathe_screen",
+          stageMoveMappings: {
+            rejected: "mock_stage_rejected",
+          },
           requiresRecruiterReview: false,
         },
       },
@@ -79,6 +82,20 @@ function buildATSSnapshot() {
       },
     ],
     externalStages: [
+      {
+        id: "ats_stage_rejected",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalJobId: "mock_job_store_associate",
+        externalId: "mock_stage_rejected",
+        name: "Rejected",
+        category: "rejected",
+        position: 5,
+        status: "active",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
       {
         id: "ats_stage_1",
         companyId: "company_1",
@@ -243,6 +260,9 @@ describe("ATS settings page", () => {
     expect(screen.getByLabelText("Writeback target stage")).toHaveValue(
       "mock_stage_breathe_screen",
     );
+    expect(
+      screen.getByLabelText("Move Breathe rejected to ATS stage"),
+    ).toHaveValue("mock_stage_rejected");
     expect(screen.getByRole("button", { name: /^Test$/i })).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: /Imported ATS applications/i }),

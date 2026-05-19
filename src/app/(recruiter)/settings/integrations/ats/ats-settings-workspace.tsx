@@ -6,6 +6,8 @@ import type {
   ATSAdminSnapshot,
   ATSAvailableProvider,
 } from "@/lib/ats-integrations/connections";
+import type { ATSWritebackPolicy } from "@/domain/ats-integrations/types";
+import type { CandidatePipelineStage } from "@/domain/candidates/types";
 
 import {
   createMockATSConnectionAction,
@@ -96,11 +98,24 @@ function applicationStageLabel(
   return application.stageName ?? application.externalStageId ?? "No stage";
 }
 
-const defaultWritebackPolicy = {
+const defaultWritebackPolicy: ATSWritebackPolicy = {
   reportMode: "candidate_note",
   moveToExternalStageId: null,
+  stageMoveMappings: {},
   requiresRecruiterReview: true,
-} as const;
+};
+
+const stageMoveMappingOptions: Array<{
+  stage: CandidatePipelineStage;
+  label: string;
+}> = [
+  { stage: "applicant", label: "Applicant" },
+  { stage: "interviewed", label: "Interviewed" },
+  { stage: "shortlisted", label: "Shortlisted" },
+  { stage: "hired", label: "Hired" },
+  { stage: "rejected", label: "Rejected" },
+  { stage: "needs_human", label: "Needs human" },
+];
 
 export function ATSSettingsWorkspace({
   snapshot,
@@ -557,6 +572,59 @@ export function ATSSettingsWorkspace({
             ) : (
               <input type="hidden" name="moveToExternalStageId" value="" />
             )}
+            {canMoveStages ? (
+              <div className="grid gap-2 rounded-md border border-slate-200 p-3">
+                <p className="text-xs font-medium uppercase text-slate-500">
+                  Manual stage mappings
+                </p>
+                <div className="grid gap-2 md:grid-cols-2">
+                  {stageMoveMappingOptions.map((option) => (
+                    <label
+                      key={option.stage}
+                      className="grid gap-1 text-xs font-medium text-slate-600"
+                    >
+                      <span>
+                        Move Breathe {option.stage} to ATS stage
+                      </span>
+                      {writebackStages.length ? (
+                        <select
+                          name={`stageMoveMapping:${option.stage}`}
+                          defaultValue={
+                            selectedWritebackPolicy.stageMoveMappings?.[
+                              option.stage
+                            ] ?? ""
+                          }
+                          className="rounded-md border border-slate-300 px-2 py-2 text-sm font-normal text-slate-700"
+                          aria-label={`Move Breathe ${option.stage} to ATS stage`}
+                        >
+                          <option value="">Do not sync this stage</option>
+                          {writebackStages.map((stage) => (
+                            <option key={stage.id} value={stage.externalId}>
+                              {stageOptionLabel({
+                                stage,
+                                jobs: snapshot.externalJobs,
+                              })}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          name={`stageMoveMapping:${option.stage}`}
+                          defaultValue={
+                            selectedWritebackPolicy.stageMoveMappings?.[
+                              option.stage
+                            ] ?? ""
+                          }
+                          placeholder={`External stage for ${option.label}`}
+                          className="rounded-md border border-slate-300 px-2 py-2 text-sm font-normal text-slate-700"
+                          aria-label={`Move Breathe ${option.stage} to ATS stage`}
+                        />
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <label className="flex items-center gap-2 text-sm text-slate-700">
               <input
                 type="checkbox"

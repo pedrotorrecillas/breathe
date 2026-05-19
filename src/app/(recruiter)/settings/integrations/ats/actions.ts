@@ -9,6 +9,7 @@ import type {
   ATSWorkflowRequest,
   ATSWritebackPolicy,
 } from "@/domain/ats-integrations/types";
+import type { CandidatePipelineStage } from "@/domain/candidates/types";
 import { requireAuthenticatedRecruiter } from "@/lib/auth/server";
 import {
   buildDefaultMockATSConnection,
@@ -35,6 +36,15 @@ const atsSyncModes: ATSSyncMode[] = [
   "manual",
   "scheduled",
   "webhook_plus_polling",
+];
+
+const candidatePipelineStages: CandidatePipelineStage[] = [
+  "applicant",
+  "interviewed",
+  "shortlisted",
+  "hired",
+  "rejected",
+  "needs_human",
 ];
 
 function requireATSAdmin(canManage: boolean) {
@@ -65,6 +75,32 @@ function buildTriggerRuleId(input: {
   return `ats_rule_${sanitizeATSRulePart(input.connectionId)}_${sanitizeATSRulePart(
     input.externalJobId ?? "any_job",
   )}_${sanitizeATSRulePart(input.externalStageId)}`;
+}
+
+function parseStageMoveMappings(
+  formData: FormData,
+): Partial<Record<CandidatePipelineStage, string>> {
+  const mappings: Partial<Record<CandidatePipelineStage, string>> = {};
+
+  for (const stage of candidatePipelineStages) {
+    const externalStageId = String(
+      formData.get(`stageMoveMapping:${stage}`) ?? "",
+    ).trim();
+
+    if (externalStageId) {
+      mappings[stage] = externalStageId;
+    }
+  }
+
+  return mappings;
+}
+
+function stageMappingValues(
+  mappings: Partial<Record<CandidatePipelineStage, string>>,
+) {
+  return candidatePipelineStages
+    .map((stage) => mappings[stage])
+    .filter((value): value is string => Boolean(value));
 }
 
 async function requireOwnedWorkflowRequest(input: {
@@ -679,6 +715,8 @@ export async function saveATSWritebackPolicyAction(
     const reportModeValue = String(formData.get("reportMode") ?? "");
     const moveToExternalStageId =
       String(formData.get("moveToExternalStageId") ?? "").trim() || null;
+    const stageMoveMappings = parseStageMoveMappings(formData);
+    const mappedExternalStageIds = stageMappingValues(stageMoveMappings);
     const requiresRecruiterReview =
       formData.get("requiresRecruiterReview") === "on";
     const reportMode: ATSWritebackPolicy["reportMode"] =
@@ -716,7 +754,10 @@ export async function saveATSWritebackPolicyAction(
       );
     }
 
-    if (moveToExternalStageId && !adapter.capabilities.supportsStageMove) {
+    if (
+      (moveToExternalStageId || mappedExternalStageIds.length > 0) &&
+      !adapter.capabilities.supportsStageMove
+    ) {
       throw new Error(
         "Selected ATS provider does not support stage move writebacks.",
       );
@@ -740,9 +781,22 @@ export async function saveATSWritebackPolicyAction(
       );
     }
 
+    if (
+      mappedExternalStageIds.length > 0 &&
+      connectionStages.length > 0 &&
+      !mappedExternalStageIds.every((externalStageId) =>
+        connectionStages.some((stage) => stage.externalId === externalStageId),
+      )
+    ) {
+      throw new Error(
+        "Choose manual stage mappings from the selected ATS connection.",
+      );
+    }
+
     const policy: ATSWritebackPolicy = {
       reportMode,
       moveToExternalStageId,
+      ...(mappedExternalStageIds.length > 0 ? { stageMoveMappings } : {}),
       requiresRecruiterReview,
     };
 
@@ -767,6 +821,7 @@ export async function saveATSWritebackPolicyAction(
         provider: connection.provider,
         reportMode,
         moveToExternalStageId,
+        stageMoveMappings: Object.keys(stageMoveMappings).join(","),
         requiresRecruiterReview,
       },
     });

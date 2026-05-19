@@ -774,6 +774,70 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("saves manual stage writeback mappings from admin", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsExternalStages = [
+      {
+        id: "ats_stage_interviewed",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalJobId: null,
+        externalId: "mock_stage_interviewed",
+        name: "Interviewed",
+        category: "interview",
+        position: 2,
+        status: "active",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+      {
+        id: "ats_stage_rejected",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalJobId: null,
+        externalId: "mock_stage_rejected",
+        name: "Rejected",
+        category: "rejected",
+        position: 5,
+        status: "active",
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { saveATSWritebackPolicyAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("reportMode", "candidate_note");
+    formData.set("stageMoveMapping:interviewed", "mock_stage_interviewed");
+    formData.set("stageMoveMapping:rejected", "mock_stage_rejected");
+    formData.set("stageMoveMapping:hired", "");
+
+    await saveATSWritebackPolicyAction(formData);
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsConnections[0].writebackPolicy).toMatchObject({
+      stageMoveMappings: {
+        interviewed: "mock_stage_interviewed",
+        rejected: "mock_stage_rejected",
+      },
+    });
+    expect(
+      savedState.atsConnections[0].writebackPolicy.stageMoveMappings.hired,
+    ).toBeUndefined();
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ats.writeback_policy_saved",
+        metadata: expect.objectContaining({
+          stageMoveMappings: "interviewed,rejected",
+        }),
+      }),
+    );
+  });
+
   it("rejects status comment writeback policy without a target stage move", async () => {
     const { saveATSWritebackPolicyAction } =
       await import("@/app/(recruiter)/settings/integrations/ats/actions");

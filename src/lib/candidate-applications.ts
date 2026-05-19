@@ -2,6 +2,8 @@ import type {
   CandidateApplication,
   CandidatePipelineStage,
 } from "@/domain/candidates/types";
+import { buildATSStageMoveWritebacksForApplicationStageChange } from "@/lib/ats-integrations/stage-writebacks";
+import { processATSWritebackActionInState } from "@/lib/ats-integrations/writeback";
 import {
   loadRuntimeStoreState,
   saveRuntimeStoreState,
@@ -133,8 +135,37 @@ export async function updateCandidateApplicationStage(input: {
     needsHumanReviewAt: null,
     recruiterOutcomeNote: nextTransition.recruiterOutcomeNote,
   };
+  const now = new Date().toISOString();
+  const writebackActions = buildATSStageMoveWritebacksForApplicationStageChange({
+    application: nextApplication,
+    previousStage: application.stage,
+    nextStage: nextApplication.stage,
+    atsConnections: state.atsConnections,
+    atsApplications: state.atsExternalApplications,
+    existingActions: state.atsWritebackActions,
+    now,
+  });
 
   state.applications[applicationIndex] = nextApplication;
+  state.atsWritebackActions.push(...writebackActions);
+
+  for (const writebackAction of writebackActions) {
+    const connection = state.atsConnections.find(
+      (item) =>
+        item.id === writebackAction.connectionId &&
+        item.companyId === writebackAction.companyId &&
+        item.provider === writebackAction.provider,
+    );
+
+    if (connection?.writebackPolicy?.requiresRecruiterReview === false) {
+      await processATSWritebackActionInState({
+        state,
+        writebackActionId: writebackAction.id,
+        now,
+      });
+    }
+  }
+
   await saveRuntimeStoreState(state);
 
   return {
