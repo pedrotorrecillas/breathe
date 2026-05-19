@@ -255,6 +255,78 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("backfills and auto-processes existing Zoho demo applications when configuring defaults", async () => {
+    vi.stubEnv("ZOHO_RECRUIT_ACCESS_TOKEN", "zoho-token");
+    const state = await mockLoadRuntimeStoreState();
+    state.atsConnections.push({
+      id: "ats_conn_zoho",
+      companyId: "company_1",
+      provider: "zoho_recruit",
+      status: "active",
+      displayName: "Zoho Recruit demo",
+      authMode: "env_token",
+      secretRef: "env:ZOHO_RECRUIT_ACCESS_TOKEN",
+      externalAccountId: "zoho_demo",
+      lastSyncAt: "2026-05-19T10:00:00.000Z",
+      lastError: null,
+      createdAt: "2026-05-19T10:00:00.000Z",
+      updatedAt: "2026-05-19T10:00:00.000Z",
+    });
+    state.atsExternalApplications = [
+      {
+        id: "ats_application_zoho",
+        companyId: "company_1",
+        connectionId: "ats_conn_zoho",
+        provider: "zoho_recruit",
+        externalId: "58431000000054321:58431000000012345",
+        externalCandidateId: "58431000000054321",
+        externalJobId: "58431000000012345",
+        externalStageId: "Breathe Screen",
+        externalUrl: null,
+        internalCandidateId: null,
+        internalApplicationId: null,
+        internalJobId: null,
+        candidateName: "Ana Martin",
+        candidateEmail: "ana@example.com",
+        candidatePhone: "+34600000000",
+        jobTitle: "Store Associate",
+        stageName: "Breathe Screen",
+        stageCategory: "screening",
+        status: "active",
+        externalUpdatedAt: "2026-05-19T10:05:00.000Z",
+        lastSeenAt: "2026-05-19T10:05:00.000Z",
+        rawSnapshot: { Candidate_Status: "Breathe Screen" },
+      },
+    ];
+    state.atsSyncEvents = [];
+    state.atsWorkflowRequests = [];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { configureZohoDemoDefaultsAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+
+    await configureZohoDemoDefaultsAction(new FormData());
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsWorkflowRequests).toHaveLength(1);
+    expect(savedState.atsWorkflowRequests[0]).toMatchObject({
+      connectionId: "ats_conn_zoho",
+      provider: "zoho_recruit",
+      externalApplicationId: "58431000000054321:58431000000012345",
+      requestedActions: [
+        "import_candidate",
+        "prepare_interview",
+        "queue_interview",
+      ],
+      requiresRecruiterApproval: false,
+      status: "queued",
+    });
+    expect(mockProcessATSWorkflowRequest).toHaveBeenCalledWith({
+      workflowRequestId: savedState.atsWorkflowRequests[0].id,
+      now: expect.any(String),
+      approved: true,
+    });
+  });
+
   it("saves configurable trigger actions and recruiter approval", async () => {
     const { saveATSTriggerRuleAction } =
       await import("@/app/(recruiter)/settings/integrations/ats/actions");

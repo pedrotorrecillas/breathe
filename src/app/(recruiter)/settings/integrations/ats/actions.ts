@@ -6,6 +6,7 @@ import { appendAuditEvent } from "@/lib/audit/log";
 import type {
   ATSSyncMode,
   ATSTriggerAction,
+  ATSTriggerRule,
   ATSInternalStageKey,
   ATSWorkflowRequest,
   ATSWritebackPolicy,
@@ -89,6 +90,104 @@ function buildTriggerRuleId(input: {
   return `ats_rule_${sanitizeATSRulePart(input.connectionId)}_${sanitizeATSRulePart(
     input.externalJobId ?? "any_job",
   )}_${sanitizeATSRulePart(input.externalStageId)}`;
+}
+
+function backfillWorkflowRequestsForRule(input: {
+  state: Awaited<ReturnType<typeof loadRuntimeStoreState>>;
+  rule: ATSTriggerRule;
+  now: string;
+}) {
+  input.state.atsWorkflowRequests = input.state.atsWorkflowRequests ?? [];
+  input.state.atsSyncEvents = input.state.atsSyncEvents ?? [];
+  const autoProcessWorkflowRequestIds: string[] = [];
+  const matchingApplications = (
+    input.state.atsExternalApplications ?? []
+  ).filter(
+    (application) =>
+      application.companyId === input.rule.companyId &&
+      application.connectionId === input.rule.connectionId &&
+      application.externalStageId === input.rule.externalStageId &&
+      (!input.rule.externalJobId ||
+        application.externalJobId === input.rule.externalJobId) &&
+      application.status === "active",
+  );
+
+  for (const application of matchingApplications) {
+    const existingRequest = input.state.atsWorkflowRequests.some(
+      (request) =>
+        request.atsTriggerRuleId === input.rule.id &&
+        request.connectionId === input.rule.connectionId &&
+        request.externalApplicationId === application.externalId,
+    );
+
+    if (existingRequest) {
+      continue;
+    }
+
+    let syncEvent = input.state.atsSyncEvents.find(
+      (event) =>
+        event.connectionId === application.connectionId &&
+        event.externalObjectType === "application" &&
+        event.externalObjectId === application.externalId &&
+        event.externalStageId === application.externalStageId,
+    );
+
+    if (!syncEvent) {
+      syncEvent = {
+        id: `ats_evt_backfill_${sanitizeATSRulePart(input.rule.id)}_${sanitizeATSRulePart(
+          application.externalId,
+        )}`,
+        companyId: application.companyId,
+        connectionId: application.connectionId,
+        provider: application.provider,
+        eventType: "application_seen",
+        externalObjectType: "application",
+        externalObjectId: application.externalId,
+        externalJobId: application.externalJobId,
+        externalCandidateId: application.externalCandidateId,
+        externalStageId: application.externalStageId,
+        occurredAt: input.now,
+        processedAt: input.now,
+        idempotencyKey: `trigger_backfill:${input.rule.id}:${application.externalId}`,
+        payload: application.rawSnapshot,
+      };
+      input.state.atsSyncEvents.push(syncEvent);
+    } else {
+      const syncEventId = syncEvent.id;
+      input.state.atsSyncEvents = input.state.atsSyncEvents.map((event) =>
+        event.id === syncEventId
+          ? {
+              ...event,
+              processedAt: event.processedAt ?? input.now,
+            }
+          : event,
+      );
+    }
+
+    const workflowRequest: ATSWorkflowRequest = {
+      id: `ats_workflow_${syncEvent.id}_${input.rule.id}`,
+      companyId: input.rule.companyId,
+      connectionId: input.rule.connectionId,
+      provider: input.rule.provider,
+      atsSyncEventId: syncEvent.id,
+      atsTriggerRuleId: input.rule.id,
+      externalApplicationId: application.externalId,
+      internalCandidateId: application.internalCandidateId,
+      internalApplicationId: application.internalApplicationId,
+      requestedActions: input.rule.actions,
+      requiresRecruiterApproval: input.rule.requiresRecruiterApproval,
+      status: "queued",
+      createdAt: input.now,
+      updatedAt: input.now,
+    };
+
+    input.state.atsWorkflowRequests.push(workflowRequest);
+    if (!workflowRequest.requiresRecruiterApproval) {
+      autoProcessWorkflowRequestIds.push(workflowRequest.id);
+    }
+  }
+
+  return autoProcessWorkflowRequestIds;
 }
 
 function parseStageMoveMappings(
@@ -309,6 +408,12 @@ export async function configureZohoDemoDefaultsAction(
       state.atsTriggerRules.push(rule);
     }
 
+    const autoProcessWorkflowRequestIds = backfillWorkflowRequestsForRule({
+      state,
+      rule,
+      now,
+    });
+
     appendAuditEvent({
       state,
       recruiter,
@@ -324,6 +429,13 @@ export async function configureZohoDemoDefaultsAction(
       },
     });
     await saveRuntimeStoreState(state);
+    for (const workflowRequestId of autoProcessWorkflowRequestIds) {
+      await processATSWorkflowRequest({
+        workflowRequestId,
+        now,
+        approved: true,
+      });
+    }
     revalidatePath("/settings/integrations/ats");
   } catch (error) {
     throw new Error(
