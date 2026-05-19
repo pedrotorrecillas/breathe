@@ -14,6 +14,7 @@ export type AuditAction =
   | "ats.manual_sync"
   | "ats.trigger_rule_saved"
   | "ats.trigger_rule_status_saved"
+  | "ats.trigger_rule_deleted"
   | "ats.writeback_policy_saved"
   | "ats.workflow_request_processed"
   | "ats.writeback_action_processed";

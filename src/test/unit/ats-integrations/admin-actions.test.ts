@@ -1192,6 +1192,112 @@ describe("ATS admin actions", () => {
     );
   });
 
+  it("deletes an admin-selected trigger rule and skips its queued workflow requests", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsTriggerRules = [
+      {
+        id: "ats_rule_1",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        name: "Run Breathe at Breathe Screen",
+        enabled: true,
+        externalJobId: null,
+        externalStageId: "Breathe Screen",
+        actions: ["import_candidate"],
+        requiresRecruiterApproval: true,
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+      {
+        id: "ats_rule_keep",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        name: "Run Breathe at Shortlist",
+        enabled: true,
+        externalJobId: null,
+        externalStageId: "Shortlist",
+        actions: ["queue_interview"],
+        requiresRecruiterApproval: true,
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+    ];
+    state.atsWorkflowRequests = [
+      {
+        id: "ats_workflow_queued",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        atsSyncEventId: "ats_evt_1",
+        atsTriggerRuleId: "ats_rule_1",
+        externalApplicationId: "mock_app_1",
+        internalCandidateId: null,
+        internalApplicationId: null,
+        requestedActions: ["import_candidate"],
+        requiresRecruiterApproval: true,
+        status: "queued",
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+      {
+        id: "ats_workflow_completed",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        atsSyncEventId: "ats_evt_2",
+        atsTriggerRuleId: "ats_rule_1",
+        externalApplicationId: "mock_app_2",
+        internalCandidateId: "cand_2",
+        internalApplicationId: "app_2",
+        requestedActions: ["import_candidate"],
+        requiresRecruiterApproval: true,
+        status: "completed",
+        createdAt: "2026-05-19T10:00:00.000Z",
+        updatedAt: "2026-05-19T10:00:00.000Z",
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { deleteATSTriggerRuleAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("triggerRuleId", "ats_rule_1");
+
+    await deleteATSTriggerRuleAction(formData);
+
+    const savedState = mockSaveRuntimeStoreState.mock.calls[0][0];
+    expect(savedState.atsTriggerRules).toEqual([
+      expect.objectContaining({ id: "ats_rule_keep" }),
+    ]);
+    expect(savedState.atsWorkflowRequests).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "ats_workflow_queued",
+          status: "skipped",
+          updatedAt: expect.any(String),
+        }),
+        expect.objectContaining({
+          id: "ats_workflow_completed",
+          status: "completed",
+        }),
+      ]),
+    );
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ats.trigger_rule_deleted",
+        targetId: "ats_rule_1",
+        metadata: expect.objectContaining({
+          provider: "mock_ats",
+          skippedWorkflowRequests: "1",
+        }),
+      }),
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith(
+      "/settings/integrations/ats",
+    );
+  });
+
   it("approves and processes queued ATS workflow requests", async () => {
     const { approveATSWorkflowRequestAction } =
       await import("@/app/(recruiter)/settings/integrations/ats/actions");

@@ -434,7 +434,7 @@ describe("ATS settings page", () => {
     expect(screen.getByText("1 active")).toBeInTheDocument();
   });
 
-  it("renders pause and resume controls for configured ATS trigger rules", async () => {
+  it("renders pause, resume and delete controls for configured ATS trigger rules", async () => {
     const snapshot = buildATSSnapshot();
     snapshot.triggerRules = [
       {
@@ -482,6 +482,9 @@ describe("ATS settings page", () => {
     expect(
       screen.getByRole("button", { name: /^Resume$/i }),
     ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: /^Delete$/i }).length,
+    ).toBe(2);
   });
 
   it("renders Zoho demo readiness from the current admin configuration", async () => {

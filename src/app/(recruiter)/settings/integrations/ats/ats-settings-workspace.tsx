@@ -16,6 +16,7 @@ import {
   createMockATSConnectionAction,
   createZohoEnvConnectionAction,
   configureZohoDemoDefaultsAction,
+  deleteATSTriggerRuleAction,
   approveATSWorkflowRequestAction,
   processATSWritebackActionAction,
   runManualATSSyncAction,
@@ -696,24 +697,39 @@ export function ATSSettingsWorkspace({
                   </p>
                 </div>
                 {canManage ? (
-                  <form action={saveATSTriggerRuleStatusAction}>
-                    <input
-                      type="hidden"
-                      name="triggerRuleId"
-                      value={rule.id}
-                    />
-                    <input
-                      type="hidden"
-                      name="enabled"
-                      value={rule.enabled ? "false" : "true"}
-                    />
-                    <button
-                      type="submit"
-                      className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700"
-                    >
-                      {rule.enabled ? "Pause" : "Resume"}
-                    </button>
-                  </form>
+                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                    <form action={saveATSTriggerRuleStatusAction}>
+                      <input
+                        type="hidden"
+                        name="triggerRuleId"
+                        value={rule.id}
+                      />
+                      <input
+                        type="hidden"
+                        name="enabled"
+                        value={rule.enabled ? "false" : "true"}
+                      />
+                      <button
+                        type="submit"
+                        className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700"
+                      >
+                        {rule.enabled ? "Pause" : "Resume"}
+                      </button>
+                    </form>
+                    <form action={deleteATSTriggerRuleAction}>
+                      <input
+                        type="hidden"
+                        name="triggerRuleId"
+                        value={rule.id}
+                      />
+                      <button
+                        type="submit"
+                        className="rounded-md border border-rose-200 px-3 py-2 text-xs font-medium text-rose-700"
+                      >
+                        Delete
+                      </button>
+                    </form>
+                  </div>
                 ) : null}
               </div>
             ))

@@ -1145,6 +1145,75 @@ export async function saveATSTriggerRuleStatusAction(
   }
 }
 
+export async function deleteATSTriggerRuleAction(
+  formData: FormData,
+): Promise<void> {
+  try {
+    const recruiter = await requireAuthenticatedRecruiter();
+    requireATSAdmin(recruiterCanManageTeams(recruiter));
+    const triggerRuleId = String(formData.get("triggerRuleId") ?? "");
+
+    if (!triggerRuleId) {
+      throw new Error("Choose an ATS trigger rule to delete.");
+    }
+
+    const state = await loadRuntimeStoreState();
+    const rule = state.atsTriggerRules.find(
+      (item) =>
+        item.id === triggerRuleId && item.companyId === recruiter.company.id,
+    );
+
+    if (!rule) {
+      throw new Error("ATS trigger rule not found.");
+    }
+
+    const now = new Date().toISOString();
+    let skippedWorkflowRequests = 0;
+
+    state.atsTriggerRules = state.atsTriggerRules.filter(
+      (item) => item.id !== rule.id,
+    );
+    state.atsWorkflowRequests = (state.atsWorkflowRequests ?? []).map(
+      (request) => {
+        if (
+          request.companyId === recruiter.company.id &&
+          request.atsTriggerRuleId === rule.id &&
+          request.status === "queued"
+        ) {
+          skippedWorkflowRequests += 1;
+          return {
+            ...request,
+            status: "skipped" as const,
+            updatedAt: now,
+          };
+        }
+
+        return request;
+      },
+    );
+
+    appendAuditEvent({
+      state,
+      recruiter,
+      action: "ats.trigger_rule_deleted",
+      targetType: "ats_trigger_rule",
+      targetId: rule.id,
+      summary: "Deleted ATS stage trigger rule.",
+      metadata: {
+        provider: rule.provider,
+        externalStageId: rule.externalStageId,
+        skippedWorkflowRequests: String(skippedWorkflowRequests),
+      },
+    });
+    await saveRuntimeStoreState(state);
+    revalidatePath("/settings/integrations/ats");
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : "Could not delete trigger rule.",
+    );
+  }
+}
+
 export async function approveATSWorkflowRequestAction(
   formData: FormData,
 ): Promise<void> {
