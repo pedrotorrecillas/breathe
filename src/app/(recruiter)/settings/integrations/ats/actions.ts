@@ -19,6 +19,7 @@ import {
 } from "@/lib/db/runtime-store";
 import { recruiterCanManageTeams } from "@/lib/team-access";
 import { processATSWorkflowRequest } from "@/lib/ats-integrations/workflow-requests";
+import { processATSWritebackAction } from "@/lib/ats-integrations/writeback";
 
 const atsTriggerActions: ATSTriggerAction[] = [
   "import_candidate",
@@ -285,6 +286,48 @@ export async function approveATSWorkflowRequestAction(
       error instanceof Error
         ? error.message
         : "Could not process ATS workflow request.",
+    );
+  }
+}
+
+export async function processATSWritebackActionAction(
+  formData: FormData,
+): Promise<void> {
+  try {
+    const recruiter = await requireAuthenticatedRecruiter();
+    requireATSAdmin(recruiterCanManageTeams(recruiter));
+    const writebackActionId = String(formData.get("writebackActionId") ?? "");
+
+    if (!writebackActionId) {
+      throw new Error("Choose an ATS writeback action to process.");
+    }
+
+    const processed = await processATSWritebackAction({
+      writebackActionId,
+      now: new Date().toISOString(),
+    });
+    const state = await loadRuntimeStoreState();
+
+    appendAuditEvent({
+      state,
+      recruiter,
+      action: "ats.writeback_action_processed",
+      targetType: "ats_writeback_action",
+      targetId: writebackActionId,
+      summary: "Processed ATS writeback action.",
+      metadata: {
+        status: processed.action.status,
+        attemptId: processed.attempt.id,
+        attemptStatus: processed.attempt.status,
+      },
+    });
+    await saveRuntimeStoreState(state);
+    revalidatePath("/settings/integrations/ats");
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Could not process ATS writeback action.",
     );
   }
 }

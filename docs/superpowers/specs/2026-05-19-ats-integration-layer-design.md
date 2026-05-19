@@ -393,11 +393,13 @@ When Breathe produces an interview summary/evaluation:
 1. Product code requests an `ATSWritebackAction`.
 2. The action records intended provider, target external application/candidate,
    action type, payload, idempotency key, and status `queued`.
-3. `writeback.ts` dispatches through the adapter.
-4. The adapter returns `success`, `skipped`, `retryable_error`, or
+3. Admin can inspect queued writeback actions and dispatch them through
+   `writeback.ts`; automated processing can call the same service later.
+4. `writeback.ts` dispatches through the adapter.
+5. The adapter returns `success`, `skipped`, `retryable_error`, or
    `terminal_error`.
-5. Attempts are stored with provider response metadata.
-6. The action is visible in admin/recruiter surfaces.
+6. Attempts are stored with provider response metadata.
+7. The action is visible in admin/recruiter surfaces.
 
 Idempotency key:
 
@@ -435,6 +437,7 @@ Integration tests:
 - approved workflow request imports/links a Breathe candidate/application from
   the canonical ATS application,
 - evaluation summary creates queued writeback action,
+- admin can dispatch queued writeback action through the provider adapter,
 - writeback success updates action/attempt state.
 
 No e2e test is required for the first design implementation unless UI changes

@@ -7,6 +7,7 @@ const mockLoadRuntimeStoreState = vi.fn();
 const mockSaveRuntimeStoreState = vi.fn();
 const mockRevalidatePath = vi.fn();
 const mockProcessATSWorkflowRequest = vi.fn();
+const mockProcessATSWritebackAction = vi.fn();
 
 vi.mock("next/cache", () => ({
   revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args),
@@ -34,6 +35,11 @@ vi.mock("@/lib/db/runtime-store", () => ({
 vi.mock("@/lib/ats-integrations/workflow-requests", () => ({
   processATSWorkflowRequest: (...args: unknown[]) =>
     mockProcessATSWorkflowRequest(...args),
+}));
+
+vi.mock("@/lib/ats-integrations/writeback", () => ({
+  processATSWritebackAction: (...args: unknown[]) =>
+    mockProcessATSWritebackAction(...args),
 }));
 
 const recruiterFixture = {
@@ -84,6 +90,26 @@ describe("ATS admin actions", () => {
           updatedAt: "2026-05-19T10:00:00.000Z",
         },
       ],
+      atsWritebackActions: [
+        {
+          id: "ats_writeback_1",
+          companyId: "company_1",
+          connectionId: "ats_conn_1",
+          provider: "mock_ats",
+          actionType: "candidate_note",
+          targetExternalCandidateId: "mock_candidate_ana",
+          targetExternalApplicationId: "mock_app_1",
+          targetExternalJobId: "mock_job_1",
+          targetExternalStageId: null,
+          sourceObjectType: "evaluation",
+          sourceObjectId: "eval_1",
+          status: "queued",
+          idempotencyKey: "key",
+          payload: { summary: "Great: 86" },
+          createdAt: "2026-05-19T10:00:00.000Z",
+          updatedAt: "2026-05-19T10:00:00.000Z",
+        },
+      ],
       auditEvents: [],
     });
     mockProcessATSWorkflowRequest.mockResolvedValue({
@@ -94,6 +120,17 @@ describe("ATS admin actions", () => {
       },
       candidateId: "ats_cand_1",
       applicationId: "ats_app_1",
+    });
+    mockProcessATSWritebackAction.mockResolvedValue({
+      action: {
+        id: "ats_writeback_1",
+        companyId: "company_1",
+        status: "succeeded",
+      },
+      attempt: {
+        id: "ats_attempt_1",
+        status: "succeeded",
+      },
     });
   });
 
@@ -150,6 +187,29 @@ describe("ATS admin actions", () => {
       expect.objectContaining({
         action: "ats.workflow_request_processed",
         targetId: "ats_workflow_1",
+      }),
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith(
+      "/settings/integrations/ats",
+    );
+  });
+
+  it("dispatches queued ATS writeback actions", async () => {
+    const { processATSWritebackActionAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("writebackActionId", "ats_writeback_1");
+
+    await processATSWritebackActionAction(formData);
+
+    expect(mockProcessATSWritebackAction).toHaveBeenCalledWith({
+      writebackActionId: "ats_writeback_1",
+      now: expect.any(String),
+    });
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ats.writeback_action_processed",
+        targetId: "ats_writeback_1",
       }),
     );
     expect(mockRevalidatePath).toHaveBeenCalledWith(

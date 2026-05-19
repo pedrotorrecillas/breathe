@@ -9,6 +9,7 @@ import {
   createMockATSConnectionAction,
   createZohoEnvConnectionAction,
   approveATSWorkflowRequestAction,
+  processATSWritebackActionAction,
   runManualATSSyncAction,
   saveATSTriggerRuleAction,
   saveATSWritebackPolicyAction,
@@ -306,6 +307,51 @@ export function ATSSettingsWorkspace({
           ) : (
             <p className="text-sm text-slate-600">
               No ATS workflow requests yet.
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <p className="ops-kicker text-slate-500">Writeback actions</p>
+        <h2 className="mt-2 text-lg font-semibold text-slate-950">
+          ATS outbound queue
+        </h2>
+        <div className="mt-4 grid gap-3">
+          {snapshot.writebackActions.length ? (
+            snapshot.writebackActions.map((action) => (
+              <div
+                key={action.id}
+                className="flex items-center justify-between gap-4 rounded-md border border-slate-200 px-4 py-3"
+              >
+                <div>
+                  <p className="text-sm font-medium text-slate-950">
+                    {action.actionType}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {action.status} · {action.targetExternalCandidateId}
+                  </p>
+                </div>
+                {canManage && action.status === "queued" ? (
+                  <form action={processATSWritebackActionAction}>
+                    <input
+                      type="hidden"
+                      name="writebackActionId"
+                      value={action.id}
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700"
+                    >
+                      Send
+                    </button>
+                  </form>
+                ) : null}
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-slate-600">
+              No ATS writeback actions queued yet.
             </p>
           )}
         </div>

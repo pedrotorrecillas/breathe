@@ -47,6 +47,7 @@ vi.mock("@/lib/ats-integrations/connections", () => ({
     connections: [],
     triggerRules: [],
     workflowRequests: [],
+    writebackActions: [],
     availableProviders: [
       { provider: "mock_ats", label: "Mock ATS", implemented: true },
       { provider: "zoho_recruit", label: "Zoho Recruit", implemented: true },
@@ -69,6 +70,9 @@ describe("ATS settings page", () => {
     expect(screen.getByText(/Writeback policy/i)).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: /ATS-triggered work/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /ATS outbound queue/i }),
     ).toBeInTheDocument();
   });
 });

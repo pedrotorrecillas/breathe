@@ -4,6 +4,7 @@ import type {
   ATSConnection,
   ATSProviderKey,
   ATSTriggerRule,
+  ATSWritebackAction,
   ATSWorkflowRequest,
 } from "@/domain/ats-integrations/types";
 import type { AuthenticatedRecruiter } from "@/lib/auth/types";
@@ -19,6 +20,7 @@ export type ATSAdminSnapshot = {
   connections: ATSConnection[];
   triggerRules: ATSTriggerRule[];
   workflowRequests: ATSWorkflowRequest[];
+  writebackActions: ATSWritebackAction[];
   availableProviders: ATSAvailableProvider[];
 };
 
@@ -50,6 +52,9 @@ export async function getATSAdminSnapshot(
     ),
     workflowRequests: state.atsWorkflowRequests.filter(
       (request) => request.companyId === companyId,
+    ),
+    writebackActions: state.atsWritebackActions.filter(
+      (action) => action.companyId === companyId,
     ),
     availableProviders: listATSAvailableProviders(),
   };
