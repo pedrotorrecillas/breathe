@@ -208,6 +208,12 @@ function zohoDemoWritebackReady(
   );
 }
 
+function connectionNeedsReauth(
+  connection: ATSAdminSnapshot["connections"][number] | null,
+) {
+  return connection?.lastError?.startsWith("needs_reauth:") ?? false;
+}
+
 function readinessStatusClass(isReady: boolean) {
   return isReady
     ? "border-emerald-200 bg-emerald-50 text-emerald-800"
@@ -305,6 +311,7 @@ export function ATSSettingsWorkspace({
       (connection) => connection.provider === "zoho_recruit",
     ) ?? null;
   const zohoConnectionReady = zohoConnection?.status === "active";
+  const zohoConnectionNeedsReauth = connectionNeedsReauth(zohoConnection);
   const zohoTriggerReady = zohoDemoTriggerReady({
     snapshot,
     connectionId: zohoConnection?.id ?? null,
@@ -523,11 +530,17 @@ export function ATSSettingsWorkspace({
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <div className="rounded-md border border-slate-200 px-4 py-3">
             <p className="text-sm font-medium text-slate-950">
-              {zohoConnectionReady ? "Connection active" : "Connection missing"}
+              {zohoConnectionNeedsReauth
+                ? "Needs reauth"
+                : zohoConnectionReady
+                  ? "Connection active"
+                  : "Connection missing"}
             </p>
             <p className="mt-1 text-xs text-slate-500">
               {zohoConnection
-                ? `${zohoConnection.displayName} · ${zohoConnection.status}`
+                ? `${zohoConnection.displayName} · ${zohoConnection.status}${
+                    zohoConnectionNeedsReauth ? " · needs reauth" : ""
+                  }`
                 : "No Zoho Recruit connection"}
             </p>
           </div>

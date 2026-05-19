@@ -539,6 +539,41 @@ describe("ATS settings page", () => {
     ).toBeInTheDocument();
   });
 
+  it("surfaces Zoho reauthentication requirements in demo readiness", async () => {
+    const snapshot = buildATSSnapshot();
+    snapshot.connections.push({
+      id: "ats_conn_zoho_reauth",
+      companyId: "company_1",
+      provider: "zoho_recruit",
+      status: "paused",
+      syncMode: "manual",
+      displayName: "Zoho Recruit demo",
+      authMode: "env_token",
+      secretRef: "env:ZOHO_RECRUIT_REFRESH_TOKEN",
+      externalAccountId: "zoho_demo",
+      lastSyncAt: null,
+      lastError: "needs_reauth: Zoho Recruit request failed with 401.",
+      createdAt: "2026-05-19T10:00:00.000Z",
+      updatedAt: "2026-05-19T11:00:00.000Z",
+      writebackPolicy: {
+        reportMode: "candidate_note",
+        moveToExternalStageId: "Interview Completed",
+        requiresRecruiterReview: false,
+      },
+    });
+    atsSnapshotState.snapshot = snapshot;
+
+    render(await ATSSettingsPage());
+
+    expect(screen.getByText("Needs reauth")).toBeInTheDocument();
+    expect(
+      screen.getByText("needs_reauth: Zoho Recruit request failed with 401."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Zoho Recruit demo · paused/i),
+    ).toBeInTheDocument();
+  });
+
   it("surfaces Zoho note fallback status in demo readiness", async () => {
     const snapshot = buildATSSnapshot();
     snapshot.connections.push({
