@@ -345,6 +345,30 @@ describe("ATS settings page", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("does not offer archived ATS jobs in trigger selectors", async () => {
+    const snapshot = buildATSSnapshot();
+    snapshot.externalJobs.push({
+      id: "ats_job_archived",
+      companyId: "company_1",
+      connectionId: "ats_conn_1",
+      provider: "mock_ats",
+      externalId: "mock_job_archived",
+      externalUrl: null,
+      title: "Archived Store Associate",
+      status: "archived_external",
+      externalUpdatedAt: null,
+      lastSeenAt: "2026-05-19T10:00:00.000Z",
+      rawSnapshot: {},
+    });
+    atsSnapshotState.snapshot = snapshot;
+
+    render(await ATSSettingsPage());
+
+    expect(
+      screen.queryByRole("option", { name: /Archived Store Associate/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it("does not offer webhook sync for providers without webhook support", async () => {
     const snapshot = buildATSSnapshot();
     snapshot.connections[0] = {

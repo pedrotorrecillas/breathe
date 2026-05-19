@@ -680,7 +680,39 @@ describe("ATS admin actions", () => {
     formData.append("actions", "queue_interview");
 
     await expect(saveATSTriggerRuleAction(formData)).rejects.toThrow(
-      "Choose a trigger job from the selected ATS connection.",
+      "Choose an active trigger job from the selected ATS connection.",
+    );
+    expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
+  });
+
+  it("rejects trigger jobs that are archived in the selected ATS connection", async () => {
+    const state = await mockLoadRuntimeStoreState();
+    state.atsExternalJobs = [
+      {
+        id: "ats_job_archived",
+        companyId: "company_1",
+        connectionId: "ats_conn_1",
+        provider: "mock_ats",
+        externalId: "mock_job_archived",
+        externalUrl: null,
+        title: "Archived Store Associate",
+        status: "archived_external",
+        externalUpdatedAt: null,
+        lastSeenAt: "2026-05-19T10:00:00.000Z",
+        rawSnapshot: {},
+      },
+    ];
+    mockLoadRuntimeStoreState.mockResolvedValue(state);
+    const { saveATSTriggerRuleAction } =
+      await import("@/app/(recruiter)/settings/integrations/ats/actions");
+    const formData = new FormData();
+    formData.set("connectionId", "ats_conn_1");
+    formData.set("externalStageId", "mock_stage_screen");
+    formData.set("externalJobId", "mock_job_archived");
+    formData.append("actions", "queue_interview");
+
+    await expect(saveATSTriggerRuleAction(formData)).rejects.toThrow(
+      "Choose an active trigger job from the selected ATS connection.",
     );
     expect(mockSaveRuntimeStoreState).not.toHaveBeenCalled();
   });

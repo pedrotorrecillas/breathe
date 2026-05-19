@@ -693,6 +693,9 @@ export async function saveATSTriggerRuleAction(
         job.companyId === recruiter.company.id &&
         job.connectionId === connection.id,
     );
+    const activeConnectionJobs = connectionJobs.filter(
+      (job) => job.status === "active",
+    );
 
     if (
       connectionStages.length > 0 &&
@@ -708,9 +711,11 @@ export async function saveATSTriggerRuleAction(
     if (
       externalJobId &&
       connectionJobs.length > 0 &&
-      !connectionJobs.some((job) => job.externalId === externalJobId)
+      !activeConnectionJobs.some((job) => job.externalId === externalJobId)
     ) {
-      throw new Error("Choose a trigger job from the selected ATS connection.");
+      throw new Error(
+        "Choose an active trigger job from the selected ATS connection.",
+      );
     }
 
     const now = new Date().toISOString();

@@ -226,7 +226,8 @@ export function ATSSettingsWorkspace({
   const triggerJobs = useMemo(
     () =>
       snapshot.externalJobs.filter(
-        (job) => job.connectionId === triggerConnectionId,
+        (job) =>
+          job.connectionId === triggerConnectionId && job.status === "active",
       ),
     [snapshot.externalJobs, triggerConnectionId],
   );
