@@ -16,6 +16,9 @@ This repository keeps product logic separate from runtime, provider, and evaluat
   HappyRobot request/response/webhook shapes and provider-facing normalization.
 - `src/domain/evaluations`
   Post-call evaluation output, fit scoring, and requirement-level assessments.
+- `src/domain/ats-integrations`
+  Provider-neutral ATS connections, external records, sync events, trigger rules,
+  workflow requests, and writeback actions.
 - `src/lib`
   Cross-cutting helpers, app config, and route-agnostic utilities only.
 - `src/app`
@@ -28,6 +31,12 @@ This repository keeps product logic separate from runtime, provider, and evaluat
 - Keep evaluation output separate from the call runtime.
 - Model `Candidate` and `Application` separately so a person can reuse the profile across jobs later.
 - Keep job requirements editable without coupling them to runtime transport details.
+- Keep ATS provider fields out of product candidate, job, interview, and
+  evaluation entities.
+- Treat ATS sync and writeback as asynchronous and auditable; public apply and
+  interview runtime must not depend on live ATS availability.
+- Keep provider-specific ATS API fields under
+  `src/lib/ats-integrations/adapters/*` or `src/lib/ats-integrations/zoho/*`.
 
 ## Current MVP Split
 
@@ -35,3 +44,4 @@ This repository keeps product logic separate from runtime, provider, and evaluat
 - Preparation layer: generated interview questions and scoring guidance.
 - Runtime layer: HappyRobot dispatch and webhook normalization.
 - Evaluation layer: post-interview scoring and summaries.
+- ATS layer: external recruiting system sync, trigger rules, and writeback queue.
