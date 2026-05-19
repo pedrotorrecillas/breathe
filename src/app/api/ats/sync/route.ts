@@ -55,11 +55,18 @@ async function handleSyncRequest(request: Request) {
   const result = await runConfiguredATSSyncs({
     now: new Date().toISOString(),
   });
+  const hasFailures = result.failedConnections > 0;
 
-  return NextResponse.json({
-    success: true,
-    result,
-  });
+  return NextResponse.json(
+    {
+      success: !hasFailures,
+      ...(hasFailures
+        ? { error: "One or more ATS syncs failed." }
+        : {}),
+      result,
+    },
+    { status: hasFailures ? 502 : 200 },
+  );
 }
 
 export async function GET(request: Request) {
